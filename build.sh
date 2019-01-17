@@ -27,3 +27,6 @@ popd >/dev/null
 
 echo "${bold}Building substrate node...${normal}"
 cargo build --release
+
+echo "${bold}Building client...${normal}"
+(cd client && ./build.sh)

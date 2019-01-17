@@ -28,6 +28,7 @@ srml-sudo = { git = "https://github.com/paritytech/substrate" }
 substrate-client = { git = "https://github.com/paritytech/substrate", optional = true }
 sr-version = { git = "https://github.com/paritytech/substrate" }
 substrate-consensus-aura-primitives = { git = "https://github.com/paritytech/substrate" }
+game = { path = "../game", default-features = false }
 
 [features]
 default = ["std"]
@@ -52,4 +53,5 @@ std = [
 	"safe-mix/std",
 	"substrate-client",
 	"substrate-consensus-aura-primitives/std",
+        "game/std",
 ]

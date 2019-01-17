@@ -1,7 +1,7 @@
-use primitives::{Ed25519AuthorityId, ed25519};
+use primitives::{ed25519, Ed25519AuthorityId};
 use rust_substrate_prototype_runtime::{
-	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig
+    AccountId, BalancesConfig, ConsensusConfig, GenesisConfig, IndicesConfig, SudoConfig,
+    TimestampConfig,
 };
 use substrate_service;
 
@@ -16,68 +16,113 @@ pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 /// from a string (`--chain=...`) into a `ChainSpec`.
 #[derive(Clone, Debug)]
 pub enum Alternative {
-	/// Whatever the current runtime is, with just Alice as an auth.
-	Development,
-	/// Whatever the current runtime is, with simple Alice/Bob auths.
-	LocalTestnet,
+    /// Whatever the current runtime is, with just Alice as an auth.
+    Development,
+    /// Whatever the current runtime is, with simple Alice/Bob auths.
+    LocalTestnet,
 }
 
 impl Alternative {
-	/// Get an actual chain config from one of the alternatives.
-	pub(crate) fn load(self) -> Result<ChainSpec, String> {
-		Ok(match self {
-			Alternative::Development => ChainSpec::from_genesis(
-				"Development",
-				"dev",
-				|| testnet_genesis(vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().into(),
-				], vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
-				],
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into()
-				),
-				vec![],
-				None,
-				None,
-				None,
-				None
-			),
-			Alternative::LocalTestnet => ChainSpec::from_genesis(
-				"Local Testnet",
-				"local_testnet",
-				|| testnet_genesis(vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().into(),
-					ed25519::Pair::from_seed(b"Bob                             ").public().into(),
-				], vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
-					ed25519::Pair::from_seed(b"Bob                             ").public().0.into(),
-					ed25519::Pair::from_seed(b"Charlie                         ").public().0.into(),
-					ed25519::Pair::from_seed(b"Dave                            ").public().0.into(),
-					ed25519::Pair::from_seed(b"Eve                             ").public().0.into(),
-					ed25519::Pair::from_seed(b"Ferdie                          ").public().0.into(),
-				],
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into()
-				),
-				vec![],
-				None,
-				None,
-				None,
-				None
-			),
-		})
-	}
+    /// Get an actual chain config from one of the alternatives.
+    pub(crate) fn load(self) -> Result<ChainSpec, String> {
+        Ok(match self {
+            Alternative::Development => ChainSpec::from_genesis(
+                "Development",
+                "dev",
+                || {
+                    testnet_genesis(
+                        vec![
+                            ed25519::Pair::from_seed(b"Alice                           ")
+                                .public()
+                                .into(),
+                        ],
+                        vec![
+                            ed25519::Pair::from_seed(b"Alice                           ")
+                                .public()
+                                .0
+                                .into(),
+                        ],
+                        ed25519::Pair::from_seed(b"Alice                           ")
+                            .public()
+                            .0
+                            .into(),
+                    )
+                },
+                vec![],
+                None,
+                None,
+                None,
+                None,
+            ),
+            Alternative::LocalTestnet => ChainSpec::from_genesis(
+                "Local Testnet",
+                "local_testnet",
+                || {
+                    testnet_genesis(
+                        vec![
+                            ed25519::Pair::from_seed(b"Alice                           ")
+                                .public()
+                                .into(),
+                            ed25519::Pair::from_seed(b"Bob                             ")
+                                .public()
+                                .into(),
+                        ],
+                        vec![
+                            ed25519::Pair::from_seed(b"Alice                           ")
+                                .public()
+                                .0
+                                .into(),
+                            ed25519::Pair::from_seed(b"Bob                             ")
+                                .public()
+                                .0
+                                .into(),
+                            ed25519::Pair::from_seed(b"Charlie                         ")
+                                .public()
+                                .0
+                                .into(),
+                            ed25519::Pair::from_seed(b"Dave                            ")
+                                .public()
+                                .0
+                                .into(),
+                            ed25519::Pair::from_seed(b"Eve                             ")
+                                .public()
+                                .0
+                                .into(),
+                            ed25519::Pair::from_seed(b"Ferdie                          ")
+                                .public()
+                                .0
+                                .into(),
+                        ],
+                        ed25519::Pair::from_seed(b"Alice                           ")
+                            .public()
+                            .0
+                            .into(),
+                    )
+                },
+                vec![],
+                None,
+                None,
+                None,
+                None,
+            ),
+        })
+    }
 
-	pub(crate) fn from(s: &str) -> Option<Self> {
-		match s {
-			"dev" => Some(Alternative::Development),
-			"local" => Some(Alternative::LocalTestnet),
-			_ => None,
-		}
-	}
+    pub(crate) fn from(s: &str) -> Option<Self> {
+        match s {
+            "dev" => Some(Alternative::Development),
+            "local" => Some(Alternative::LocalTestnet),
+            _ => None,
+        }
+    }
 }
 
-fn testnet_genesis(initial_authorities: Vec<Ed25519AuthorityId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
-	GenesisConfig {
+fn testnet_genesis(
+    initial_authorities: Vec<Ed25519AuthorityId>,
+    endowed_accounts: Vec<AccountId>,
+    root_key: AccountId,
+) -> GenesisConfig {
+    GenesisConfig {
 		consensus: Some(ConsensusConfig {
 			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/rust_substrate_prototype_runtime.compact.wasm").to_vec(),
 			authorities: initial_authorities.clone(),

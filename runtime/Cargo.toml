@@ -29,6 +29,7 @@ substrate-client = { git = "https://github.com/paritytech/substrate", optional =
 sr-version = { git = "https://github.com/paritytech/substrate" }
 substrate-consensus-aura-primitives = { git = "https://github.com/paritytech/substrate" }
 game = { path = "../game", default-features = false }
+byteorder = "1.2.7"
 
 [features]
 default = ["std"]

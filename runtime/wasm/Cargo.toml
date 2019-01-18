@@ -27,6 +27,7 @@ srml-timestamp = { git = "https://github.com/paritytech/substrate", default-feat
 srml-sudo = { git = "https://github.com/paritytech/substrate", default-features = false }
 sr-version = { git = "https://github.com/paritytech/substrate", default-features = false }
 substrate-consensus-aura-primitives = { git = "https://github.com/paritytech/substrate", default-features = false }
+byteorder = { version = "1.2.7", default-features = false }
 game = { path = "../../game", default-features = false }
 
 [features]

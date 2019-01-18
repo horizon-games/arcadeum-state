@@ -36,8 +36,8 @@ decl_module! {
             }
 
             match state.winner() {
-                None => {
-                    if state.next_player().is_none() {
+                game::Player::None => {
+                    if state.next_player() == game::Player::None {
                         <Draws<T>>::insert(sender.clone(), if <Draws<T>>::exists(sender.clone()) {
                             <Draws<T>>::get(sender.clone()) + 1
                         } else {
@@ -47,21 +47,19 @@ decl_module! {
                         return Err("incomplete proof");
                     }
                 },
-                Some(winner) => match winner {
-                    game::Player::One => {
-                        <Wins<T>>::insert(sender.clone(), if <Wins<T>>::exists(sender.clone()) {
-                            <Wins<T>>::get(sender.clone()) + 1
-                        } else {
-                            1
-                        });
-                    },
-                    game::Player::Two => {
-                        <Losses<T>>::insert(sender.clone(), if <Losses<T>>::exists(sender.clone()) {
-                            <Losses<T>>::get(sender.clone()) + 1
-                        } else {
-                            1
-                        });
-                    },
+                game::Player::One => {
+                    <Wins<T>>::insert(sender.clone(), if <Wins<T>>::exists(sender.clone()) {
+                        <Wins<T>>::get(sender.clone()) + 1
+                    } else {
+                        1
+                    });
+                },
+                game::Player::Two => {
+                    <Losses<T>>::insert(sender.clone(), if <Losses<T>>::exists(sender.clone()) {
+                        <Losses<T>>::get(sender.clone()) + 1
+                    } else {
+                        1
+                    });
                 },
             }
 

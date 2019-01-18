@@ -32,6 +32,11 @@ extern crate srml_system as system;
 extern crate srml_timestamp as timestamp;
 extern crate substrate_consensus_aura_primitives as consensus_aura;
 
+extern crate byteorder;
+mod arcadeum;
+
+extern crate game;
+
 use client::{block_builder::api as block_builder_api, runtime_api};
 use consensus_aura::api as aura_api;
 #[cfg(feature = "std")]
@@ -99,8 +104,8 @@ pub mod opaque {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("rust-substrate-prototype"),
-    impl_name: create_runtime_str!("rust-substrate-prototype"),
+    spec_name: create_runtime_str!("arcadeum-spec"),
+    impl_name: create_runtime_str!("arcadeum-impl"),
     authoring_version: 3,
     spec_version: 3,
     impl_version: 0,
@@ -196,6 +201,8 @@ impl sudo::Trait for Runtime {
     type Proposal = Call;
 }
 
+impl arcadeum::Trait for Runtime {}
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, Ed25519AuthorityId>) where
 		Block = Block,
@@ -209,6 +216,7 @@ construct_runtime!(
 		Indices: indices,
 		Balances: balances,
 		Sudo: sudo,
+		Arcadeum: arcadeum::{Module, Call, Storage},
 	}
 );
 

@@ -41,7 +41,7 @@ vergen = "2"
 
 [workspace]
 members = [ "runtime" ]
-exclude = [ "game", "client", "runtime/wasm" ]
+exclude = [ "game", "client", "example", "runtime/wasm" ]
 
 [profile.release]
 # Substrate runtime requires unwinding.

@@ -30,3 +30,6 @@ cargo build --release
 
 echo "${bold}Building client...${normal}"
 (cd client && ./build.sh)
+
+echo "${bold}Building example...${normal}"
+(cd example && yarn && yarn tsc)

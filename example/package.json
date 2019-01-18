@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "client": "link:../client"
+  },
+  "devDependencies": {
+    "typescript": "^3.2.4"
   }
 }

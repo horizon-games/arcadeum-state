@@ -24,3 +24,6 @@ done
 
 # Restore initial directory.
 popd >/dev/null
+
+echo "${bold}Building substrate node...${normal}"
+cargo build --release

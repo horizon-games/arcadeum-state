@@ -6,6 +6,15 @@
 ./build.sh
 ```
 
+nixos-specific:
+
+```
+nix-shell -p openssl pkgconfig clang
+# add libstdc++.so location to LD_LIBRARY_PATH
+# add libclang.so location to LIBCLANG_PATH
+./build.sh
+```
+
 ## run
 
 ### blockchain

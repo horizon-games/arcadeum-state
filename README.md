@@ -1,5 +1,13 @@
 # rust-substrate-prototype
 
+## bootstrap
+
+install https://rustup.rs/
+
+```
+./init.sh
+```
+
 ## build
 
 ```

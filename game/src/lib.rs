@@ -24,7 +24,7 @@ impl State {
     // https://github.com/rustwasm/wasm-bindgen/issues/1191
     // #[cfg_attr(feature = "bindings", wasm_bindgen(constructor))]
     pub fn new() -> Self {
-        State {
+        Self {
             nonce: 0,
             board: [
                 [Player::None, Player::None, Player::None],

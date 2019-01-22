@@ -5,6 +5,7 @@
 install https://rustup.rs/
 
 ```
+rustup default nightly
 ./init.sh
 ```
 

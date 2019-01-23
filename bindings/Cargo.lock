@@ -1,14 +1,14 @@
 [[package]]
-name = "cfg-if"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "client"
+name = "bindings"
 version = "0.1.0"
 dependencies = [
  "game 0.1.0",
 ]
+
+[[package]]
+name = "cfg-if"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "game"

@@ -1,6 +1,6 @@
-import * as client from 'client'
+import * as bindings from 'bindings'
 
-function log(state: client.State): void {
+function log(state: bindings.State): void {
   console.log(state)
   console.log(`winner: ${state.winner()}`)
   console.log(`next player: ${state.next_player()}`)
@@ -9,7 +9,7 @@ function log(state: client.State): void {
 
 ;(() => {
   try {
-    let state = client.State.new()
+    let state = bindings.State.new()
     log(state)
     state = state.next(new Uint8Array([1, 0, 0]))
     log(state)

@@ -1,12 +1,5 @@
 import * as bindings from 'bindings'
 
-function log(state: bindings.State): void {
-  console.log(state)
-  console.log(`winner: ${state.winner()}`)
-  console.log(`next player: ${state.next_player()}`)
-  console.log()
-}
-
 ;(() => {
   try {
     let state = bindings.State.new()
@@ -27,3 +20,10 @@ function log(state: bindings.State): void {
     console.log(`error: ${e}`)
   }
 })()
+
+function log(state: bindings.State): void {
+  console.log(state)
+  console.log(`winner: ${state.winner()}`)
+  console.log(`next player: ${state.next_player()}`)
+  console.log()
+}

@@ -1,4 +1,5 @@
 use byteorder::ByteOrder;
+use itoa::Integer;
 use rstd::prelude::*;
 use srml_support::StorageMap;
 
@@ -66,4 +67,66 @@ decl_module! {
             Ok(())
         }
     }
+}
+
+struct Message<'a> {
+    message: &'a [u8],
+    author: [u8; 20],
+    parent: &'a [u8],
+    hash: [u8; 32],
+}
+
+impl<'a> Message<'a> {
+    fn new(buffer: &mut &'a [u8]) -> Result<Self, &'static str> {
+        if buffer.len() < 65 + 32 + 4 {
+            return Err("buffer.len() < 65 + 32 + 4");
+        }
+
+        let length = byteorder::LE::read_u32(&buffer[65 + 32..]) as usize;
+
+        if buffer.len() < 65 + 32 + 4 + length {
+            return Err("buffer.len() < 65 + 32 + 4 + length");
+        }
+
+        let mut signature = [0; 65];
+        signature.copy_from_slice(&buffer[..65]);
+
+        let signer = runtime_io::secp256k1_ecdsa_recover(
+            &signature,
+            &digest(&buffer[65..65 + 32 + 4 + length]),
+        )
+        .map_err(|error| match error {
+            runtime_io::EcdsaVerifyError::BadRS => "runtime_io::EcdsaVerifyError::BadRS",
+            runtime_io::EcdsaVerifyError::BadV => "runtime_io::EcdsaVerifyError::BadV",
+            runtime_io::EcdsaVerifyError::BadSignature => {
+                "runtime_io::EcdsaVerifyError::BadSignature"
+            }
+        })?;
+
+        let mut author = [0; 20];
+        author.copy_from_slice(&runtime_io::keccak_256(&signer)[32 - 20..]);
+
+        let message = Message {
+            message: &buffer[65 + 32 + 4..65 + 32 + 4 + length],
+            author,
+            parent: &buffer[65..65 + 32],
+            hash: runtime_io::keccak_256(&buffer[..65 + 32 + 4 + length]),
+        };
+
+        *buffer = &buffer[65 + 32 + 4 + length..];
+
+        Ok(message)
+    }
+}
+
+fn digest(message: &[u8]) -> [u8; 32] {
+    let mut buffer = itoa::Buffer::new();
+    let length = message.len().write(&mut buffer);
+
+    let mut string = Vec::with_capacity(26 + length.len() + message.len());
+    string.extend(b"\x19Ethereum Signed Message:\n");
+    string.extend(length.bytes());
+    string.extend(message);
+
+    runtime_io::keccak_256(&string)
 }

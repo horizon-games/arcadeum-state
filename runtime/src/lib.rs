@@ -33,6 +33,7 @@ extern crate srml_timestamp as timestamp;
 extern crate substrate_consensus_aura_primitives as consensus_aura;
 
 extern crate byteorder;
+extern crate itoa;
 mod arcadeum;
 
 extern crate game;

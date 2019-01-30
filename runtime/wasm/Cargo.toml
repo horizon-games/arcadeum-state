@@ -50,7 +50,8 @@ std = [
 	"srml-timestamp/std",
 	"srml-sudo/std",
 	"sr-version/std",
-        "game/std",
+	"game/std",
+	"byteorder/std",
 ]
 
 [profile.release]

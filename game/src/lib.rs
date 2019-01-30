@@ -89,18 +89,16 @@ impl State {
         }
     }
 
-    pub fn next(&self, action: &[u8], _random: &[u8]) -> Result<State, Error> {
-        if action.len() != 3 {
+    pub fn next(&self, player: Player, action: &[u8], _random: &[u8]) -> Result<State, Error> {
+        if action.len() != 2 {
             return Err(ErrorCode::WrongLength.into());
         }
-
-        let player = Player::try_from(action[0])?;
 
         if player == Player::None || player != self.next_player() {
             return Err(ErrorCode::WrongTurn.into());
         }
 
-        let (row, column) = (action[1] as usize, action[2] as usize);
+        let (row, column) = (action[0] as usize, action[1] as usize);
 
         if row >= 3 {
             return Err(ErrorCode::BadRow.into());
@@ -128,10 +126,10 @@ pub enum Player {
     Two = 2,
 }
 
-impl TryFrom<u8> for Player {
+impl TryFrom<i32> for Player {
     type Error = Error;
 
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
             1 => Ok(Player::One),
             2 => Ok(Player::Two),
@@ -156,6 +154,15 @@ impl wasm_bindgen::convert::IntoWasmAbi for Player {
     }
 }
 
+#[cfg(feature = "bindings")]
+impl wasm_bindgen::convert::FromWasmAbi for Player {
+    type Abi = i32;
+
+    unsafe fn from_abi(value: Self::Abi, _extra: &mut dyn wasm_bindgen::convert::Stack) -> Self {
+        Self::try_from(value).unwrap()
+    }
+}
+
 #[cfg(not(feature = "bindings"))]
 type Error = i32;
 #[cfg(feature = "bindings")]
@@ -168,10 +175,31 @@ impl From<ErrorCode> for Error {
 }
 
 enum ErrorCode {
-    WrongLength,
-    NotPlayer,
-    WrongTurn,
-    BadRow,
-    BadColumn,
-    AlreadyPlayed,
+    WrongLength = 0,
+    NotPlayer = 1,
+    WrongTurn = 2,
+    BadRow = 3,
+    BadColumn = 4,
+    AlreadyPlayed = 5,
+}
+
+pub fn error_string(error: Error) -> &'static str {
+#[cfg(not(feature = "bindings"))]
+    let error = Some(error);
+#[cfg(feature = "bindings")]
+    let error = error.as_f64();
+
+    if let Some(code) = error {
+        match code as i32 {
+            0 => "ErrorCode::WrongLength",
+            1 => "ErrorCode::NotPlayer",
+            2 => "ErrorCode::WrongTurn",
+            3 => "ErrorCode::BadRow",
+            4 => "ErrorCode::BadColumn",
+            5 => "ErrorCode::AlreadyPlayed",
+            _ => "not an ErrorCode",
+        }
+    } else {
+        "not an ErrorCode"
+    }
 }

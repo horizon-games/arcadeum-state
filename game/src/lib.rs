@@ -89,7 +89,7 @@ impl State {
         }
     }
 
-    pub fn next(&self, action: &[u8]) -> Result<State, Error> {
+    pub fn next(&self, action: &[u8], _random: &[u8]) -> Result<State, Error> {
         if action.len() != 3 {
             return Err(ErrorCode::WrongLength.into());
         }

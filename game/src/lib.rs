@@ -4,9 +4,6 @@
 #[cfg(feature = "bindings")]
 use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "std")]
-use std::convert::Into;
-
 #[cfg(not(feature = "std"))]
 use core::convert::TryFrom;
 #[cfg(feature = "std")]
@@ -164,6 +161,12 @@ type Error = i32;
 #[cfg(feature = "bindings")]
 type Error = JsValue;
 
+impl From<ErrorCode> for Error {
+    fn from(code: ErrorCode) -> Self {
+        (code as i32).into()
+    }
+}
+
 enum ErrorCode {
     WrongLength,
     NotPlayer,
@@ -171,10 +174,4 @@ enum ErrorCode {
     BadRow,
     BadColumn,
     AlreadyPlayed,
-}
-
-impl Into<Error> for ErrorCode {
-    fn into(self) -> Error {
-        (self as i32).into()
-    }
 }

@@ -37,17 +37,19 @@ mod arcadeum;
 
 extern crate game;
 
-use client::{block_builder::api as block_builder_api, runtime_api};
-use consensus_aura::api as aura_api;
+use client::{
+    block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},
+    runtime_api,
+};
 #[cfg(feature = "std")]
 use primitives::bytes;
 use primitives::{Ed25519AuthorityId, OpaqueMetadata};
 use rstd::prelude::*;
 use runtime_primitives::{
     generic,
-    traits::{self, BlakeTwo256, Block as BlockT, ProvideInherent, StaticLookup},
+    traits::{self, BlakeTwo256, Block as BlockT, StaticLookup},
     transaction_validity::TransactionValidity,
-    ApplyResult, BasicInherentData, CheckInherentError, Ed25519Signature,
+    ApplyResult, Ed25519Signature,
 };
 #[cfg(feature = "std")]
 use version::NativeVersion;
@@ -151,8 +153,6 @@ impl aura::Trait for Runtime {
 }
 
 impl consensus::Trait for Runtime {
-    /// The position in the block's extrinsics that the note-offline inherent must be placed.
-    const NOTE_OFFLINE_POSITION: u32 = 1;
     /// The identifier we use to refer to authorities.
     type SessionKey = Ed25519AuthorityId;
     // The aura module handles offline-reports internally
@@ -175,8 +175,6 @@ impl indices::Trait for Runtime {
 }
 
 impl timestamp::Trait for Runtime {
-    /// The position in the block's extrinsics that the timestamp-set inherent must be placed.
-    const TIMESTAMP_SET_POSITION: u32 = 0;
     /// A timestamp: seconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;
@@ -207,7 +205,7 @@ construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, Ed25519AuthorityId>) where
 		Block = Block,
 		NodeBlock = opaque::Block,
-		InherentData = BasicInherentData
+		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: system::{default, Log(ChangesTrieRoot)},
 		Timestamp: timestamp::{Module, Call, Storage, Config<T>, Inherent},
@@ -253,8 +251,8 @@ impl_runtime_apis! {
             Executive::execute_block(block)
         }
 
-        fn initialise_block(header: <Block as BlockT>::Header) {
-            Executive::initialise_block(&header)
+        fn initialise_block(header: &<Block as BlockT>::Header) {
+            Executive::initialise_block(header)
         }
     }
 
@@ -264,7 +262,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl block_builder_api::BlockBuilder<Block, BasicInherentData> for Runtime {
+    impl block_builder_api::BlockBuilder<Block> for Runtime {
         fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyResult {
             Executive::apply_extrinsic(extrinsic)
         }
@@ -273,27 +271,12 @@ impl_runtime_apis! {
             Executive::finalise_block()
         }
 
-        fn inherent_extrinsics(data: BasicInherentData) -> Vec<<Block as BlockT>::Extrinsic> {
-            let mut inherent = Vec::new();
-
-            inherent.extend(
-                Timestamp::create_inherent_extrinsics(data.timestamp)
-                    .into_iter()
-                    .map(|v| (v.0, UncheckedExtrinsic::new_unsigned(Call::Timestamp(v.1))))
-            );
-
-            inherent.extend(
-                Consensus::create_inherent_extrinsics(data.consensus)
-                    .into_iter()
-                    .map(|v| (v.0, UncheckedExtrinsic::new_unsigned(Call::Consensus(v.1))))
-            );
-
-            inherent.as_mut_slice().sort_unstable_by_key(|v| v.0);
-            inherent.into_iter().map(|v| v.1).collect()
+        fn inherent_extrinsics(data: InherentData) -> Vec<<Block as BlockT>::Extrinsic> {
+            data.create_extrinsics()
         }
 
-        fn check_inherents(block: Block, data: BasicInherentData) -> Result<(), CheckInherentError> {
-            Runtime::check_inherents(block, data)
+        fn check_inherents(block: Block, data: InherentData) -> CheckInherentsResult {
+            data.check_extrinsics(&block)
         }
 
         fn random_seed() -> <Block as BlockT>::Hash {
@@ -307,7 +290,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl aura_api::AuraApi<Block> for Runtime {
+    impl consensus_aura::AuraApi<Block> for Runtime {
         fn slot_duration() -> u64 {
             Aura::slot_duration()
         }

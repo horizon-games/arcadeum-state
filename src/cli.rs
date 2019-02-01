@@ -3,32 +3,10 @@ use futures::{future, sync::oneshot, Future};
 use service;
 use std::cell::RefCell;
 use std::ops::Deref;
-use structopt::StructOpt;
 pub use substrate_cli::{error, IntoExit, VersionInfo};
-use substrate_cli::{execute_default, informant, parse_matches, Action, CoreParams};
+use substrate_cli::{informant, parse_and_execute, NoCustom};
 use substrate_service::{Roles as ServiceRoles, ServiceFactory};
 use tokio::runtime::Runtime;
-
-/// Extend params for Node
-#[derive(Debug, StructOpt)]
-pub struct NodeParams {
-    /// Should run as a GRANDPA authority node
-    #[structopt(
-        long = "grandpa-authority",
-        help = "Run Node as a GRANDPA authority, implies --validator"
-    )]
-    grandpa_authority: bool,
-
-    /// Should run as a GRANDPA authority node only
-    #[structopt(
-        long = "grandpa-authority-only",
-        help = "Run Node as a GRANDPA authority only, don't as a usual validator, implies --grandpa-authority"
-    )]
-    grandpa_authority_only: bool,
-
-    #[structopt(flatten)]
-    core: CoreParams,
-}
 
 /// Parse command line arguments into service configuration.
 pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()>
@@ -37,50 +15,39 @@ where
     T: Into<std::ffi::OsString> + Clone,
     E: IntoExit,
 {
-    let full_version =
-        substrate_service::config::full_version_from_strs(version.version, version.commit);
-
-    let matches = match NodeParams::clap()
-        .name(version.executable_name)
-        .author(version.author)
-        .about(version.description)
-        .version(&(full_version + "\n")[..])
-        .get_matches_from_safe(args)
-    {
-        Ok(m) => m,
-        Err(e) => e.exit(),
-    };
-
-    let (spec, config) =
-        parse_matches::<service::Factory, _>(load_spec, &version, "substrate-node", &matches)?;
-
-    match execute_default::<service::Factory, _>(spec, exit, &matches, &config, &version)? {
-        Action::ExecutedInternally => (),
-        Action::RunService(exit) => {
+    parse_and_execute::<service::Factory, NoCustom, NoCustom, _, _, _, _, _>(
+        load_spec,
+        &version,
+        "substrate-node",
+        args,
+        exit,
+        |exit, _custom_args, config| {
             info!("{}", version.name);
             info!("  version {}", config.full_version());
             info!("  by {}, 2017, 2018", version.author);
             info!("Chain specification: {}", config.chain_spec.name());
             info!("Node name: {}", config.name);
             info!("Roles: {:?}", config.roles);
-            let mut runtime = Runtime::new()?;
+            let runtime = Runtime::new().map_err(|e| format!("{:?}", e))?;
             let executor = runtime.executor();
-            match config.roles == ServiceRoles::LIGHT {
-                true => run_until_exit(
-                    &mut runtime,
-                    service::Factory::new_light(config, executor)?,
+            match config.roles {
+                ServiceRoles::LIGHT => run_until_exit(
+                    runtime,
+                    service::Factory::new_light(config, executor)
+                        .map_err(|e| format!("{:?}", e))?,
                     exit,
-                )?,
-                false => run_until_exit(
-                    &mut runtime,
-                    service::Factory::new_full(config, executor)?,
+                ),
+                _ => run_until_exit(
+                    runtime,
+                    service::Factory::new_full(config, executor).map_err(|e| format!("{:?}", e))?,
                     exit,
-                )?,
+                ),
             }
-        }
-    }
-
-    Ok(())
+            .map_err(|e| format!("{:?}", e))
+        },
+    )
+    .map_err(Into::into)
+    .map(|_| ())
 }
 
 fn load_spec(id: &str) -> Result<Option<chain_spec::ChainSpec>, String> {
@@ -90,7 +57,7 @@ fn load_spec(id: &str) -> Result<Option<chain_spec::ChainSpec>, String> {
     })
 }
 
-fn run_until_exit<T, C, E>(runtime: &mut Runtime, service: T, e: E) -> error::Result<()>
+fn run_until_exit<T, C, E>(mut runtime: Runtime, service: T, e: E) -> error::Result<()>
 where
     T: Deref<Target = substrate_service::Service<C>>,
     C: substrate_service::Components,

@@ -23,8 +23,7 @@ extern crate substrate_transaction_pool as transaction_pool;
 extern crate substrate_service;
 extern crate node_executor;
 extern crate rust_substrate_prototype_runtime;
-extern crate sr_primitives as runtime_primitives;
-extern crate structopt;
+extern crate substrate_inherents as inherents;
 
 mod chain_spec;
 mod cli;

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs"
+  },
+  "exclude": [
+    "lib/bindings.d.ts",
+    "lib/bindings_bg.d.ts"
+  ]
+}

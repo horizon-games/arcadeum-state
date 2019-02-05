@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "bindings": "link:../bindings"
+    "bindings": "link:../bindings",
+    "ethers": "^4.0.23"
   },
   "devDependencies": {
     "typescript": "^3.2.4"

@@ -34,7 +34,7 @@ offset | size | description
 32 | n - 32 | message
 | n
 
-### seed message
+### reply message
 
 offset | size | description
 ------ | ---- | -----------

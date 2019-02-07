@@ -1,108 +1,24 @@
 [package]
-authors = ["Parity Technologies <admin@parity.io>"]
-name = "rust-substrate-prototype-runtime"
+name = "rust-substrate-prototype-runtime-wasm"
 version = "0.9.0"
-[dependencies.byteorder]
-default-features = false
-version = "1.2.7"
+authors = ["Parity Technologies <admin@parity.io>"]
 
-[dependencies.game]
-default-features = false
-path = "../../game"
+[lib]
+name = "rust_substrate_prototype_runtime"
+crate-type = ["cdylib"]
 
-[dependencies.integer-sqrt]
-git = "https://github.com/paritytech/integer-sqrt-rs.git"
-
-[dependencies.itoa]
-default-features = false
-version = "*"
-
-[dependencies.parity-codec]
-default-features = false
-version = "^2.1"
-
-[dependencies.parity-codec-derive]
-version = "^2.1"
-
-[dependencies.safe-mix]
-default-features = false
-version = "1.0"
-
-[dependencies.sr-io]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.sr-primitives]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.sr-std]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.sr-version]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-aura]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-balances]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-consensus]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-executive]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-indices]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-sudo]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-support]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-system]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.srml-timestamp]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.substrate-client]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.substrate-consensus-aura-primitives]
-default-features = false
-git = "https://github.com/paritytech/substrate"
-
-[dependencies.substrate-primitives]
-default-features = false
-git = "https://github.com/paritytech/substrate"
+[dependencies]
+rust-substrate-prototype-runtime = { path = "..", default-features = false }
 
 [features]
 default = []
-std = ["safe-mix/std", "parity-codec/std", "substrate-primitives/std", "substrate-client/std", "sr-std/std", "sr-io/std", "srml-support/std", "srml-balances/std", "srml-consensus/std", "srml-executive/std", "srml-aura/std", "sr-primitives/std", "srml-indices/std", "srml-system/std", "srml-timestamp/std", "srml-sudo/std", "sr-version/std", "game/std", "byteorder/std", "itoa/std"]
+std = [
+	"rust-substrate-prototype-runtime/std"
+]
 
-[lib]
-crate-type = ["cdylib"]
-
-[profile]
 [profile.release]
-lto = true
 panic = "abort"
+lto = true
 
 [workspace]
 members = []

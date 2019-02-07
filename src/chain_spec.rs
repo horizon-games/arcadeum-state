@@ -123,27 +123,28 @@ fn testnet_genesis(
     root_key: AccountId,
 ) -> GenesisConfig {
     GenesisConfig {
-		consensus: Some(ConsensusConfig {
-			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/rust_substrate_prototype_runtime.compact.wasm").to_vec(),
-			authorities: initial_authorities.clone(),
-		}),
-		system: None,
-		timestamp: Some(TimestampConfig {
-			period: 5,					// 5 second block time.
-		}),
-		indices: Some(IndicesConfig {
-			ids: endowed_accounts.clone(),
-		}),
-		balances: Some(BalancesConfig {
-			transaction_base_fee: 1,
-			transaction_byte_fee: 0,
-			existential_deposit: 500,
-			transfer_fee: 0,
-			creation_fee: 0,
-			balances: endowed_accounts.iter().map(|&k|(k, (1 << 60))).collect(),
-		}),
-		sudo: Some(SudoConfig {
-			key: root_key,
-		}),
-	}
+        consensus: Some(ConsensusConfig {
+            code: include_bytes!(
+                "../runtime/wasm/target/wasm32-unknown-unknown/release/rust_substrate_prototype_runtime.compact.wasm"
+            )
+            .to_vec(),
+            authorities: initial_authorities.clone(),
+        }),
+        system: None,
+        timestamp: Some(TimestampConfig {
+            period: 5, // 5 second block time.
+        }),
+        indices: Some(IndicesConfig {
+            ids: endowed_accounts.clone(),
+        }),
+        balances: Some(BalancesConfig {
+            transaction_base_fee: 1,
+            transaction_byte_fee: 0,
+            existential_deposit: 500,
+            transfer_fee: 0,
+            creation_fee: 0,
+            balances: endowed_accounts.iter().map(|&k| (k, (1 << 60))).collect(),
+        }),
+        sudo: Some(SudoConfig { key: root_key }),
+    }
 }

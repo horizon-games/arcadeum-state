@@ -62,7 +62,7 @@ pub use consensus::Call as ConsensusCall;
 #[cfg(any(feature = "std", test))]
 pub use runtime_primitives::BuildStorage;
 pub use runtime_primitives::{Perbill, Permill};
-pub use srml_support::{RuntimeMetadata, StorageValue};
+pub use srml_support::StorageValue;
 pub use timestamp::BlockPeriod;
 pub use timestamp::Call as TimestampCall;
 

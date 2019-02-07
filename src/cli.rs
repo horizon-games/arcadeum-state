@@ -24,7 +24,7 @@ where
         |exit, _custom_args, config| {
             info!("{}", version.name);
             info!("  version {}", config.full_version());
-            info!("  by {}, 2017, 2018", version.author);
+            info!("  by Parity Technologies, 2017-2019");
             info!("Chain specification: {}", config.chain_spec.name());
             info!("Node name: {}", config.name);
             info!("Roles: {:?}", config.roles);

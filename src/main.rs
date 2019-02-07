@@ -39,6 +39,7 @@ fn run() -> cli::error::Result<()> {
         executable_name: "rust-substrate-prototype",
         author: "William Hua",
         description: "rust-substrate-prototype",
+        support_url: "https://github.com/paritytech/substrate/issues/new",
     };
     cli::run(::std::env::args(), cli::Exit, version)
 }

@@ -1,11 +1,11 @@
 [package]
-name = "rust-substrate-prototype"
+name = "arcadeum-chain"
 version = "0.9.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 
 [[bin]]
-name = "rust-substrate-prototype"
+name = "arcadeum-chain"
 path = "src/main.rs"
 
 [dependencies]
@@ -31,7 +31,7 @@ substrate-network = { git = "https://github.com/paritytech/substrate" }
 substrate-consensus-aura = { git = "https://github.com/paritytech/substrate" }
 substrate-client = { git = "https://github.com/paritytech/substrate", default-features = false }
 substrate-basic-authorship = { git = "https://github.com/paritytech/substrate" }
-rust-substrate-prototype-runtime = { path = "runtime" }
+arcadeum-chain-runtime = { path = "runtime" }
 node-executor = { git = "https://github.com/paritytech/substrate" }
 
 [build-dependencies]

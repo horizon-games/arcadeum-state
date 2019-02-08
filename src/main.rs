@@ -21,8 +21,8 @@ extern crate substrate_basic_authorship as basic_authorship;
 extern crate substrate_transaction_pool as transaction_pool;
 #[macro_use]
 extern crate substrate_service;
+extern crate arcadeum_chain_runtime;
 extern crate node_executor;
-extern crate rust_substrate_prototype_runtime;
 extern crate substrate_inherents as inherents;
 
 mod chain_spec;
@@ -36,9 +36,9 @@ fn run() -> cli::error::Result<()> {
         name: "Substrate Node",
         commit: env!("VERGEN_SHA_SHORT"),
         version: env!("CARGO_PKG_VERSION"),
-        executable_name: "rust-substrate-prototype",
+        executable_name: "arcadeum-chain",
         author: "William Hua",
-        description: "rust-substrate-prototype",
+        description: "arcadeum-chain",
         support_url: "https://github.com/paritytech/substrate/issues/new",
     };
     cli::run(::std::env::args(), cli::Exit, version)

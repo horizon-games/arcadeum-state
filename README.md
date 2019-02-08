@@ -1,4 +1,4 @@
-# rust-substrate-prototype
+# arcadeum-chain
 
 ## bootstrap
 
@@ -29,7 +29,7 @@ nix-shell -p openssl pkgconfig clang
 ### blockchain
 
 ```
-target/release/rust-substrate-prototype --dev
+target/release/arcadeum-chain --dev
 ```
 
 ### blockchain explorer

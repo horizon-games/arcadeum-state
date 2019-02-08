@@ -1,8 +1,8 @@
-use primitives::{ed25519, Ed25519AuthorityId};
-use rust_substrate_prototype_runtime::{
+use arcadeum_chain_runtime::{
     AccountId, BalancesConfig, ConsensusConfig, GenesisConfig, IndicesConfig, SudoConfig,
     TimestampConfig,
 };
+use primitives::{ed25519, Ed25519AuthorityId};
 use substrate_service;
 
 // Note this is the URL for the telemetry server
@@ -125,7 +125,7 @@ fn testnet_genesis(
     GenesisConfig {
         consensus: Some(ConsensusConfig {
             code: include_bytes!(
-                "../runtime/wasm/target/wasm32-unknown-unknown/release/rust_substrate_prototype_runtime.compact.wasm"
+                "../runtime/wasm/target/wasm32-unknown-unknown/release/arcadeum_chain_runtime.compact.wasm"
             )
             .to_vec(),
             authorities: initial_authorities.clone(),

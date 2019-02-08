@@ -7,7 +7,7 @@ else
 	CARGO_CMD="cargo +nightly"
 fi
 $CARGO_CMD build --target=wasm32-unknown-unknown --release --no-default-features
-for i in rust_substrate_prototype_runtime
+for i in arcadeum_chain_runtime
 do
 	wasm-gc target/wasm32-unknown-unknown/release/$i.wasm target/wasm32-unknown-unknown/release/$i.compact.wasm
 done

@@ -18,5 +18,5 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate rust_substrate_prototype_runtime;
-pub use rust_substrate_prototype_runtime::*;
+extern crate arcadeum_chain_runtime;
+pub use arcadeum_chain_runtime::*;

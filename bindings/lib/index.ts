@@ -4,6 +4,56 @@ import * as bindings from './bindings'
 const Matcher = `0x373513E36c78044A08A35D237C94Ec49F362e372`
 
 export class State {
+  get winner(): Player | undefined {
+    if (this.state !== undefined) {
+      switch (this.state.winner()) {
+      case bindings.Player.One:
+        return Player.One
+
+      case bindings.Player.Two:
+        return Player.Two
+      }
+    }
+  }
+
+  get nextPlayer(): Player | undefined {
+    if (this.matchID === undefined) {
+
+    } else if (this.subkey1 === undefined) {
+      return Player.One
+
+    } else if (this.subkey2 === undefined) {
+      return Player.Two
+
+    } else if (this.reply !== undefined) {
+      switch (this.state.next_player()) {
+      case bindings.Player.One:
+        return Player.One
+
+      case bindings.Player.Two:
+        return Player.Two
+      }
+
+    } else if (this.commit !== undefined) {
+      switch (this.state.next_player()) {
+      case bindings.Player.One:
+        return Player.Two
+
+      case bindings.Player.Two:
+        return Player.One
+      }
+
+    } else {
+      switch (this.state.next_player()) {
+      case bindings.Player.One:
+        return Player.One
+
+      case bindings.Player.Two:
+        return Player.Two
+      }
+    }
+  }
+
   next(message: Message): State {
     const next = this.copy()
 
@@ -160,6 +210,11 @@ export class State {
 
     return copy
   }
+}
+
+export enum Player {
+  One = bindings.Player.One as number,
+  Two = bindings.Player.Two as number
 }
 
 export interface Message {

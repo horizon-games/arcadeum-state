@@ -37,6 +37,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -45,6 +46,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -52,6 +54,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -59,6 +62,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -67,6 +71,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -74,6 +79,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -81,6 +87,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -89,6 +96,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -96,6 +104,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -103,6 +112,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -111,6 +121,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -118,6 +129,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -125,6 +137,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -133,6 +146,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -140,6 +154,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 
@@ -147,6 +162,7 @@ import * as bindings from 'bindings'
     state = state.next(message)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
+    console.log(`nonce: ${state.state.nonce}`)
     console.log()
     proof = concat(proof, message.encoding)
 

@@ -4,6 +4,8 @@ import * as bindings from './bindings'
 const Matcher = `0x373513E36c78044A08A35D237C94Ec49F362e372`
 
 export class State {
+  state?: bindings.State
+
   get winner(): Player | undefined {
     if (this.state !== undefined) {
       switch (this.state.winner()) {
@@ -193,7 +195,6 @@ export class State {
   private subkey2?: string
   private commit?: Uint8Array
   private reply?: Uint8Array
-  private state?: bindings.State
 
   private copy(): State {
     const copy = new State()

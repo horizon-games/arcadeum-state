@@ -52,14 +52,14 @@ export class State {
 
     } else if (next.reply !== undefined) {
       switch (next.state.next_player()) {
-      case 1:
+      case Player.One:
         if (message.author !== next.subkey1) {
           throw Error(`message.author !== next.subkey1`)
         }
 
         break
 
-      case 2:
+      case Player.Two:
         if (message.author !== next.subkey2) {
           throw Error(`message.author !== next.subkey2`)
         }
@@ -87,14 +87,14 @@ export class State {
 
     } else if (next.commit !== undefined) {
       switch (next.state.next_player()) {
-      case 1:
+      case Player.One:
         if (message.author !== next.subkey2) {
           throw Error(`message.author !== next.subkey2`)
         }
 
         break
 
-      case 2:
+      case Player.Two:
         if (message.author !== next.subkey1) {
           throw Error(`message.author !== next.subkey1`)
         }
@@ -110,14 +110,14 @@ export class State {
 
     } else {
       switch (next.state.next_player()) {
-      case 1:
+      case Player.One:
         if (message.author !== next.subkey1) {
           throw Error(`message.author !== next.subkey1`)
         }
 
         break
 
-      case 2:
+      case Player.Two:
         if (message.author !== next.subkey2) {
           throw Error(`message.author !== next.subkey2`)
         }

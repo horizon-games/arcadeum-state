@@ -119,6 +119,7 @@ impl State {
     }
 }
 
+#[cfg_attr(feature = "bindings", wasm_bindgen)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Player {
     None = 0,
@@ -135,31 +136,6 @@ impl TryFrom<i32> for Player {
             2 => Ok(Player::Two),
             _ => Err(ErrorCode::NotPlayer.into()),
         }
-    }
-}
-
-#[cfg(feature = "bindings")]
-impl wasm_bindgen::describe::WasmDescribe for Player {
-    fn describe() {
-        wasm_bindgen::describe::inform(wasm_bindgen::describe::I32)
-    }
-}
-
-#[cfg(feature = "bindings")]
-impl wasm_bindgen::convert::IntoWasmAbi for Player {
-    type Abi = i32;
-
-    fn into_abi(self, _extra: &mut wasm_bindgen::convert::Stack) -> Self::Abi {
-        self as Self::Abi
-    }
-}
-
-#[cfg(feature = "bindings")]
-impl wasm_bindgen::convert::FromWasmAbi for Player {
-    type Abi = i32;
-
-    unsafe fn from_abi(value: Self::Abi, _extra: &mut dyn wasm_bindgen::convert::Stack) -> Self {
-        Self::try_from(value).unwrap()
     }
 }
 

@@ -83,8 +83,8 @@ decl_module! {
                 let message = Message::new(&mut buffer)?;
 
                 if message.author != match state.next_player() {
-                    game::Player::One => subkey_1,
-                    game::Player::Two => subkey_2,
+                    Some(game::Player::One) => subkey_1,
+                    Some(game::Player::Two) => subkey_2,
                     _ => return Err("message.author != state.next_player"),
                 } {
                     return Err("message.author != state.next_player");
@@ -106,8 +106,8 @@ decl_module! {
                 let message = Message::new(&mut buffer)?;
 
                 if message.author != match state.next_player() {
-                    game::Player::One => subkey_2,
-                    game::Player::Two => subkey_1,
+                    Some(game::Player::One) => subkey_2,
+                    Some(game::Player::Two) => subkey_1,
                     _ => return Err("message.author != state.next_player.opponent"),
                 } {
                     return Err("message.author != state.next_player.opponent");
@@ -128,8 +128,8 @@ decl_module! {
                 let message = Message::new(&mut buffer)?;
 
                 if message.author != match state.next_player() {
-                    game::Player::One => subkey_1,
-                    game::Player::Two => subkey_2,
+                    Some(game::Player::One) => subkey_1,
+                    Some(game::Player::Two) => subkey_2,
                     _ => return Err("message.author != state.next_player"),
                 } {
                     return Err("message.author != state.next_player");
@@ -149,7 +149,7 @@ decl_module! {
 
                 let random: Vec<_> = random.iter().zip(message.message).map(|(x, y)| x ^ y).collect();
 
-                state = state.next(state.next_player(), action, &random).map_err(game::error_string)?;
+                state = state.next(state.next_player().ok_or("state.next_player().is_none()")?, action, &random).map_err(game::error_string)?;
 
                 parent.copy_from_slice(&message.hash);
             }
@@ -158,27 +158,24 @@ decl_module! {
             let account_2 = account_2.to_vec();
 
             match state.winner() {
-                game::Player::None => {
-                    match state.next_player() {
-                        game::Player::None => {
-                            <Draws<T>>::insert(&account_1, if <Draws<T>>::exists(&account_1) {
-                                <Draws<T>>::get(&account_1) + 1
-                            } else {
-                                1
-                            });
+                None => {
+                    if state.next_player().is_none() {
+                        <Draws<T>>::insert(&account_1, if <Draws<T>>::exists(&account_1) {
+                            <Draws<T>>::get(&account_1) + 1
+                        } else {
+                            1
+                        });
 
-                            <Draws<T>>::insert(&account_2, if <Draws<T>>::exists(&account_2) {
-                                <Draws<T>>::get(&account_2) + 1
-                            } else {
-                                1
-                            });
-                        },
-                        _ => {
-                            return Err("match not finished");
-                        },
+                        <Draws<T>>::insert(&account_2, if <Draws<T>>::exists(&account_2) {
+                            <Draws<T>>::get(&account_2) + 1
+                        } else {
+                            1
+                        });
+                    } else {
+                        return Err("match not finished");
                     }
                 },
-                game::Player::One => {
+                Some(game::Player::One) => {
                     <Wins<T>>::insert(&account_1, if <Wins<T>>::exists(&account_1) {
                         <Wins<T>>::get(&account_1) + 1
                     } else {
@@ -191,7 +188,7 @@ decl_module! {
                         1
                     });
                 },
-                game::Player::Two => {
+                Some(game::Player::Two) => {
                     <Losses<T>>::insert(&account_1, if <Losses<T>>::exists(&account_1) {
                         <Losses<T>>::get(&account_1) + 1
                     } else {

@@ -13,7 +13,7 @@ use std::convert::TryFrom;
 #[derive(Clone, Copy)]
 pub struct State {
     pub nonce: i32,
-    board: [[Player; 3]; 3],
+    board: [[Option<Player>; 3]; 3],
 }
 
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
@@ -22,70 +22,66 @@ impl State {
     pub fn new() -> Self {
         Self {
             nonce: 0,
-            board: [
-                [Player::None, Player::None, Player::None],
-                [Player::None, Player::None, Player::None],
-                [Player::None, Player::None, Player::None],
-            ],
+            board: [[None, None, None], [None, None, None], [None, None, None]],
         }
     }
 
-    pub fn winner(&self) -> Player {
-        if self.board[0][0] != Player::None
+    pub fn winner(&self) -> Option<Player> {
+        if self.board[0][0].is_some()
             && self.board[0][0] == self.board[0][1]
             && self.board[0][1] == self.board[0][2]
         {
             self.board[0][0]
-        } else if self.board[1][0] != Player::None
+        } else if self.board[1][0].is_some()
             && self.board[1][0] == self.board[1][1]
             && self.board[1][1] == self.board[1][2]
         {
             self.board[1][0]
-        } else if self.board[2][0] != Player::None
+        } else if self.board[2][0].is_some()
             && self.board[2][0] == self.board[2][1]
             && self.board[2][1] == self.board[2][2]
         {
             self.board[2][0]
-        } else if self.board[0][0] != Player::None
+        } else if self.board[0][0].is_some()
             && self.board[0][0] == self.board[1][0]
             && self.board[1][0] == self.board[2][0]
         {
             self.board[0][0]
-        } else if self.board[0][1] != Player::None
+        } else if self.board[0][1].is_some()
             && self.board[0][1] == self.board[1][1]
             && self.board[1][1] == self.board[2][1]
         {
             self.board[0][1]
-        } else if self.board[0][2] != Player::None
+        } else if self.board[0][2].is_some()
             && self.board[0][2] == self.board[1][2]
             && self.board[1][2] == self.board[2][2]
         {
             self.board[0][2]
-        } else if self.board[0][0] != Player::None
+        } else if self.board[0][0].is_some()
             && self.board[0][0] == self.board[1][1]
             && self.board[1][1] == self.board[2][2]
         {
             self.board[0][0]
-        } else if self.board[0][2] != Player::None
+        } else if self.board[0][2].is_some()
             && self.board[0][2] == self.board[1][1]
             && self.board[1][1] == self.board[2][0]
         {
             self.board[0][2]
         } else {
-            Player::None
+            None
         }
     }
 
     #[cfg_attr(feature = "bindings", wasm_bindgen(js_name = nextPlayer))]
-    pub fn next_player(&self) -> Player {
-        if self.winner() != Player::None {
-            return Player::None;
+    pub fn next_player(&self) -> Option<Player> {
+        if self.winner().is_some() {
+            return None;
         }
 
         match self.nonce {
-            0 | 2 | 4 | 6 | 8 => Player::One,
-            1 | 3 | 5 | 7 => Player::Two,
-            _ => Player::None,
+            0 | 2 | 4 | 6 | 8 => Some(Player::One),
+            1 | 3 | 5 | 7 => Some(Player::Two),
+            _ => None,
         }
     }
 
@@ -94,7 +90,7 @@ impl State {
             return Err(ErrorCode::WrongLength.into());
         }
 
-        if player == Player::None || player != self.next_player() {
+        if Some(player) != self.next_player() {
             return Err(ErrorCode::WrongTurn.into());
         }
 
@@ -108,13 +104,13 @@ impl State {
             return Err(ErrorCode::BadColumn.into());
         }
 
-        if self.board[row][column] != Player::None {
+        if self.board[row][column].is_some() {
             return Err(ErrorCode::AlreadyPlayed.into());
         }
 
         let mut next = *self;
         next.nonce += 1;
-        next.board[row][column] = player;
+        next.board[row][column] = Some(player);
         Ok(next)
     }
 }
@@ -122,7 +118,6 @@ impl State {
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Player {
-    None = 0,
     One = 1,
     Two = 2,
 }

@@ -28,7 +28,7 @@ export class State {
       return Player.Two
 
     } else if (this.reply !== undefined) {
-      switch (this.state.next_player()) {
+      switch (this.state.nextPlayer()) {
       case bindings.Player.One:
         return Player.One
 
@@ -37,7 +37,7 @@ export class State {
       }
 
     } else if (this.commit !== undefined) {
-      switch (this.state.next_player()) {
+      switch (this.state.nextPlayer()) {
       case bindings.Player.One:
         return Player.Two
 
@@ -46,7 +46,7 @@ export class State {
       }
 
     } else {
-      switch (this.state.next_player()) {
+      switch (this.state.nextPlayer()) {
       case bindings.Player.One:
         return Player.One
 
@@ -103,7 +103,7 @@ export class State {
       next.state = new bindings.State()
 
     } else if (next.reply !== undefined) {
-      switch (next.state.next_player()) {
+      switch (next.state.nextPlayer()) {
       case Player.One:
         if (message.author !== next.subkey1) {
           throw Error(`message.author !== next.subkey1`)
@@ -133,12 +133,12 @@ export class State {
         random[i] ^= message.message[i]
       }
 
-      next.state = next.state.next(next.state.next_player(), next.commit.subarray(32), random)
+      next.state = next.state.next(next.state.nextPlayer(), next.commit.subarray(32), random)
       delete next.commit
       delete next.reply
 
     } else if (next.commit !== undefined) {
-      switch (next.state.next_player()) {
+      switch (next.state.nextPlayer()) {
       case Player.One:
         if (message.author !== next.subkey2) {
           throw Error(`message.author !== next.subkey2`)
@@ -161,7 +161,7 @@ export class State {
       next.reply = message.message
 
     } else {
-      switch (next.state.next_player()) {
+      switch (next.state.nextPlayer()) {
       case Player.One:
         if (message.author !== next.subkey1) {
           throw Error(`message.author !== next.subkey1`)

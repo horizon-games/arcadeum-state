@@ -76,6 +76,7 @@ impl State {
         }
     }
 
+    #[cfg_attr(feature = "bindings", wasm_bindgen(js_name = nextPlayer))]
     pub fn next_player(&self) -> Player {
         if self.winner() != Player::None {
             return Player::None;

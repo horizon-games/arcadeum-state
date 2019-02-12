@@ -160,9 +160,9 @@ enum ErrorCode {
 }
 
 pub fn error_string(error: Error) -> &'static str {
-#[cfg(not(feature = "bindings"))]
+    #[cfg(not(feature = "bindings"))]
     let error = Some(error);
-#[cfg(feature = "bindings")]
+    #[cfg(feature = "bindings")]
     let error = error.as_f64();
 
     if let Some(code) = error {

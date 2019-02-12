@@ -100,7 +100,7 @@ export class State {
 
       next.subkey2 = ethers.utils.getAddress(ethers.utils.hexlify(message.message))
 
-      next.state = bindings.State.new()
+      next.state = new bindings.State()
 
     } else if (next.reply !== undefined) {
       switch (next.state.next_player()) {

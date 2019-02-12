@@ -18,8 +18,7 @@ pub struct State {
 
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
 impl State {
-    // https://github.com/rustwasm/wasm-bindgen/issues/1191
-    // #[cfg_attr(feature = "bindings", wasm_bindgen(constructor))]
+    #[cfg_attr(feature = "bindings", wasm_bindgen(constructor))]
     pub fn new() -> Self {
         Self {
             nonce: 0,

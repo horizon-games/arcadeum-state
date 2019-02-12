@@ -82,12 +82,14 @@ decl_module! {
             while buffer.len() != 0 {
                 let message = Message::new(&mut buffer)?;
 
-                if message.author != match state.next_player() {
-                    Some(game::Player::One) => subkey_1,
-                    Some(game::Player::Two) => subkey_2,
-                    _ => return Err("message.author != state.next_player"),
-                } {
-                    return Err("message.author != state.next_player");
+                let (next_player, player_subkey, opponent_subkey) = match state.next_player() {
+                    Some(game::Player::One) => (game::Player::One, subkey_1, subkey_2),
+                    Some(game::Player::Two) => (game::Player::Two, subkey_2, subkey_1),
+                    _ => return Err("state.next_player().is_none()"),
+                };
+
+                if message.author != player_subkey {
+                    return Err("message.author != player_subkey");
                 }
 
                 if message.parent != parent {
@@ -105,12 +107,8 @@ decl_module! {
 
                 let message = Message::new(&mut buffer)?;
 
-                if message.author != match state.next_player() {
-                    Some(game::Player::One) => subkey_2,
-                    Some(game::Player::Two) => subkey_1,
-                    _ => return Err("message.author != state.next_player.opponent"),
-                } {
-                    return Err("message.author != state.next_player.opponent");
+                if message.author != opponent_subkey {
+                    return Err("message.author != opponent_subkey");
                 }
 
                 if message.parent != inner_parent {
@@ -127,12 +125,8 @@ decl_module! {
 
                 let message = Message::new(&mut buffer)?;
 
-                if message.author != match state.next_player() {
-                    Some(game::Player::One) => subkey_1,
-                    Some(game::Player::Two) => subkey_2,
-                    _ => return Err("message.author != state.next_player"),
-                } {
-                    return Err("message.author != state.next_player");
+                if message.author != player_subkey {
+                    return Err("message.author != player_subkey");
                 }
 
                 if message.parent != inner_parent {
@@ -149,7 +143,7 @@ decl_module! {
 
                 let random: Vec<_> = random.iter().zip(message.message).map(|(x, y)| x ^ y).collect();
 
-                state = state.next(state.next_player().ok_or("state.next_player().is_none()")?, action, &random).map_err(game::error_string)?;
+                state = state.next(next_player, action, &random).map_err(game::error_string)?;
 
                 parent.copy_from_slice(&message.hash);
             }

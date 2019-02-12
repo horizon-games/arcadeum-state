@@ -99,6 +99,9 @@ export class State {
         }
 
         break
+
+      default:
+        throw Error(`next.state.nextPlayer() === undefined`)
       }
 
       if (message.message.length !== 16) {
@@ -134,6 +137,9 @@ export class State {
         }
 
         break
+
+      default:
+        throw Error(`next.state.nextPlayer() === undefined`)
       }
 
       if (message.message.length !== 16) {
@@ -157,6 +163,9 @@ export class State {
         }
 
         break
+
+      default:
+        throw Error(`next.state.nextPlayer() === undefined`)
       }
 
       if (message.message.length < 32) {

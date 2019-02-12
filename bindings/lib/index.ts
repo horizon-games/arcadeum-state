@@ -8,13 +8,7 @@ export class State {
 
   get winner(): Player | undefined {
     if (this.state !== undefined) {
-      switch (this.state.winner()) {
-      case bindings.Player.One:
-        return Player.One
-
-      case bindings.Player.Two:
-        return Player.Two
-      }
+      return this.state.winner()
     }
   }
 
@@ -28,31 +22,19 @@ export class State {
       return Player.Two
 
     } else if (this.reply !== undefined) {
-      switch (this.state.nextPlayer()) {
-      case bindings.Player.One:
-        return Player.One
-
-      case bindings.Player.Two:
-        return Player.Two
-      }
+      return this.state.nextPlayer()
 
     } else if (this.commit !== undefined) {
       switch (this.state.nextPlayer()) {
-      case bindings.Player.One:
+      case Player.One:
         return Player.Two
 
-      case bindings.Player.Two:
+      case Player.Two:
         return Player.One
       }
 
     } else {
-      switch (this.state.nextPlayer()) {
-      case bindings.Player.One:
-        return Player.One
-
-      case bindings.Player.Two:
-        return Player.Two
-      }
+      return this.state.nextPlayer()
     }
   }
 
@@ -213,10 +195,7 @@ export class State {
   }
 }
 
-export enum Player {
-  One = bindings.Player.One as number,
-  Two = bindings.Player.Two as number
-}
+import Player = bindings.Player
 
 export interface Message {
   readonly message: Uint8Array

@@ -2,14 +2,14 @@
 
 #![warn(unused_extern_crates)]
 
-use arcadeum_chain_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi};
 use basic_authorship::ProposerFactory;
-use client;
 use consensus::{import_queue, start_aura, AuraImportQueue, NothingExtra, SlotDuration};
 use inherents::InherentDataProviders;
 use node_executor;
+use node_template_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi};
 use primitives::ed25519::Pair;
 use std::sync::Arc;
+use substrate_client as client;
 use substrate_service::{
     FactoryFullConfiguration, FullBackend, FullClient, FullComponents, FullExecutor, LightBackend,
     LightClient, LightComponents, LightExecutor, TaskExecutor,
@@ -20,9 +20,9 @@ pub use substrate_executor::NativeExecutor;
 // Our native executor instance.
 native_executor_instance!(
 	pub Executor,
-	arcadeum_chain_runtime::api::dispatch,
-	arcadeum_chain_runtime::native_version,
-	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/arcadeum_chain_runtime.compact.wasm")
+	node_template_runtime::api::dispatch,
+	node_template_runtime::native_version,
+	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/node_template_runtime_wasm.compact.wasm")
 );
 
 #[derive(Default)]

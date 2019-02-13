@@ -3,27 +3,16 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-extern crate futures;
 #[macro_use]
 extern crate error_chain;
-extern crate tokio;
 #[macro_use]
 extern crate log;
-extern crate substrate_cli;
-extern crate substrate_client as client;
-extern crate substrate_consensus_aura as consensus;
-extern crate substrate_primitives as primitives;
 #[macro_use]
 extern crate substrate_network as network;
 #[macro_use]
 extern crate substrate_executor;
-extern crate substrate_basic_authorship as basic_authorship;
-extern crate substrate_transaction_pool as transaction_pool;
 #[macro_use]
 extern crate substrate_service;
-extern crate arcadeum_chain_runtime;
-extern crate node_executor;
-extern crate substrate_inherents as inherents;
 
 mod chain_spec;
 mod cli;
@@ -39,7 +28,7 @@ fn run() -> cli::error::Result<()> {
         executable_name: "arcadeum-chain",
         author: "William Hua",
         description: "arcadeum-chain",
-        support_url: "https://github.com/paritytech/substrate/issues/new",
+        support_url: "support.anonymous.an",
     };
     cli::run(::std::env::args(), cli::Exit, version)
 }

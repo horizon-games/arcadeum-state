@@ -1,6 +1,6 @@
-use chain_spec;
+use crate::chain_spec;
+use crate::service;
 use futures::{future, sync::oneshot, Future};
-use service;
 use std::cell::RefCell;
 use std::ops::Deref;
 pub use substrate_cli::{error, IntoExit, VersionInfo};
@@ -24,7 +24,7 @@ where
         |exit, _custom_args, config| {
             info!("{}", version.name);
             info!("  version {}", config.full_version());
-            info!("  by Parity Technologies, 2017-2019");
+            info!("  by {}, 2017, 2018", version.author);
             info!("Chain specification: {}", config.chain_spec.name());
             info!("Node name: {}", config.name);
             info!("Roles: {:?}", config.roles);

@@ -1,7 +1,7 @@
 use byteorder::ByteOrder;
 use itoa::Integer;
 use rstd::prelude::*;
-use srml_support::StorageMap;
+use support::{decl_module, decl_storage, StorageMap};
 
 pub trait Trait: system::Trait {}
 
@@ -15,7 +15,7 @@ decl_storage! {
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        fn prove(_origin, proof: Vec<u8>) -> srml_support::dispatch::Result {
+        fn prove(_origin, proof: Vec<u8>) -> support::dispatch::Result {
             let mut buffer = proof.as_slice();
             let message = Message::new(&mut buffer)?;
             let matcher = b"\x37\x35\x13\xE3\x6c\x78\x04\x4A\x08\xA3\x5D\x23\x7C\x94\xEc\x49\xF3\x62\xe3\x72";

@@ -9,8 +9,9 @@ crate-type = ["lib"]
 
 [dependencies]
 wasm-bindgen = { version = "0.2.37", optional = true }
+serde = { version = "1.0.88", optional = true }
 
 [features]
 default = ["std"]
 std = []
-bindings = ["std", "wasm-bindgen"]
+bindings = ["std", "wasm-bindgen/serde-serialize", "serde/derive"]

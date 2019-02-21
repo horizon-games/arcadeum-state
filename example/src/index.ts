@@ -35,6 +35,7 @@ import * as bindings from 'bindings'
 
     message = await bindings.createSubkeyMessage(subkey2.address, account2, message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -43,6 +44,7 @@ import * as bindings from 'bindings'
     let action = await bindings.createActionMessage([0, 0], subkey1, message)
     message = action[0]
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -50,6 +52,7 @@ import * as bindings from 'bindings'
 
     message = await bindings.createReplyMessage(subkey2, message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -57,6 +60,7 @@ import * as bindings from 'bindings'
 
     message = await action[1](message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -65,6 +69,7 @@ import * as bindings from 'bindings'
     action = await bindings.createActionMessage([1, 0], subkey2, message)
     message = action[0]
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -72,6 +77,7 @@ import * as bindings from 'bindings'
 
     message = await bindings.createReplyMessage(subkey1, message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -79,6 +85,7 @@ import * as bindings from 'bindings'
 
     message = await action[1](message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -87,6 +94,7 @@ import * as bindings from 'bindings'
     action = await bindings.createActionMessage([0, 1], subkey1, message)
     message = action[0]
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -94,6 +102,7 @@ import * as bindings from 'bindings'
 
     message = await bindings.createReplyMessage(subkey2, message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -101,6 +110,7 @@ import * as bindings from 'bindings'
 
     message = await action[1](message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -109,6 +119,7 @@ import * as bindings from 'bindings'
     action = await bindings.createActionMessage([1, 1], subkey2, message)
     message = action[0]
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -116,6 +127,7 @@ import * as bindings from 'bindings'
 
     message = await bindings.createReplyMessage(subkey1, message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -123,6 +135,7 @@ import * as bindings from 'bindings'
 
     message = await action[1](message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -131,6 +144,7 @@ import * as bindings from 'bindings'
     action = await bindings.createActionMessage([0, 2], subkey1, message)
     message = action[0]
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -138,6 +152,7 @@ import * as bindings from 'bindings'
 
     message = await bindings.createReplyMessage(subkey2, message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()
@@ -145,6 +160,7 @@ import * as bindings from 'bindings'
 
     message = await action[1](message)
     state = state.next(message)
+    console.log(`state: ${JSON.stringify(state.decoding, undefined, 2)}`)
     console.log(`winner: ${state.winner}`)
     console.log(`nextPlayer: ${state.nextPlayer}`)
     console.log()

@@ -4,7 +4,11 @@ import * as bindings from './bindings'
 const Matcher = `0x373513E36c78044A08A35D237C94Ec49F362e372`
 
 export class State {
-  state?: bindings.State
+  get decoding(): any {
+    if (this.state !== undefined) {
+      return this.state.decode()
+    }
+  }
 
   get winner(): Player | undefined {
     if (this.state !== undefined) {
@@ -186,16 +190,17 @@ export class State {
   private subkey2?: string
   private commit?: Uint8Array
   private reply?: Uint8Array
+  private state?: bindings.State
 
   private copy(): State {
     const copy = new State()
 
+    copy.hash = this.hash
     copy.matchID = this.matchID
     copy.account1 = this.account1
     copy.account2 = this.account2
     copy.subkey1 = this.subkey1
     copy.subkey2 = this.subkey2
-    copy.hash = this.hash
     copy.commit = this.commit
     copy.reply = this.reply
     copy.state = this.state

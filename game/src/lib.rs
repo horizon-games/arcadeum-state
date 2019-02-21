@@ -2,6 +2,8 @@
 #![feature(try_from)]
 
 #[cfg(feature = "bindings")]
+use serde::Serialize;
+#[cfg(feature = "bindings")]
 use wasm_bindgen::prelude::*;
 
 #[cfg(not(feature = "std"))]
@@ -10,6 +12,7 @@ use core::convert::TryFrom;
 use std::convert::TryFrom;
 
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
+#[cfg_attr(feature = "bindings", derive(Serialize))]
 #[derive(Clone, Copy)]
 pub struct State {
     nonce: i32,
@@ -24,6 +27,11 @@ impl State {
             nonce: 0,
             board: [[None, None, None], [None, None, None], [None, None, None]],
         }
+    }
+
+    #[cfg(feature = "bindings")]
+    pub fn decode(&self) -> Result<JsValue, Error> {
+        JsValue::from_serde(self).or(Err(ErrorCode::BadEncoding.into()))
     }
 
     pub fn winner(&self) -> Option<Player> {
@@ -122,6 +130,13 @@ pub enum Player {
     Two = 2,
 }
 
+#[cfg(feature = "bindings")]
+impl Serialize for Player {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        (*self as i32).serialize(serializer)
+    }
+}
+
 impl TryFrom<i32> for Player {
     type Error = Error;
 
@@ -146,12 +161,13 @@ impl From<ErrorCode> for Error {
 }
 
 enum ErrorCode {
-    WrongLength = 0,
-    NotPlayer = 1,
-    WrongTurn = 2,
-    BadRow = 3,
-    BadColumn = 4,
-    AlreadyPlayed = 5,
+    BadEncoding = 0,
+    WrongLength = 1,
+    NotPlayer = 2,
+    WrongTurn = 3,
+    BadRow = 4,
+    BadColumn = 5,
+    AlreadyPlayed = 6,
 }
 
 pub fn error_string(error: Error) -> &'static str {
@@ -162,12 +178,13 @@ pub fn error_string(error: Error) -> &'static str {
 
     if let Some(code) = error {
         match code as i32 {
-            0 => "ErrorCode::WrongLength",
-            1 => "ErrorCode::NotPlayer",
-            2 => "ErrorCode::WrongTurn",
-            3 => "ErrorCode::BadRow",
-            4 => "ErrorCode::BadColumn",
-            5 => "ErrorCode::AlreadyPlayed",
+            0 => "ErrorCode::BadEncoding",
+            1 => "ErrorCode::WrongLength",
+            2 => "ErrorCode::NotPlayer",
+            3 => "ErrorCode::WrongTurn",
+            4 => "ErrorCode::BadRow",
+            5 => "ErrorCode::BadColumn",
+            6 => "ErrorCode::AlreadyPlayed",
             _ => "not an ErrorCode",
         }
     } else {

@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
 #[derive(Clone, Copy)]
 pub struct State {
-    pub nonce: i32,
+    nonce: i32,
     board: [[Option<Player>; 3]; 3],
 }
 

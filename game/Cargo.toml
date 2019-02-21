@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["lib"]
 
 [dependencies]
-wasm-bindgen = { version = "0.2.34", optional = true }
+wasm-bindgen = { version = "0.2.37", optional = true }
 
 [features]
 default = ["std"]

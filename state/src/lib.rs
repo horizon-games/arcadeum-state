@@ -21,6 +21,14 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "bindings")]
 use wasm_bindgen::prelude::*;
 
+#[cfg(feature = "std")]
+pub extern crate rand;
+pub extern crate rand_core;
+extern crate rand_xorshift;
+use rand_core::SeedableRng;
+
+extern crate tiny_keccak;
+
 pub struct Store<'a, SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
@@ -33,6 +41,10 @@ where
     listener: Option<Box<dyn FnMut()>>,
     sender: Option<Box<dyn FnMut(&[u8])>>,
     requests: VecDeque<Request<'a, SharedState, LocalState>>,
+
+    seeder: Option<Box<dyn rand_core::RngCore>>,
+    commit: Option<[u8; 32]>,
+    reply: Option<Seed>,
 }
 
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
@@ -89,6 +101,8 @@ where
     );
 }
 
+type Seed = <rand_xorshift::XorShiftRng as rand_core::SeedableRng>::Seed;
+
 impl<'a, SharedState, LocalState> Store<'a, SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
@@ -99,6 +113,7 @@ where
         local_state: LocalState,
         listener: Option<Box<dyn FnMut()>>,
         sender: Option<Box<dyn FnMut(&[u8])>>,
+        seeder: Option<Box<dyn rand_core::RngCore>>,
     ) -> Self {
         Self {
             player,
@@ -107,6 +122,9 @@ where
             listener,
             sender,
             requests: VecDeque::new(),
+            seeder,
+            commit: None,
+            reply: None,
         }
     }
 
@@ -166,6 +184,102 @@ where
 
     pub fn request(&mut self, request: Request<'a, SharedState, LocalState>) {
         self.requests.push_back(request);
+    }
+
+    pub fn random(
+        &mut self,
+        continuation: impl FnOnce(&mut Store<SharedState, LocalState>, rand_xorshift::XorShiftRng) + 'a,
+    ) {
+        let seed = self.seeder.as_mut().map(|seeder| {
+            let mut seed = [0; 16];
+            seeder.fill_bytes(&mut seed);
+            seed
+        });
+
+        self.request(Request {
+            player: Player::One,
+
+            reveal: if let (Some(Player::One), Some(seed)) = (&self.player, seed) {
+                Some(Box::new(move |_| tiny_keccak::keccak256(&seed).to_vec()))
+            } else {
+                None
+            },
+
+            verify: Box::new(|_, _, hash| match hash.len() {
+                32 => Ok(()),
+                _ => Err("hash.len() != 32"),
+            }),
+
+            mutate: Box::new(
+                |store: &mut Store<SharedState, LocalState>, _, hash: &[u8]| {
+                    let mut commit = [0; 32];
+                    commit.copy_from_slice(hash);
+                    store.commit = Some(commit);
+                },
+            ),
+        });
+
+        self.request(Request {
+            player: Player::Two,
+
+            reveal: if let (Some(Player::Two), Some(seed)) = (&self.player, seed) {
+                Some(Box::new(move |_| seed.to_vec()))
+            } else {
+                None
+            },
+
+            verify: Box::new(|_, _, seed| match seed.len() {
+                16 => Ok(()),
+                _ => Err("seed.len() != 16"),
+            }),
+
+            mutate: Box::new(
+                |store: &mut Store<SharedState, LocalState>, _, seed: &[u8]| {
+                    let mut reply = [0; 16];
+                    reply.copy_from_slice(seed);
+                    store.reply = Some(reply);
+                },
+            ),
+        });
+
+        self.request(Request {
+            player: Player::One,
+
+            reveal: if let (Some(Player::One), Some(seed)) = (&self.player, seed) {
+                Some(Box::new(move |_| seed.to_vec()))
+            } else {
+                None
+            },
+
+            verify: Box::new(|store, _, seed| match seed.len() {
+                16 => {
+                    if &store.commit.unwrap() == &tiny_keccak::keccak256(seed) {
+                        Ok(())
+                    } else {
+                        Err("&store.commit.unwrap() != &tiny_keccak::keccak256(seed)")
+                    }
+                }
+                _ => Err("seed.len() != 16"),
+            }),
+
+            mutate: Box::new(
+                |store: &mut Store<SharedState, LocalState>, _, seed: &[u8]| {
+                    let xor: Vec<u8> = seed
+                        .iter()
+                        .zip(&store.reply.unwrap())
+                        .map(|(x, y)| x ^ y)
+                        .collect();
+
+                    let mut seed = [0; 16];
+                    seed.copy_from_slice(&xor);
+
+                    store.commit = None;
+                    store.reply = None;
+
+                    continuation(store, rand_xorshift::XorShiftRng::from_seed(seed));
+                },
+            ),
+        });
     }
 
     fn process_requests(&mut self) {

@@ -29,7 +29,7 @@ use rand_core::SeedableRng;
 
 extern crate tiny_keccak;
 
-pub struct Store<'a, SharedState, LocalState>
+pub struct Store<SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
 {
@@ -40,7 +40,7 @@ where
 
     listener: Option<Box<dyn FnMut()>>,
     sender: Option<Box<dyn FnMut(&[u8])>>,
-    requests: VecDeque<Request<'a, SharedState, LocalState>>,
+    requests: VecDeque<Request<SharedState, LocalState>>,
 
     seeder: Option<Box<dyn rand_core::RngCore>>,
     commit: Option<[u8; 32]>,
@@ -78,7 +78,7 @@ where
 
 pub type Error = &'static str;
 
-pub struct Request<'a, SharedState, LocalState>
+pub struct Request<SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
 {
@@ -86,7 +86,7 @@ where
 
     pub reveal: Option<Box<dyn Fn(&mut Store<SharedState, LocalState>) -> Vec<u8>>>,
     pub verify: Box<dyn Fn(&Store<SharedState, LocalState>, Player, &[u8]) -> Result<(), Error>>,
-    pub mutate: Box<dyn Mutator<SharedState, LocalState> + 'a>,
+    pub mutate: Box<dyn Mutator<SharedState, LocalState>>,
 }
 
 pub trait Mutator<SharedState, LocalState>
@@ -103,7 +103,7 @@ where
 
 type Seed = <rand_xorshift::XorShiftRng as rand_core::SeedableRng>::Seed;
 
-impl<'a, SharedState, LocalState> Store<'a, SharedState, LocalState>
+impl<SharedState, LocalState> Store<SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
 {
@@ -182,13 +182,14 @@ where
         }
     }
 
-    pub fn request(&mut self, request: Request<'a, SharedState, LocalState>) {
+    pub fn request(&mut self, request: Request<SharedState, LocalState>) {
         self.requests.push_back(request);
     }
 
     pub fn random(
         &mut self,
-        continuation: impl FnOnce(&mut Store<SharedState, LocalState>, rand_xorshift::XorShiftRng) + 'a,
+        continuation: impl FnOnce(&mut Store<SharedState, LocalState>, rand_xorshift::XorShiftRng)
+            + 'static,
     ) {
         let seed = self.seeder.as_mut().map(|seeder| {
             let mut seed = [0; 16];

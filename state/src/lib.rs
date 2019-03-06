@@ -29,6 +29,308 @@ use rand_core::SeedableRng;
 
 extern crate tiny_keccak;
 
+#[macro_export]
+macro_rules! create_store_std {
+    ($shared:ident, $local:ident) => {
+        use arcadeum_state::rand::RngCore;
+
+        pub struct Store(arcadeum_state::Store<$shared, $local>);
+
+        impl Store {
+            pub fn owner() -> Vec<u8> {
+                <$shared as arcadeum_state::State<$shared, $local>>::owner()
+            }
+
+            pub fn new(
+                player: Option<arcadeum_state::Player>,
+                listener: Option<Box<dyn FnMut()>>,
+                sender: Option<Box<dyn FnMut(&[u8])>>,
+            ) -> Self {
+                Store(arcadeum_state::Store::new(
+                    player,
+                    $shared::default(),
+                    $local::default(),
+                    listener,
+                    sender,
+                    Some(Box::new(arcadeum_state::rand::thread_rng())),
+                ))
+            }
+
+            pub fn player(&self) -> Option<arcadeum_state::Player> {
+                self.0.player
+            }
+
+            pub fn shared_state(&self) -> &$shared {
+                &self.0.shared_state
+            }
+
+            pub fn local_state(&self) -> &$local {
+                &self.0.local_state
+            }
+
+            pub fn mut_shared_state(&mut self) -> &mut $shared {
+                &mut self.0.shared_state
+            }
+
+            pub fn mut_local_state(&mut self) -> &mut $local {
+                &mut self.0.local_state
+            }
+
+            pub fn winner(&self) -> Option<arcadeum_state::Player> {
+                self.0.winner()
+            }
+
+            pub fn next_player(&self) -> Option<arcadeum_state::Player> {
+                self.0.next_player()
+            }
+
+            pub fn mutate(
+                &mut self,
+                player: arcadeum_state::Player,
+                action: &[u8],
+            ) -> Result<(), Error> {
+                self.0.mutate(player, action)
+            }
+        }
+
+        pub use arcadeum_state::Player;
+
+        pub type Error = &'static str;
+    };
+}
+
+#[macro_export]
+macro_rules! create_store_no_std {
+    ($shared:ident, $local:ident) => {
+        use arcadeum_state::alloc::prelude::v1::Box;
+        use arcadeum_state::alloc::prelude::v1::Vec;
+        use arcadeum_state::rand_core::RngCore;
+
+        pub struct Store(arcadeum_state::Store<$shared, $local>);
+
+        impl Store {
+            pub fn owner() -> Vec<u8> {
+                <$shared as arcadeum_state::State<$shared, $local>>::owner()
+            }
+
+            pub fn new(
+                player: Option<arcadeum_state::Player>,
+                listener: Option<Box<dyn FnMut()>>,
+                sender: Option<Box<dyn FnMut(&[u8])>>,
+            ) -> Self {
+                Store(arcadeum_state::Store::new(
+                    player,
+                    $shared::default(),
+                    $local::default(),
+                    listener,
+                    sender,
+                    Some(Box::new(Seeder)),
+                ))
+            }
+
+            pub fn player(&self) -> Option<arcadeum_state::Player> {
+                self.0.player
+            }
+
+            pub fn shared_state(&self) -> &$shared {
+                &self.0.shared_state
+            }
+
+            pub fn local_state(&self) -> &$local {
+                &self.0.local_state
+            }
+
+            pub fn mut_shared_state(&mut self) -> &mut $shared {
+                &mut self.0.shared_state
+            }
+
+            pub fn mut_local_state(&mut self) -> &mut $local {
+                &mut self.0.local_state
+            }
+
+            pub fn winner(&self) -> Option<arcadeum_state::Player> {
+                self.0.winner()
+            }
+
+            pub fn next_player(&self) -> Option<arcadeum_state::Player> {
+                self.0.next_player()
+            }
+
+            pub fn mutate(
+                &mut self,
+                player: arcadeum_state::Player,
+                action: &[u8],
+            ) -> Result<(), Error> {
+                self.0.mutate(player, action)
+            }
+        }
+
+        pub use arcadeum_state::Player;
+
+        pub type Error = &'static str;
+
+        struct Seeder;
+
+        impl RngCore for Seeder {
+            fn next_u32(&mut self) -> u32 {
+                arcadeum_state::rand_core::impls::next_u32_via_fill(self)
+            }
+
+            fn next_u64(&mut self) -> u64 {
+                arcadeum_state::rand_core::impls::next_u64_via_fill(self)
+            }
+
+            fn fill_bytes(&mut self, dest: &mut [u8]) {
+                self.try_fill_bytes(dest).unwrap()
+            }
+
+            fn try_fill_bytes(
+                &mut self,
+                _dest: &mut [u8],
+            ) -> Result<(), arcadeum_state::rand_core::Error> {
+                Err(arcadeum_state::rand_core::Error::new(
+                    arcadeum_state::rand_core::ErrorKind::Unavailable,
+                    "no seeder",
+                ))
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! create_store_wasm_bindgen {
+    ($shared:ident, $local:ident) => {
+        extern crate js_sys;
+        extern crate serde;
+        extern crate wasm_bindgen;
+        use arcadeum_state::rand_core::RngCore;
+        use serde::{Deserialize, Serialize};
+        use wasm_bindgen::prelude::*;
+
+        #[wasm_bindgen]
+        pub struct Store(arcadeum_state::Store<$shared, $local>);
+
+        #[wasm_bindgen]
+        impl Store {
+            pub fn owner() -> Vec<u8> {
+                <$shared as arcadeum_state::State<$shared, $local>>::owner()
+            }
+
+            #[wasm_bindgen(constructor)]
+            pub fn new(
+                player: Option<arcadeum_state::Player>,
+                listener: Option<js_sys::Function>,
+                sender: Option<js_sys::Function>,
+                seeder: Option<js_sys::Function>,
+            ) -> Self {
+                Store(arcadeum_state::Store::new(
+                    player,
+                    $shared::default(),
+                    $local::default(),
+                    listener.map(|listener| {
+                        Box::new(move || {
+                            listener.call0(&JsValue::UNDEFINED).unwrap();
+                        }) as Box<dyn FnMut()>
+                    }),
+                    sender.map(|sender| {
+                        Box::new(move |action: &[u8]| {
+                            sender
+                                .call1(&JsValue::UNDEFINED, &JsValue::from_serde(action).unwrap())
+                                .unwrap();
+                        }) as Box<dyn FnMut(&[u8])>
+                    }),
+                    seeder.map(|seeder| Box::new(Seeder(seeder)) as Box<dyn RngCore>),
+                ))
+            }
+
+            pub fn player(&self) -> Option<arcadeum_state::Player> {
+                self.0.player
+            }
+
+            #[wasm_bindgen(js_name = sharedState)]
+            pub fn shared_state(&self) -> Result<JsValue, Error> {
+                JsValue::from_serde(&self.0.shared_state)
+                    .map_err(|error| JsValue::from_str(&format!("{}", error)))
+            }
+
+            #[wasm_bindgen(js_name = localState)]
+            pub fn local_state(&self) -> Result<JsValue, Error> {
+                JsValue::from_serde(&self.0.local_state)
+                    .map_err(|error| JsValue::from_str(&format!("{}", error)))
+            }
+
+            pub fn winner(&self) -> Option<arcadeum_state::Player> {
+                self.0.winner()
+            }
+
+            #[wasm_bindgen(js_name = nextPlayer)]
+            pub fn next_player(&self) -> Option<arcadeum_state::Player> {
+                self.0.next_player()
+            }
+
+            pub fn mutate(
+                &mut self,
+                player: arcadeum_state::Player,
+                action: &[u8],
+            ) -> Result<(), Error> {
+                self.0.mutate(player, action).map_err(JsValue::from_str)
+            }
+        }
+
+        pub use arcadeum_state::Player;
+
+        pub type Error = JsValue;
+
+        struct Seeder(js_sys::Function);
+
+        impl RngCore for Seeder {
+            fn next_u32(&mut self) -> u32 {
+                arcadeum_state::rand_core::impls::next_u32_via_fill(self)
+            }
+
+            fn next_u64(&mut self) -> u64 {
+                arcadeum_state::rand_core::impls::next_u64_via_fill(self)
+            }
+
+            fn fill_bytes(&mut self, dest: &mut [u8]) {
+                self.try_fill_bytes(dest).unwrap()
+            }
+
+            fn try_fill_bytes(
+                &mut self,
+                dest: &mut [u8],
+            ) -> Result<(), arcadeum_state::rand_core::Error> {
+                let result = self
+                    .0
+                    .call1(&JsValue::UNDEFINED, &JsValue::from(dest.len() as u32))
+                    .or(Err(arcadeum_state::rand_core::Error::new(
+                        arcadeum_state::rand_core::ErrorKind::Unexpected,
+                        "self.0.call1(&context, &length).is_err()",
+                    )))?;
+
+                let result: Vec<u8> =
+                    result
+                        .into_serde()
+                        .or(Err(arcadeum_state::rand_core::Error::new(
+                            arcadeum_state::rand_core::ErrorKind::Unexpected,
+                            "result.into_serde().is_err()",
+                        )))?;
+
+                if result.len() != dest.len() {
+                    return Err(arcadeum_state::rand_core::Error::new(
+                        arcadeum_state::rand_core::ErrorKind::Unexpected,
+                        "result.len() != dest.len()",
+                    ));
+                }
+
+                dest.copy_from_slice(&result);
+
+                Ok(())
+            }
+        }
+    };
+}
+
 pub struct Store<SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,

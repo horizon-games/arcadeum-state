@@ -5,13 +5,6 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-#[cfg(feature = "std")]
-#[macro_use]
-extern crate serde_derive;
-
-#[macro_use]
-extern crate parity_codec_derive;
-
 extern crate byteorder;
 extern crate itoa;
 mod arcadeum;
@@ -22,6 +15,7 @@ use client::{
     block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},
     impl_runtime_apis, runtime_api,
 };
+use parity_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use primitives::bytes;
 use primitives::{Ed25519AuthorityId, OpaqueMetadata};
@@ -32,6 +26,8 @@ use runtime_primitives::{
     transaction_validity::TransactionValidity,
     ApplyResult, Ed25519Signature,
 };
+#[cfg(feature = "std")]
+use serde_derive::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use version::NativeVersion;
 use version::RuntimeVersion;
@@ -168,9 +164,12 @@ impl balances::Trait for Runtime {
     type OnFreeBalanceZero = ();
     /// What to do if a new account is created.
     type OnNewAccount = Indices;
-    /// Restrict whether an account can transfer funds. We don't place any further restrictions.
-    type EnsureAccountLiquid = ();
     /// The uniquitous event type.
+    type Event = Event;
+}
+
+impl fees::Trait for Runtime {
+    type TransferAsset = Balances;
     type Event = Event;
 }
 
@@ -195,6 +194,7 @@ construct_runtime!(
 		Indices: indices,
 		Balances: balances,
 		Sudo: sudo,
+		Fees: fees::{Module, Storage, Config<T>, Event<T>},
 		Arcadeum: arcadeum::{Module, Call, Storage},
 	}
 );
@@ -215,7 +215,7 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Nonce, Call>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = executive::Executive<Runtime, Block, Context, Balances, AllModules>;
+pub type Executive = executive::Executive<Runtime, Block, Context, Fees, AllModules>;
 
 // Implement our runtime API endpoints. This is just a bunch of proxying.
 impl_runtime_apis! {

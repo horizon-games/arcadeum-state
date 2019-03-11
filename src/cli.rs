@@ -1,6 +1,7 @@
 use crate::chain_spec;
 use crate::service;
 use futures::{future, sync::oneshot, Future};
+use log::info;
 use std::cell::RefCell;
 use std::ops::Deref;
 pub use substrate_cli::{error, IntoExit, VersionInfo};

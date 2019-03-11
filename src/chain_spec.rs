@@ -1,6 +1,6 @@
 use node_template_runtime::{
-    AccountId, BalancesConfig, ConsensusConfig, GenesisConfig, IndicesConfig, SudoConfig,
-    TimestampConfig,
+    AccountId, BalancesConfig, ConsensusConfig, FeesConfig, GenesisConfig, IndicesConfig,
+    SudoConfig, TimestampConfig,
 };
 use primitives::{ed25519, Ed25519AuthorityId};
 use substrate_service;
@@ -135,8 +135,6 @@ fn testnet_genesis(
 			ids: endowed_accounts.clone(),
 		}),
 		balances: Some(BalancesConfig {
-			transaction_base_fee: 1,
-			transaction_byte_fee: 0,
 			existential_deposit: 500,
 			transfer_fee: 0,
 			creation_fee: 0,
@@ -146,5 +144,9 @@ fn testnet_genesis(
 		sudo: Some(SudoConfig {
 			key: root_key,
 		}),
+		fees: Some(FeesConfig {
+			transaction_base_fee: 1,
+			transaction_byte_fee: 0,
+		})
 	}
 }

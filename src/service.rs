@@ -5,11 +5,15 @@
 use basic_authorship::ProposerFactory;
 use consensus::{import_queue, start_aura, AuraImportQueue, NothingExtra, SlotDuration};
 use inherents::InherentDataProviders;
+use log::info;
+use network::construct_simple_protocol;
 use node_executor;
 use node_template_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi};
 use primitives::ed25519::Pair;
 use std::sync::Arc;
 use substrate_client as client;
+use substrate_executor::native_executor_instance;
+use substrate_service::construct_service_factory;
 use substrate_service::{
     FactoryFullConfiguration, FullBackend, FullClient, FullComponents, FullExecutor, LightBackend,
     LightClient, LightComponents, LightExecutor, TaskExecutor,
@@ -79,8 +83,6 @@ construct_service_factory! {
             { |config, executor| <LightComponents<Factory>>::new(config, executor) },
         FullImportQueue = AuraImportQueue<
             Self::Block,
-            FullClient<Self>,
-            NothingExtra,
         >
             { |config: &mut FactoryFullConfiguration<Self> , client: Arc<FullClient<Self>>|
                 import_queue(
@@ -94,8 +96,6 @@ construct_service_factory! {
             },
         LightImportQueue = AuraImportQueue<
             Self::Block,
-            LightClient<Self>,
-            NothingExtra,
         >
             { |config: &mut FactoryFullConfiguration<Self>, client: Arc<LightClient<Self>>|
                 import_queue(

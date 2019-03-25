@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs"
+  },
+  "exclude": [
+    "lib/arcadeum_ttt_ts.d.ts",
+    "lib/arcadeum_ttt_ts_bg.d.ts"
+  ]
+}

@@ -11,5 +11,8 @@
   },
   "dependencies": {
     "ethers": "^4.0.27"
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }

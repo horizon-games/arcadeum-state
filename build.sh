@@ -29,7 +29,7 @@ echo "${bold}Building substrate node...${normal}"
 cargo build --release
 
 echo "${bold}Building bindings...${normal}"
-(cd bindings && ./build.sh)
+(cd bindings && yarn && yarn build)
 
 echo "${bold}Building example...${normal}"
 (cd example && yarn && yarn tsc)

@@ -1,0 +1,8 @@
+{
+  "name": "arcadeum-bindings",
+  "version": "0.0.0",
+  "description": "TypeScript bindings for Arcadeum games",
+  "main": "src/index.js",
+  "author": "Horizon Blockchain Games",
+  "license": "MIT"
+}

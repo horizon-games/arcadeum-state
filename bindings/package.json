@@ -4,5 +4,8 @@
   "description": "TypeScript bindings for Arcadeum games",
   "main": "src/index.js",
   "author": "Horizon Blockchain Games",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^3.3.4000"
+  }
 }

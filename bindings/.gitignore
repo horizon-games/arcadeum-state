@@ -1,8 +1,0 @@
-lib/bindings.d.ts
-lib/bindings.js
-lib/bindings.wasm
-lib/bindings_bg.d.ts
-lib/bindings_bg.js
-lib/bindings_bg.wasm
-lib/index.js
-node_modules

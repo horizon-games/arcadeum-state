@@ -14,7 +14,7 @@ offset | size | description
 
 offset | size | description
 ------ | ---- | -----------
-0 | 16 | match uuid
+0 | 16 | match id
 16 | 20 | player 1 ethereum address
 36 | 20 | player 2 ethereum address
 | 56
@@ -25,18 +25,3 @@ offset | size | description
 ------ | ---- | -----------
 0 | 20 | subkey address
 | 20
-
-### action message
-
-offset | size | description
------- | ---- | -----------
-0 | 32 | keccak256 hash of 16 random bytes b
-32 | n - 32 | message
-| n
-
-### reply message
-
-offset | size | description
------- | ---- | -----------
-0 | 16 | 16 random bytes b
-| 16

@@ -31,5 +31,5 @@ cargo build --release
 echo "${bold}Building bindings...${normal}"
 (cd bindings && yarn && yarn build)
 
-echo "${bold}Building example...${normal}"
-(cd example && yarn && yarn tsc)
+echo "${bold}Building ttt...${normal}"
+(cd examples/ttt/src-ts && yarn && yarn build)

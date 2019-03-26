@@ -1,0 +1,8 @@
+{
+  "name": "arcadeum-ttt",
+  "version": "0.0.0",
+  "description": "Arcadeum tic-tac-toe WebAssembly module",
+  "main": "src/index.js",
+  "author": "Horizon Blockchain Games",
+  "license": "MIT"
+}

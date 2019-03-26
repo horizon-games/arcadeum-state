@@ -5,6 +5,7 @@
   },
   "dependencies": {
     "arcadeum-bindings": "link:../../../bindings",
-    "arcadeum-ttt": "link:../src-ts"
+    "arcadeum-ttt": "link:../src-ts",
+    "ethers": "^4.0.27"
   }
 }

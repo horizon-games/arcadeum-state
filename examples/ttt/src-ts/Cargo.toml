@@ -1,0 +1,10 @@
+[package]
+name = "arcadeum-ttt-bindings"
+version = "0.1.0"
+authors = ["William Hua <william@attente.ca>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]

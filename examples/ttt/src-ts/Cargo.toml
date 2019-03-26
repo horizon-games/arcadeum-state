@@ -8,3 +8,4 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
+arcadeum-ttt = { path = "../src-rs", features = ["bindings"] }

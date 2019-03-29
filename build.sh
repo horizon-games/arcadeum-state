@@ -37,3 +37,4 @@ echo "${bold}Building ttt...${normal}"
 
 echo "${bold}Building coin...${normal}"
 (cd examples/coin/src-ts && yarn && yarn build)
+(cd examples/coin/test && yarn && yarn build)

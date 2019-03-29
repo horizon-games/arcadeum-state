@@ -1,0 +1,8 @@
+{
+  "name": "arcadeum-coin",
+  "version": "0.0.0",
+  "description": "Arcadeum coin flip WebAssembly module",
+  "main": "src/index.js",
+  "author": "Horizon Blockchain Games",
+  "license": "MIT"
+}

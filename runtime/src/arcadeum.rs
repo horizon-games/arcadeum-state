@@ -18,10 +18,9 @@ decl_module! {
         fn prove(_origin, proof: Vec<u8>) -> support::dispatch::Result {
             let mut buffer = proof.as_slice();
             let message = Message::new(&mut buffer)?;
-            let matcher = b"\x37\x35\x13\xE3\x6c\x78\x04\x4A\x08\xA3\x5D\x23\x7C\x94\xEc\x49\xF3\x62\xe3\x72";
 
-            if &message.author != matcher {
-                return Err("&message.author != matcher");
+            if message.author != game::Store::owner().as_slice() {
+                return Err("message.author != game::Store::owner().as_slice()");
             }
 
             if message.parent != [0; 32] {
@@ -32,7 +31,6 @@ decl_module! {
                 return Err("message.message.len() != 16 + 2 * 20");
             }
 
-            let _match_id = &message.message[..16];
             let mut account_1 = [0; 20];
             account_1.copy_from_slice(&message.message[16..16 + 20]);
             let mut account_2 = [0; 20];
@@ -74,7 +72,7 @@ decl_module! {
 
             let subkey_2 = message.message;
 
-            let mut state = game::State::new();
+            let mut store = game::Store::new(None, None, None);
 
             let mut parent = [0; 32];
             parent.copy_from_slice(&message.hash);
@@ -82,68 +80,21 @@ decl_module! {
             while buffer.len() != 0 {
                 let message = Message::new(&mut buffer)?;
 
-                let (next_player, player_subkey, opponent_subkey) = match state.next_player() {
-                    Some(game::Player::One) => (game::Player::One, subkey_1, subkey_2),
-                    Some(game::Player::Two) => (game::Player::Two, subkey_2, subkey_1),
-                    _ => return Err("state.next_player().is_none()"),
+                let (next_player, subkey) = match store.next_player() {
+                    Some(game::Player::One) => (game::Player::One, subkey_1),
+                    Some(game::Player::Two) => (game::Player::Two, subkey_2),
+                    _ => return Err("store.next_player().is_none()"),
                 };
 
-                if message.author != player_subkey {
-                    return Err("message.author != player_subkey");
+                if message.author != subkey {
+                    return Err("message.author != subkey");
                 }
 
                 if message.parent != parent {
                     return Err("message.parent != parent");
                 }
 
-                if message.message.len() < 32 {
-                    return Err("message.message.len() < 32");
-                }
-
-                let commit = &message.message[..32];
-                let action = &message.message[32..];
-
-                let inner_parent = &message.hash;
-
-                let message = Message::new(&mut buffer)?;
-
-                if message.author != opponent_subkey {
-                    return Err("message.author != opponent_subkey");
-                }
-
-                if message.parent != inner_parent {
-                    return Err("message.parent != inner_parent");
-                }
-
-                if message.message.len() != 16 {
-                    return Err("message.message.len() != 16");
-                }
-
-                let random = message.message;
-
-                let inner_parent = &message.hash;
-
-                let message = Message::new(&mut buffer)?;
-
-                if message.author != player_subkey {
-                    return Err("message.author != player_subkey");
-                }
-
-                if message.parent != inner_parent {
-                    return Err("message.parent != inner_parent");
-                }
-
-                if message.message.len() != 16 {
-                    return Err("message.message.len() != 16");
-                }
-
-                if runtime_io::keccak_256(message.message) != commit {
-                    return Err("runtime_io::keccak_256(message.message) != commit");
-                }
-
-                let random: Vec<_> = random.iter().zip(message.message).map(|(x, y)| x ^ y).collect();
-
-                state = state.next(next_player, action, &random).map_err(game::error_string)?;
+                store.mutate(next_player, message.message)?;
 
                 parent.copy_from_slice(&message.hash);
             }
@@ -151,9 +102,9 @@ decl_module! {
             let account_1 = account_1.to_vec();
             let account_2 = account_2.to_vec();
 
-            match state.winner() {
+            match store.winner() {
                 None => {
-                    if state.next_player().is_none() {
+                    if store.next_player().is_none() {
                         <Draws<T>>::insert(&account_1, if <Draws<T>>::exists(&account_1) {
                             <Draws<T>>::get(&account_1) + 1
                         } else {

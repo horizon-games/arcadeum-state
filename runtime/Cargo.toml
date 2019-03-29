@@ -1,3 +1,7 @@
+[dependencies.arcadeum-ttt]
+default_features = false
+path = "../examples/ttt/src-rs"
+
 [dependencies.aura]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -43,10 +47,6 @@ default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-fees'
 rev = '79718328ce9479cb80af325fb115e224ff911ff4'
-
-[dependencies.game]
-default_features = false
-path = '../game'
 
 [dependencies.indices]
 default_features = false
@@ -152,7 +152,7 @@ std = [
     'serde',
     'safe-mix/std',
     'consensus-aura/std',
-    'game/std',
+    'arcadeum-ttt/std',
     'byteorder/std',
     'itoa/std',
 ]

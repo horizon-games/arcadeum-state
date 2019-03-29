@@ -34,3 +34,6 @@ echo "${bold}Building bindings...${normal}"
 echo "${bold}Building ttt...${normal}"
 (cd examples/ttt/src-ts && yarn && yarn build)
 (cd examples/ttt/test && yarn && yarn build)
+
+echo "${bold}Building coin...${normal}"
+(cd examples/coin/src-ts && yarn && yarn build)

@@ -6,6 +6,7 @@ version = "0.1.0"
 dependencies = [
  "arcadeum-state 0.1.0",
  "js-sys 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.89 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

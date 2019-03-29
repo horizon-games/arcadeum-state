@@ -1,6 +1,6 @@
-[dependencies.arcadeum-ttt]
+[dependencies.arcadeum-coin]
 default_features = false
-path = "../examples/ttt/src-rs"
+path = "../examples/coin/src-rs"
 
 [dependencies.aura]
 default_features = false
@@ -152,7 +152,7 @@ std = [
     'serde',
     'safe-mix/std',
     'consensus-aura/std',
-    'arcadeum-ttt/std',
+    'arcadeum-coin/std',
     'byteorder/std',
     'itoa/std',
 ]

@@ -28,6 +28,7 @@ export LIBCLANG_PATH=<location of libclang.so>
 
 ```
 yarn node examples/ttt/test/src/index.js
+yarn node examples/coin/test/src/index.js
 ```
 
 ### blockchain

@@ -9,7 +9,7 @@ extern crate byteorder;
 extern crate itoa;
 mod arcadeum;
 
-extern crate arcadeum_ttt as game;
+extern crate arcadeum_coin as game;
 
 use client::{
     block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},

@@ -8,9 +8,8 @@ const owner = ethers.Wallet.fromMnemonic(
   `winter off snap small sleep debate cheap drill elevator glove caution once`
 )
 
-const client = path.join(__dirname, `client`)
-const client1 = child_process.fork(client)
-const client2 = child_process.fork(client)
+const client1 = child_process.fork(path.join(__dirname, `client-async`))
+const client2 = child_process.fork(path.join(__dirname, `client-sync`))
 
 const send = (player: arcadeum.Player, message: arcadeum.Message) => {
   switch (player) {

@@ -3,12 +3,7 @@
 #[macro_use]
 extern crate arcadeum_state;
 
-#[cfg(all(feature = "std", not(feature = "bindings")))]
-create_store_std!(SharedState, LocalState);
-#[cfg(not(feature = "std"))]
-create_store_no_std!(SharedState, LocalState);
-#[cfg(feature = "bindings")]
-create_store_wasm_bindgen!(SharedState, LocalState);
+create_store!(SharedState, LocalState);
 
 #[cfg_attr(not(feature = "bindings"), derive(Default))]
 #[cfg_attr(feature = "bindings", derive(Deserialize, Serialize, Default))]

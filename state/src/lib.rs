@@ -29,8 +29,9 @@ use rand_core::SeedableRng;
 
 extern crate tiny_keccak;
 
+#[cfg(all(feature = "std", not(feature = "bindings")))]
 #[macro_export]
-macro_rules! create_store_std {
+macro_rules! create_store {
     ($shared:ident, $local:ident) => {
         use arcadeum_state::rand::RngCore;
 
@@ -99,8 +100,9 @@ macro_rules! create_store_std {
     };
 }
 
+#[cfg(not(feature = "std"))]
 #[macro_export]
-macro_rules! create_store_no_std {
+macro_rules! create_store {
     ($shared:ident, $local:ident) => {
         use arcadeum_state::alloc::prelude::v1::Box;
         use arcadeum_state::alloc::prelude::v1::Vec;
@@ -197,8 +199,9 @@ macro_rules! create_store_no_std {
     };
 }
 
+#[cfg(feature = "bindings")]
 #[macro_export]
-macro_rules! create_store_wasm_bindgen {
+macro_rules! create_store {
     ($shared:ident, $local:ident) => {
         extern crate js_sys;
         extern crate serde;

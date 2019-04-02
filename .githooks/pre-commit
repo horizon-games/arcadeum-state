@@ -1,0 +1,11 @@
+#!/bin/sh
+
+for i in `git ls-files | grep Cargo.toml$`; do
+  (cd `dirname $i` && cargo fmt -- --check) || exit 1
+done
+
+for i in `git ls-files | grep package.json$`; do
+  if grep prettier $i ; then
+    (cd `dirname $i` && yarn && yarn prettier -c `git ls-files | grep \.ts$`) || exit 1
+  fi
+done

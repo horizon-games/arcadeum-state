@@ -15,7 +15,7 @@ process.on(`message`, async (message: any) => {
     const rootMessage = ethers.utils.arrayify(message)
     const send = (message: arcadeum.Message) =>
       process.send(ethers.utils.hexlify(message.encoding))
-    store.store = new arcadeum.Store(ttt.Store, rootMessage, account, send)
+    store.store = new arcadeum.Store(ttt.Game, rootMessage, account, send)
 
     await store.store.ready
 

@@ -31,13 +31,13 @@ extern crate tiny_keccak;
 
 #[cfg(all(feature = "std", not(feature = "bindings")))]
 #[macro_export]
-macro_rules! create_store {
+macro_rules! create_game {
     ($shared:ident, $local:ident) => {
         use arcadeum_state::rand::RngCore;
 
-        pub struct Store(arcadeum_state::Store<$shared, $local>);
+        pub struct Game(arcadeum_state::Store<$shared, $local>);
 
-        impl Store {
+        impl Game {
             pub fn owner() -> Vec<u8> {
                 <$shared as arcadeum_state::State<$shared, $local>>::owner()
             }
@@ -47,7 +47,7 @@ macro_rules! create_store {
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
-                Store(arcadeum_state::Store::new(
+                Game(arcadeum_state::Store::new(
                     player,
                     $shared::default(),
                     $local::default(),
@@ -102,15 +102,15 @@ macro_rules! create_store {
 
 #[cfg(not(feature = "std"))]
 #[macro_export]
-macro_rules! create_store {
+macro_rules! create_game {
     ($shared:ident, $local:ident) => {
         use arcadeum_state::alloc::prelude::v1::Box;
         use arcadeum_state::alloc::prelude::v1::Vec;
         use arcadeum_state::rand_core::RngCore;
 
-        pub struct Store(arcadeum_state::Store<$shared, $local>);
+        pub struct Game(arcadeum_state::Store<$shared, $local>);
 
-        impl Store {
+        impl Game {
             pub fn owner() -> Vec<u8> {
                 <$shared as arcadeum_state::State<$shared, $local>>::owner()
             }
@@ -120,7 +120,7 @@ macro_rules! create_store {
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
-                Store(arcadeum_state::Store::new(
+                Game(arcadeum_state::Store::new(
                     player,
                     $shared::default(),
                     $local::default(),
@@ -201,7 +201,7 @@ macro_rules! create_store {
 
 #[cfg(feature = "bindings")]
 #[macro_export]
-macro_rules! create_store {
+macro_rules! create_game {
     ($shared:ident, $local:ident) => {
         extern crate js_sys;
         extern crate serde;
@@ -211,10 +211,10 @@ macro_rules! create_store {
         use wasm_bindgen::prelude::*;
 
         #[wasm_bindgen]
-        pub struct Store(arcadeum_state::Store<$shared, $local>);
+        pub struct Game(arcadeum_state::Store<$shared, $local>);
 
         #[wasm_bindgen]
-        impl Store {
+        impl Game {
             pub fn owner() -> Vec<u8> {
                 <$shared as arcadeum_state::State<$shared, $local>>::owner()
             }
@@ -226,7 +226,7 @@ macro_rules! create_store {
                 sender: Option<js_sys::Function>,
                 seeder: Option<js_sys::Function>,
             ) -> Self {
-                Store(arcadeum_state::Store::new(
+                Game(arcadeum_state::Store::new(
                     player,
                     $shared::default(),
                     $local::default(),

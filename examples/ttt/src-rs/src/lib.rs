@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate arcadeum_state;
 
-create_store!(SharedState, LocalState);
+create_game!(SharedState, LocalState);
 
 #[cfg_attr(not(feature = "bindings"), derive(Default))]
 #[cfg_attr(feature = "bindings", derive(Deserialize, Serialize, Default))]

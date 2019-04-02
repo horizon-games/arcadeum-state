@@ -49,7 +49,7 @@ client1.on(`message`, (message: any) => {
 
     if (server.account2 !== undefined) {
       server.server = new arcadeum.Server(
-        coin.Store,
+        coin.Game,
         owner,
         server.account1,
         server.account2,
@@ -69,7 +69,7 @@ client2.on(`message`, (message: any) => {
 
     if (server.account1 !== undefined) {
       server.server = new arcadeum.Server(
-        coin.Store,
+        coin.Game,
         owner,
         server.account1,
         server.account2,

@@ -19,8 +19,8 @@ decl_module! {
             let mut buffer = proof.as_slice();
             let message = Message::new(&mut buffer)?;
 
-            if message.author != game::Store::owner().as_slice() {
-                return Err("message.author != game::Store::owner().as_slice()");
+            if message.author != game::Game::owner().as_slice() {
+                return Err("message.author != game::Game::owner().as_slice()");
             }
 
             if message.parent != [0; 32] {
@@ -72,7 +72,7 @@ decl_module! {
 
             let subkey_2 = message.message;
 
-            let mut store = game::Store::new(None, None, None);
+            let mut store = game::Game::new(None, None, None);
 
             let mut parent = [0; 32];
             parent.copy_from_slice(&message.hash);

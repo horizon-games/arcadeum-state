@@ -1,6 +1,12 @@
 export interface Game {
   owner(): Uint8Array
-  new (arg0: number | undefined, arg1: any, arg2: any, arg3: any): Match
+  new (
+    player?: number,
+    logger?: (message: any) => void,
+    listener?: () => void,
+    sender?: (message: number[]) => void,
+    seeder?: (length: number) => number[]
+  ): Match
 }
 
 export interface Match {
@@ -10,7 +16,7 @@ export interface Match {
   localState(): any
   winner(): number | undefined
   nextPlayer(): number | undefined
-  mutate(arg0: number, arg1: Uint8Array): void
+  mutate(player: number, action: Uint8Array): void
 }
 
 export enum Player {

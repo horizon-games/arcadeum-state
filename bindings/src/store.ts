@@ -8,6 +8,7 @@ export class Store {
     private readonly game: Game,
     rootMessageBytes: Message | Bytes,
     private readonly account: ethers.Signer,
+    private readonly log: (message: any) => void,
     private readonly send: (message: Message) => void
   ) {
     const rootMessage = new Message(rootMessageBytes)
@@ -85,7 +86,13 @@ export class Store {
 
             switch (address) {
               case this.account1:
-                this.match = new this.game(Player.One, listener, sender, seeder)
+                this.match = new this.game(
+                  Player.One,
+                  this.log,
+                  listener,
+                  sender,
+                  seeder
+                )
 
                 this.subkey1 = this.subkey.address
 
@@ -105,7 +112,14 @@ export class Store {
                 break
 
               case this.account2:
-                this.match = new this.game(Player.Two, listener, sender, seeder)
+                this.match = new this.game(
+                  Player.Two,
+                  this.log,
+                  listener,
+                  sender,
+                  seeder
+                )
+
                 break
 
               default:

@@ -23,7 +23,7 @@ export class Server {
     }
     this.account2 = ethers.utils.getAddress(this.account2)
 
-    this.match = new this.game(undefined, undefined, undefined, undefined)
+    this.match = new this.game()
 
     this.messages = []
 

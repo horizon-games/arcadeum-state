@@ -226,6 +226,7 @@ macro_rules! create_game {
             #[wasm_bindgen(constructor)]
             pub fn new(
                 player: Option<arcadeum_state::Player>,
+                logger: Option<js_sys::Function>,
                 listener: Option<js_sys::Function>,
                 sender: Option<js_sys::Function>,
                 seeder: Option<js_sys::Function>,
@@ -234,6 +235,11 @@ macro_rules! create_game {
                     player,
                     $shared::default(),
                     $local::default(),
+                    logger.map(|logger| {
+                        Box::new(move |message: &JsValue| {
+                            logger.call1(&JsValue::UNDEFINED, message).unwrap();
+                        }) as Box<dyn FnMut(&JsValue)>
+                    }),
                     listener.map(|listener| {
                         Box::new(move || {
                             listener.call0(&JsValue::UNDEFINED).unwrap();
@@ -347,6 +353,9 @@ where
     pub shared_state: SharedState,
     pub local_state: LocalState,
 
+    #[cfg(feature = "bindings")]
+    pub logger: Option<Box<dyn FnMut(&JsValue)>>,
+
     listener: Option<Box<dyn FnMut()>>,
     sender: Option<Box<dyn FnMut(&[u8])>>,
     requests: VecDeque<Request<SharedState, LocalState>>,
@@ -396,6 +405,22 @@ where
 
 pub type Error = &'static str;
 
+#[cfg(not(feature = "bindings"))]
+#[macro_export]
+macro_rules! log {
+    ($store:ident, $message:expr) => {};
+}
+
+#[cfg(feature = "bindings")]
+#[macro_export]
+macro_rules! log {
+    ($store:ident, $message:expr) => {
+        if let Some(logger) = &mut $store.logger {
+            logger($message);
+        }
+    };
+}
+
 pub struct Request<SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
@@ -425,6 +450,7 @@ impl<SharedState, LocalState> Store<SharedState, LocalState>
 where
     SharedState: State<SharedState, LocalState>,
 {
+    #[cfg(not(feature = "bindings"))]
     pub fn new(
         player: Option<Player>,
         shared_state: SharedState,
@@ -437,6 +463,30 @@ where
             player,
             shared_state,
             local_state,
+            listener,
+            sender,
+            requests: VecDeque::new(),
+            seeder,
+            commit: None,
+            reply: None,
+        }
+    }
+
+    #[cfg(feature = "bindings")]
+    pub fn new(
+        player: Option<Player>,
+        shared_state: SharedState,
+        local_state: LocalState,
+        logger: Option<Box<dyn FnMut(&JsValue)>>,
+        listener: Option<Box<dyn FnMut()>>,
+        sender: Option<Box<dyn FnMut(&[u8])>>,
+        seeder: Option<Box<dyn rand_core::RngCore>>,
+    ) -> Self {
+        Self {
+            player,
+            shared_state,
+            local_state,
+            logger,
             listener,
             sender,
             requests: VecDeque::new(),

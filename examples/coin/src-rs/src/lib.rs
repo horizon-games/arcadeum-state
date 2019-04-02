@@ -5,8 +5,8 @@ extern crate arcadeum_state;
 
 create_game!(SharedState, LocalState);
 
-#[cfg_attr(not(feature = "bindings"), derive(Default))]
-#[cfg_attr(feature = "bindings", derive(Deserialize, Serialize, Default))]
+#[cfg_attr(not(feature = "bindings"), derive(Debug, Default))]
+#[cfg_attr(feature = "bindings", derive(Deserialize, Serialize, Debug, Default))]
 pub struct SharedState {
     score: (u32, u32),
     count: u32,
@@ -55,10 +55,13 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
         player: arcadeum_state::Player,
         action: &[u8],
     ) {
-        let guess = action[0] % 2;
+        let guess = action[0];
 
         store.random(move |store, mut random| {
-            if (random.next_u32() % 2) as u8 == guess {
+            let result = random.next_u32();
+            let correct = (result % 2) as u8 == guess % 2;
+
+            if correct {
                 match player {
                     arcadeum_state::Player::One => store.shared_state.score.0 += 1,
                     arcadeum_state::Player::Two => store.shared_state.score.1 += 1,
@@ -66,6 +69,14 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
             }
 
             store.shared_state.count += 1;
+
+            log!(
+                store,
+                &JsValue::from_str(&format!(
+                    "{:?}: {}: guess: {}, result: {}, correct: {}",
+                    store.shared_state, player, guess, result, correct
+                ))
+            );
         });
     }
 }

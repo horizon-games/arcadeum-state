@@ -15,7 +15,16 @@ process.on(`message`, async (message: any) => {
     const rootMessage = ethers.utils.arrayify(message)
     const send = (message: arcadeum.Message) =>
       process.send(ethers.utils.hexlify(message.encoding))
-    store.store = new arcadeum.Store(coin.Game, rootMessage, account, send)
+
+    store.store = new arcadeum.Store(
+      coin.Game,
+      rootMessage,
+      account,
+      (message: any) => {
+        console.log(`client (${process.pid}): ${JSON.stringify(message)}`)
+      },
+      send
+    )
 
     await store.store.ready
 

@@ -8,8 +8,8 @@ const account = ethers.Wallet.createRandom()
 process.send(account.address)
 
 const store = {
-  store: undefined as arcadeum.Store,
-  unsubscribe: undefined as () => void
+  store: undefined as arcadeum.Store | undefined,
+  unsubscribe: undefined as (() => void) | undefined
 }
 
 process.on(`message`, async (message: any) => {

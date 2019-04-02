@@ -37,9 +37,9 @@ const send = (player: arcadeum.Player, message: arcadeum.Message) => {
 }
 
 const server = {
-  account1: undefined,
-  account2: undefined,
-  server: undefined
+  account1: undefined as string | undefined,
+  account2: undefined as string | undefined,
+  server: undefined as arcadeum.Server | undefined
 }
 
 client1.on(`message`, (message: any) => {

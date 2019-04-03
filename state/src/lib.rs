@@ -8,9 +8,13 @@ pub extern crate alloc;
 use alloc::collections::VecDeque;
 #[cfg(not(feature = "std"))]
 use alloc::prelude::v1::*;
+#[cfg(not(feature = "std"))]
+use core::fmt;
 
 #[cfg(feature = "std")]
 use std::collections::VecDeque;
+#[cfg(feature = "std")]
+use std::fmt;
 
 #[cfg(feature = "bindings")]
 extern crate serde;
@@ -361,6 +365,15 @@ where
 pub enum Player {
     One = 0,
     Two = 1,
+}
+
+impl fmt::Display for Player {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Player::One => write!(f, "Player::One"),
+            Player::Two => write!(f, "Player::Two"),
+        }
+    }
 }
 
 pub trait State<SharedState, LocalState>

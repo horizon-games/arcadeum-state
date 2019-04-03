@@ -355,9 +355,9 @@ where
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
 #[cfg_attr(
     feature = "bindings",
-    derive(Deserialize, Serialize, Copy, Clone, PartialEq)
+    derive(Deserialize, Serialize, Debug, Copy, Clone, PartialEq)
 )]
-#[cfg_attr(not(feature = "bindings"), derive(Copy, Clone, PartialEq))]
+#[cfg_attr(not(feature = "bindings"), derive(Debug, Copy, Clone, PartialEq))]
 pub enum Player {
     One = 0,
     Two = 1,

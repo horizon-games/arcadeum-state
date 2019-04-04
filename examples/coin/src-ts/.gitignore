@@ -4,3 +4,4 @@ src/index.js
 src/index_bg.d.ts
 src/index_bg.js
 src/index_bg.wasm
+target

@@ -1,12 +1,28 @@
+/// A runtime module template with necessary imports
+
+/// Feel free to remove or edit this file as needed.
+/// If you change the name of this file, make sure to update its references in runtime/src/lib.rs
+/// If you remove this file, you can remove those references
+
+/// For more guidance on Substrate modules, see the example module
+/// https://github.com/paritytech/substrate/blob/master/srml/example/src/lib.rs
+use support::{decl_event, decl_module, decl_storage, StorageMap};
+
 use byteorder::ByteOrder;
 use itoa::Integer;
-use rstd::prelude::*;
-use support::{decl_module, decl_storage, StorageMap};
+use rstd::prelude::Vec;
 
-pub trait Trait: system::Trait {}
+// The module's configuration trait.
+pub trait Trait: system::Trait {
+    // TODO: Add other types and constants required configure this module.
 
+    /// The overarching event type.
+    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+}
+
+// This module's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as Records {
+    trait Store for Module<T: Trait> as Results {
         Wins: map Vec<u8> => u32;
         Draws: map Vec<u8> => u32;
         Losses: map Vec<u8> => u32;
@@ -14,6 +30,7 @@ decl_storage! {
 }
 
 decl_module! {
+    /// The module declaration.
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn prove(_origin, proof: Vec<u8>) -> support::dispatch::Result {
             let mut buffer = proof.as_slice();
@@ -152,6 +169,18 @@ decl_module! {
         }
     }
 }
+
+decl_event!(
+    pub enum Event<T>
+    where
+        AccountId = <T as system::Trait>::AccountId,
+    {
+        // Just a dummy event.
+        // Event `Something` is declared with a parameter of the type `u32` and `AccountId`
+        // To emit this event, we call the deposit funtion, from our runtime funtions
+        SomethingStored(u32, AccountId),
+    }
+);
 
 struct Message<'a> {
     message: &'a [u8],

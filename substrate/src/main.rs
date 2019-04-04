@@ -15,7 +15,7 @@ fn run() -> cli::error::Result<()> {
         commit: env!("VERGEN_SHA_SHORT"),
         version: env!("CARGO_PKG_VERSION"),
         executable_name: "arcadeum-chain",
-        author: "William Hua",
+        author: "Horizon Blockchain Games",
         description: "arcadeum-chain",
         support_url: "support.anonymous.an",
     };

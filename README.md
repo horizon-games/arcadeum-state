@@ -24,7 +24,7 @@ nixos-specific:
 
 ```
 nix-shell -p openssl pkgconfig clang
-export LIBCLANG_PATH=<location of libclang.so>
+export LIBCLANG_PATH=`echo /nix/store/*-clang-*-lib/lib` # doesn't work if you have more than one
 ./build.sh
 ```
 
@@ -59,6 +59,6 @@ http://localhost:3000 → settings → local node (127.0.0.1:9944)
 
 http://localhost:3000 → extrinsics → alice → arcadeum → prove(proof) → proof → submit transaction
 
-#### view records
+#### view results
 
-http://localhost:3000 → chain state → records → wins/draws/losses → player account → +
+http://localhost:3000 → chain state → results → wins/draws/losses → player account → +

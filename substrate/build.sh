@@ -25,16 +25,5 @@ done
 # Restore initial directory.
 popd >/dev/null
 
-echo "${bold}Building substrate node...${normal}"
+echo "${bold}Building node...${normal}"
 cargo build --release
-
-echo "${bold}Building bindings...${normal}"
-(cd bindings && yarn && yarn build)
-
-echo "${bold}Building ttt...${normal}"
-(cd examples/ttt/src-ts && yarn && yarn build)
-(cd examples/ttt/test && yarn && yarn build)
-
-echo "${bold}Building coin...${normal}"
-(cd examples/coin/src-ts && yarn && yarn build)
-(cd examples/coin/test && yarn && yarn build)

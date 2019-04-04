@@ -2,7 +2,7 @@
 
 set -e
 
-echo "*** Initialising WASM build environment"
+echo "*** Initializing WASM build environment"
 
 if [ -z $CI_PROJECT_NAME ] ; then
    rustup update nightly
@@ -13,4 +13,4 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 
 # Install wasm-gc. It's useful for stripping slimming down wasm binaries.
 command -v wasm-gc || \
-	cargo install --git https://github.com/alexcrichton/wasm-gc --force
+	cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force

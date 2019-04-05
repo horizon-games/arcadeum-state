@@ -559,11 +559,15 @@ where
         continuation: impl FnOnce(&mut Store<SharedState, LocalState>, rand_xorshift::XorShiftRng)
             + 'static,
     ) {
-        let seed = self.seeder.as_mut().map(|seeder| {
-            let mut seed = [0; 16];
-            seeder.fill_bytes(&mut seed);
-            seed
-        });
+        let seed = if self.player.is_some() {
+            self.seeder.as_mut().map(|seeder| {
+                let mut seed = [0; 16];
+                seeder.fill_bytes(&mut seed);
+                seed
+            })
+        } else {
+            None
+        };
 
         self.request(Request {
             player: Player::One,

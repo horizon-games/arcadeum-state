@@ -415,8 +415,9 @@ macro_rules! log {
 #[macro_export]
 macro_rules! log {
     ($store:ident, $message:expr) => {
+        let message = $message;
         if let Some(logger) = &mut $store.logger {
-            logger($message);
+            logger(message);
         }
     };
 }

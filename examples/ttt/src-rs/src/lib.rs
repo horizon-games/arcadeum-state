@@ -109,25 +109,25 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
         store.shared_state.board[row][column] = Some(player);
         store.shared_state.count += 1;
 
-        let square = |row: usize, column: usize| match store.shared_state.board[row][column] {
-            Some(arcadeum_state::Player::One) => 'x',
-            Some(arcadeum_state::Player::Two) => 'o',
-            _ => ' ',
-        };
+        log!(store, &{
+            let square = |row: usize, column: usize| match store.shared_state.board[row][column] {
+                Some(arcadeum_state::Player::One) => 'x',
+                Some(arcadeum_state::Player::Two) => 'o',
+                _ => ' ',
+            };
 
-        let message = JsValue::from_str(&format!(
-            "   |   |   \n {} | {} | {} \n   |   |   \n---+---+---\n   |   |   \n {} | {} | {} \n   |   |   \n---+---+---\n   |   |   \n {} | {} | {} \n   |   |   ",
-            square(0, 0),
-            square(0, 1),
-            square(0, 2),
-            square(1, 0),
-            square(1, 1),
-            square(1, 2),
-            square(2, 0),
-            square(2, 1),
-            square(2, 2)
-        ));
-
-        log!(store, &message);
+            JsValue::from_str(&format!(
+                "   |   |   \n {} | {} | {} \n   |   |   \n---+---+---\n   |   |   \n {} | {} | {} \n   |   |   \n---+---+---\n   |   |   \n {} | {} | {} \n   |   |   ",
+                square(0, 0),
+                square(0, 1),
+                square(0, 2),
+                square(1, 0),
+                square(1, 1),
+                square(1, 2),
+                square(2, 0),
+                square(2, 1),
+                square(2, 2)
+            ))
+        });
     }
 }

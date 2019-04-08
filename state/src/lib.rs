@@ -430,19 +430,7 @@ where
 
     pub reveal: Option<Box<dyn Fn(&mut Store<SharedState, LocalState>) -> Vec<u8>>>,
     pub verify: Box<dyn Fn(&Store<SharedState, LocalState>, Player, &[u8]) -> Result<(), Error>>,
-    pub mutate: Box<dyn Mutator<SharedState, LocalState>>,
-}
-
-pub trait Mutator<SharedState, LocalState>
-where
-    SharedState: State<SharedState, LocalState>,
-{
-    fn call(
-        self: Box<Self>,
-        store: &mut Store<SharedState, LocalState>,
-        player: Player,
-        action: &[u8],
-    );
+    pub mutate: Box<dyn FnOnce(&mut Store<SharedState, LocalState>, Player, &[u8])>,
 }
 
 type Seed = <rand_xorshift::XorShiftRng as rand_core::SeedableRng>::Seed;
@@ -521,7 +509,7 @@ where
                     let result = (request.verify)(self, player, action);
 
                     if result.is_ok() {
-                        request.mutate.call(self, player, action);
+                        (request.mutate)(self, player, action);
 
                         self.process_requests();
                     } else {
@@ -663,7 +651,7 @@ where
             if Some(player) == self.player {
                 let action = request.reveal.unwrap()(self);
                 (request.verify)(self, player, &action).unwrap();
-                request.mutate.call(self, player, &action);
+                (request.mutate)(self, player, &action);
 
                 if let Some(sender) = &mut self.sender {
                     sender(&action);
@@ -679,20 +667,5 @@ where
                 listener()
             }
         }
-    }
-}
-
-impl<F, SharedState, LocalState> Mutator<SharedState, LocalState> for F
-where
-    F: FnOnce(&mut Store<SharedState, LocalState>, Player, &[u8]),
-    SharedState: State<SharedState, LocalState>,
-{
-    fn call(
-        self: Box<Self>,
-        store: &mut Store<SharedState, LocalState>,
-        player: Player,
-        action: &[u8],
-    ) {
-        self(store, player, action)
     }
 }

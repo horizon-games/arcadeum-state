@@ -572,13 +572,11 @@ where
                 _ => Err("hash.len() != 32"),
             }),
 
-            mutate: Box::new(
-                |store: &mut Store<SharedState, LocalState>, _, hash: &[u8]| {
-                    let mut commit = [0; 32];
-                    commit.copy_from_slice(hash);
-                    store.commit = Some(commit);
-                },
-            ),
+            mutate: Box::new(|store, _, hash| {
+                let mut commit = [0; 32];
+                commit.copy_from_slice(hash);
+                store.commit = Some(commit);
+            }),
         });
 
         self.request(Request {
@@ -595,13 +593,11 @@ where
                 _ => Err("seed.len() != 16"),
             }),
 
-            mutate: Box::new(
-                |store: &mut Store<SharedState, LocalState>, _, seed: &[u8]| {
-                    let mut reply = [0; 16];
-                    reply.copy_from_slice(seed);
-                    store.reply = Some(reply);
-                },
-            ),
+            mutate: Box::new(|store, _, seed| {
+                let mut reply = [0; 16];
+                reply.copy_from_slice(seed);
+                store.reply = Some(reply);
+            }),
         });
 
         self.request(Request {
@@ -624,23 +620,21 @@ where
                 _ => Err("seed.len() != 16"),
             }),
 
-            mutate: Box::new(
-                |store: &mut Store<SharedState, LocalState>, _, seed: &[u8]| {
-                    let xor: Vec<u8> = seed
-                        .iter()
-                        .zip(&store.reply.unwrap())
-                        .map(|(x, y)| x ^ y)
-                        .collect();
+            mutate: Box::new(|store, _, seed| {
+                let xor: Vec<u8> = seed
+                    .iter()
+                    .zip(&store.reply.unwrap())
+                    .map(|(x, y)| x ^ y)
+                    .collect();
 
-                    let mut seed = [0; 16];
-                    seed.copy_from_slice(&xor);
+                let mut seed = [0; 16];
+                seed.copy_from_slice(&xor);
 
-                    store.commit = None;
-                    store.reply = None;
+                store.commit = None;
+                store.reply = None;
 
-                    continuation(store, rand_xorshift::XorShiftRng::from_seed(seed));
-                },
-            ),
+                continuation(store, rand_xorshift::XorShiftRng::from_seed(seed));
+            }),
         });
     }
 

@@ -428,7 +428,7 @@ where
 {
     pub player: Player,
 
-    pub reveal: Option<Box<dyn Fn(&mut Store<SharedState, LocalState>) -> Vec<u8>>>,
+    pub reveal: Option<Box<dyn FnMut(&mut Store<SharedState, LocalState>) -> Vec<u8>>>,
     pub verify: Box<dyn Fn(&Store<SharedState, LocalState>, Player, &[u8]) -> Result<(), Error>>,
     pub mutate: Box<dyn FnOnce(&mut Store<SharedState, LocalState>, Player, &[u8])>,
 }

@@ -40,7 +40,7 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
     }
 
     fn verify(
-        _store: &arcadeum_state::Store<SharedState, LocalState>,
+        _store: &arcadeum_state::Store<Self, LocalState>,
         _player: arcadeum_state::Player,
         action: &[u8],
     ) -> Result<(), arcadeum_state::Error> {
@@ -51,7 +51,7 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
     }
 
     fn mutate(
-        store: &mut arcadeum_state::Store<SharedState, LocalState>,
+        store: &mut arcadeum_state::Store<Self, LocalState>,
         player: arcadeum_state::Player,
         action: &[u8],
     ) {

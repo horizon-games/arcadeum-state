@@ -51,7 +51,7 @@ macro_rules! create_game {
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
-                Game(arcadeum_state::Store::new(
+                Self(arcadeum_state::Store::new(
                     player,
                     $shared::default(),
                     $local::default(),
@@ -124,7 +124,7 @@ macro_rules! create_game {
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
-                Game(arcadeum_state::Store::new(
+                Self(arcadeum_state::Store::new(
                     player,
                     $shared::default(),
                     $local::default(),
@@ -231,7 +231,7 @@ macro_rules! create_game {
                 sender: Option<js_sys::Function>,
                 seeder: Option<js_sys::Function>,
             ) -> Self {
-                Game(arcadeum_state::Store::new(
+                Self(arcadeum_state::Store::new(
                     player,
                     $shared::default(),
                     $local::default(),
@@ -545,8 +545,7 @@ where
 
     pub fn random(
         &mut self,
-        continuation: impl FnOnce(&mut Store<SharedState, LocalState>, rand_xorshift::XorShiftRng)
-            + 'static,
+        continuation: impl FnOnce(&mut Self, rand_xorshift::XorShiftRng) + 'static,
     ) {
         let seed = if self.player.is_some() {
             self.seeder.as_mut().map(|seeder| {

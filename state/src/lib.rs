@@ -43,7 +43,7 @@ macro_rules! create_game {
 
         impl Game {
             pub fn owner() -> Vec<u8> {
-                <$shared as arcadeum_state::State<$shared, $local>>::owner()
+                <$shared as arcadeum_state::SharedState>::owner()
             }
 
             pub fn new(
@@ -116,7 +116,7 @@ macro_rules! create_game {
 
         impl Game {
             pub fn owner() -> Vec<u8> {
-                <$shared as arcadeum_state::State<$shared, $local>>::owner()
+                <$shared as arcadeum_state::SharedState>::owner()
             }
 
             pub fn new(
@@ -220,7 +220,7 @@ macro_rules! create_game {
         #[wasm_bindgen]
         impl Game {
             pub fn owner() -> Vec<u8> {
-                <$shared as arcadeum_state::State<$shared, $local>>::owner()
+                <$shared as arcadeum_state::SharedState>::owner()
             }
 
             #[wasm_bindgen(constructor)]
@@ -385,12 +385,16 @@ impl fmt::Display for Player {
     }
 }
 
+pub trait SharedState {
+    fn owner() -> Vec<u8>;
+}
+
+pub trait LocalState {}
+
 pub trait State<Shared, Local>
 where
     Shared: State<Shared, Local>,
 {
-    fn owner() -> Vec<u8>;
-
     fn winner(&self) -> Option<Player>;
     fn next_player(&self) -> Option<Player>;
 

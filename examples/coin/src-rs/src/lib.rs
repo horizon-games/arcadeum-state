@@ -14,11 +14,13 @@ pub struct SharedState {
 
 pub type LocalState = ();
 
-impl arcadeum_state::State<SharedState, LocalState> for SharedState {
+impl arcadeum_state::SharedState for SharedState {
     fn owner() -> Vec<u8> {
         b"\x37\x35\x13\xE3\x6c\x78\x04\x4A\x08\xA3\x5D\x23\x7C\x94\xEc\x49\xF3\x62\xe3\x72".to_vec()
     }
+}
 
+impl arcadeum_state::State<SharedState, LocalState> for SharedState {
     fn winner(&self) -> Option<arcadeum_state::Player> {
         if self.score.0 >= 10 || self.score.1 >= 10 {
             if self.score.0 > self.score.1 + 1 {

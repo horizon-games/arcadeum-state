@@ -344,21 +344,21 @@ macro_rules! create_game {
     };
 }
 
-pub struct Store<SharedState, LocalState>
+pub struct Store<Shared, Local>
 where
-    SharedState: State<SharedState, LocalState>,
+    Shared: State<Shared, Local>,
 {
     pub player: Option<Player>,
 
-    pub shared_state: SharedState,
-    pub local_state: LocalState,
+    pub shared_state: Shared,
+    pub local_state: Local,
 
     #[cfg(feature = "bindings")]
     pub logger: Option<Box<dyn FnMut(&JsValue)>>,
 
     listener: Option<Box<dyn FnMut()>>,
     sender: Option<Box<dyn FnMut(&[u8])>>,
-    requests: VecDeque<Request<SharedState, LocalState>>,
+    requests: VecDeque<Request<Shared, Local>>,
 
     seeder: Option<Box<dyn rand_core::RngCore>>,
     commit: Option<[u8; 32]>,
@@ -385,22 +385,17 @@ impl fmt::Display for Player {
     }
 }
 
-pub trait State<SharedState, LocalState>
+pub trait State<Shared, Local>
 where
-    SharedState: State<SharedState, LocalState>,
+    Shared: State<Shared, Local>,
 {
     fn owner() -> Vec<u8>;
 
     fn winner(&self) -> Option<Player>;
     fn next_player(&self) -> Option<Player>;
 
-    fn verify(
-        store: &Store<SharedState, LocalState>,
-        player: Player,
-        action: &[u8],
-    ) -> Result<(), Error>;
-
-    fn mutate(store: &mut Store<SharedState, LocalState>, player: Player, action: &[u8]);
+    fn verify(store: &Store<Shared, Local>, player: Player, action: &[u8]) -> Result<(), Error>;
+    fn mutate(store: &mut Store<Shared, Local>, player: Player, action: &[u8]);
 }
 
 pub type Error = &'static str;
@@ -422,28 +417,28 @@ macro_rules! log {
     };
 }
 
-pub struct Request<SharedState, LocalState>
+pub struct Request<Shared, Local>
 where
-    SharedState: State<SharedState, LocalState>,
+    Shared: State<Shared, Local>,
 {
     pub player: Player,
 
-    pub reveal: Option<Box<dyn FnMut(&mut Store<SharedState, LocalState>) -> Vec<u8>>>,
-    pub verify: Box<dyn Fn(&Store<SharedState, LocalState>, Player, &[u8]) -> Result<(), Error>>,
-    pub mutate: Box<dyn FnOnce(&mut Store<SharedState, LocalState>, Player, &[u8])>,
+    pub reveal: Option<Box<dyn FnMut(&mut Store<Shared, Local>) -> Vec<u8>>>,
+    pub verify: Box<dyn Fn(&Store<Shared, Local>, Player, &[u8]) -> Result<(), Error>>,
+    pub mutate: Box<dyn FnOnce(&mut Store<Shared, Local>, Player, &[u8])>,
 }
 
 type Seed = <rand_xorshift::XorShiftRng as rand_core::SeedableRng>::Seed;
 
-impl<SharedState, LocalState> Store<SharedState, LocalState>
+impl<Shared, Local> Store<Shared, Local>
 where
-    SharedState: State<SharedState, LocalState>,
+    Shared: State<Shared, Local>,
 {
     #[cfg(not(feature = "bindings"))]
     pub fn new(
         player: Option<Player>,
-        shared_state: SharedState,
-        local_state: LocalState,
+        shared_state: Shared,
+        local_state: Local,
         listener: Option<Box<dyn FnMut()>>,
         sender: Option<Box<dyn FnMut(&[u8])>>,
         seeder: Option<Box<dyn rand_core::RngCore>>,
@@ -464,8 +459,8 @@ where
     #[cfg(feature = "bindings")]
     pub fn new(
         player: Option<Player>,
-        shared_state: SharedState,
-        local_state: LocalState,
+        shared_state: Shared,
+        local_state: Local,
         logger: Option<Box<dyn FnMut(&JsValue)>>,
         listener: Option<Box<dyn FnMut()>>,
         sender: Option<Box<dyn FnMut(&[u8])>>,
@@ -519,10 +514,10 @@ where
                     result
                 }
                 None => {
-                    let result = SharedState::verify(self, player, action);
+                    let result = Shared::verify(self, player, action);
 
                     if result.is_ok() {
-                        SharedState::mutate(self, player, action);
+                        Shared::mutate(self, player, action);
 
                         if Some(player) == self.player {
                             if let Some(sender) = &mut self.sender {
@@ -539,7 +534,7 @@ where
         }
     }
 
-    pub fn request(&mut self, request: Request<SharedState, LocalState>) {
+    pub fn request(&mut self, request: Request<Shared, Local>) {
         self.requests.push_back(request);
     }
 

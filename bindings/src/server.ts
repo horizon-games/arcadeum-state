@@ -5,7 +5,7 @@ import { Bytes, Message, createMessage } from './message'
 
 export class Server {
   constructor(
-    private readonly game: Game,
+    game: Game,
     owner: ethers.Signer,
     private readonly account1: string,
     private readonly account2: string,
@@ -23,7 +23,7 @@ export class Server {
     }
     this.account2 = ethers.utils.getAddress(this.account2)
 
-    this.match = new this.game()
+    this.match = new game()
 
     this.messages = []
 

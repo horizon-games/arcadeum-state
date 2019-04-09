@@ -5,18 +5,15 @@ import { Bytes, Message, createMessage } from './message'
 
 export class Store {
   constructor(
-    private readonly game: Game,
+    game: Game,
     rootMessageBytes: Message | Bytes,
     private readonly account: ethers.Signer,
-    private readonly log: (message: any) => void,
+    log: (message: any) => void,
     private readonly send: (message: Message) => void
   ) {
     const rootMessage = new Message(rootMessageBytes)
 
-    const owner = ethers.utils.getAddress(
-      ethers.utils.hexlify(this.game.owner())
-    )
-
+    const owner = ethers.utils.getAddress(ethers.utils.hexlify(game.owner()))
     if (rootMessage.author !== owner) {
       throw Error(`rootMessage.author !== owner`)
     }
@@ -86,13 +83,7 @@ export class Store {
 
             switch (address) {
               case this.account1:
-                this.match = new this.game(
-                  Player.One,
-                  this.log,
-                  listener,
-                  sender,
-                  seeder
-                )
+                this.match = new game(Player.One, log, listener, sender, seeder)
 
                 this.subkey1 = this.subkey.address
 
@@ -112,14 +103,7 @@ export class Store {
                 break
 
               case this.account2:
-                this.match = new this.game(
-                  Player.Two,
-                  this.log,
-                  listener,
-                  sender,
-                  seeder
-                )
-
+                this.match = new game(Player.Two, log, listener, sender, seeder)
                 break
 
               default:

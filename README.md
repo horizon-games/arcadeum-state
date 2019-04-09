@@ -11,7 +11,7 @@ ln -s ../../.githooks/pre-commit .git/hooks
 install rust nightly
 
 ```
-./init.sh
+substrate/init.sh
 ```
 
 ## build
@@ -40,8 +40,8 @@ yarn node examples/coin/test/src/index.js
 ### blockchain
 
 ```
-target/release/arcadeum-chain purge-chain --dev # optional
-target/release/arcadeum-chain --dev
+substrate/target/release/arcadeum-chain purge-chain --dev # optional
+substrate/target/release/arcadeum-chain --dev
 ```
 
 ### blockchain viewer

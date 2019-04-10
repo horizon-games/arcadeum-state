@@ -207,7 +207,7 @@ export class Store {
     }
   }
 
-  dispatch(actionBytes: Bytes) {
+  dispatch(action: Bytes) {
     return new Promise((resolve: () => void, reject: (reason: any) => void) => {
       const unsubscribe = { unsubscribe: undefined }
 
@@ -217,7 +217,7 @@ export class Store {
         resolve()
       })
 
-      this.match.mutate(this.player, ethers.utils.arrayify(actionBytes))
+      this.match.mutate(this.player, ethers.utils.arrayify(action))
     })
   }
 

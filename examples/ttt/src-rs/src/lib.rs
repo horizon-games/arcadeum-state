@@ -12,11 +12,23 @@ pub struct SharedState {
     count: u32,
 }
 
-pub type LocalState = ();
+#[cfg_attr(not(feature = "bindings"), derive(Debug, Default))]
+#[cfg_attr(feature = "bindings", derive(Deserialize, Serialize, Debug, Default))]
+pub struct LocalState;
 
 impl arcadeum_state::SharedState for SharedState {
     fn owner() -> Vec<u8> {
         b"\x37\x35\x13\xE3\x6c\x78\x04\x4A\x08\xA3\x5D\x23\x7C\x94\xEc\x49\xF3\x62\xe3\x72".to_vec()
+    }
+
+    fn new(_match_seed: &[u8], _public_seed_1: &[u8], _public_seed_2: &[u8]) -> Self {
+        Default::default()
+    }
+}
+
+impl arcadeum_state::LocalState for LocalState {
+    fn new(_secret_seed: &[u8]) -> Self {
+        Default::default()
     }
 }
 

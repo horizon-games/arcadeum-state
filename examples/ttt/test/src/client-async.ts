@@ -20,6 +20,7 @@ process.on(`message`, async (message: any) => {
       ttt.Game,
       rootMessage,
       account,
+      new Uint8Array(),
       (message: any) => {
         console.log(`client (${process.pid}):`)
         console.log(message)

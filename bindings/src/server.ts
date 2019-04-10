@@ -9,6 +9,9 @@ export class Server {
     owner: ethers.Signer,
     private readonly account1: string,
     private readonly account2: string,
+    matchSeed: Bytes,
+    publicSeed1: Bytes,
+    publicSeed2: Bytes,
     private readonly send: (player: Player, message: Message) => void
   ) {
     const account1Bytes = ethers.utils.arrayify(this.account1)
@@ -23,13 +26,55 @@ export class Server {
     }
     this.account2 = ethers.utils.getAddress(this.account2)
 
-    this.match = new game()
+    const matchSeedBytes = ethers.utils.arrayify(matchSeed)
+    const publicSeed1Bytes = ethers.utils.arrayify(publicSeed1)
+    const publicSeed2Bytes = ethers.utils.arrayify(publicSeed2)
+    this.match = new game(matchSeedBytes, publicSeed1Bytes, publicSeed2Bytes)
 
     this.messages = []
 
-    const rootMessage = new Uint8Array(16 + 2 * 20)
+    const rootMessage = new Uint8Array(
+      16 +
+        2 * 20 +
+        4 +
+        matchSeedBytes.length +
+        4 +
+        publicSeed1Bytes.length +
+        4 +
+        publicSeed2Bytes.length
+    )
+
+    const view = new DataView(
+      rootMessage.buffer,
+      rootMessage.byteOffset,
+      rootMessage.length
+    )
+
     rootMessage.set(account1Bytes, 16)
     rootMessage.set(account2Bytes, 16 + 20)
+
+    view.setUint32(16 + 2 * 20, matchSeedBytes.length, true)
+    rootMessage.set(matchSeedBytes, 16 + 2 * 20 + 4)
+
+    view.setUint32(
+      16 + 2 * 20 + 4 + matchSeedBytes.length,
+      publicSeed1Bytes.length,
+      true
+    )
+    rootMessage.set(
+      publicSeed1Bytes,
+      16 + 2 * 20 + 4 + matchSeedBytes.length + 4
+    )
+
+    view.setUint32(
+      16 + 2 * 20 + 4 + matchSeedBytes.length + 4 + publicSeed1Bytes.length,
+      publicSeed2Bytes.length,
+      true
+    )
+    rootMessage.set(
+      publicSeed2Bytes,
+      16 + 2 * 20 + 4 + matchSeedBytes.length + 4 + publicSeed1Bytes.length + 4
+    )
 
     createMessage(rootMessage, owner).then((rootMessage: Message) => {
       this.messages.push(rootMessage)

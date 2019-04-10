@@ -47,14 +47,22 @@ macro_rules! create_game {
             }
 
             pub fn new(
+                match_seed: &[u8],
+                public_seed_1: &[u8],
+                public_seed_2: &[u8],
                 player: Option<arcadeum_state::Player>,
+                secret_seed: Option<&[u8]>,
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
                 Self(arcadeum_state::Store::new(
                     player,
-                    $shared::default(),
-                    $local::default(),
+                    <$shared as arcadeum_state::SharedState>::new(
+                        match_seed,
+                        public_seed_1,
+                        public_seed_2,
+                    ),
+                    secret_seed.map(<$local as arcadeum_state::LocalState>::new),
                     listener,
                     sender,
                     Some(Box::new(arcadeum_state::rand::thread_rng())),
@@ -69,7 +77,7 @@ macro_rules! create_game {
                 &self.0.shared_state
             }
 
-            pub fn local_state(&self) -> &$local {
+            pub fn local_state(&self) -> &Option<$local> {
                 &self.0.local_state
             }
 
@@ -77,7 +85,7 @@ macro_rules! create_game {
                 &mut self.0.shared_state
             }
 
-            pub fn mut_local_state(&mut self) -> &mut $local {
+            pub fn mut_local_state(&mut self) -> &mut Option<$local> {
                 &mut self.0.local_state
             }
 
@@ -120,14 +128,22 @@ macro_rules! create_game {
             }
 
             pub fn new(
+                match_seed: &[u8],
+                public_seed_1: &[u8],
+                public_seed_2: &[u8],
                 player: Option<arcadeum_state::Player>,
+                secret_seed: Option<&[u8]>,
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
                 Self(arcadeum_state::Store::new(
                     player,
-                    $shared::default(),
-                    $local::default(),
+                    <$shared as arcadeum_state::SharedState>::new(
+                        match_seed,
+                        public_seed_1,
+                        public_seed_2,
+                    ),
+                    secret_seed.map(<$local as arcadeum_state::LocalState>::new),
                     listener,
                     sender,
                     Some(Box::new(Seeder)),
@@ -142,7 +158,7 @@ macro_rules! create_game {
                 &self.0.shared_state
             }
 
-            pub fn local_state(&self) -> &$local {
+            pub fn local_state(&self) -> &Option<$local> {
                 &self.0.local_state
             }
 
@@ -150,7 +166,7 @@ macro_rules! create_game {
                 &mut self.0.shared_state
             }
 
-            pub fn mut_local_state(&mut self) -> &mut $local {
+            pub fn mut_local_state(&mut self) -> &mut Option<$local> {
                 &mut self.0.local_state
             }
 
@@ -225,7 +241,11 @@ macro_rules! create_game {
 
             #[wasm_bindgen(constructor)]
             pub fn new(
+                match_seed: &[u8],
+                public_seed_1: &[u8],
+                public_seed_2: &[u8],
                 player: Option<arcadeum_state::Player>,
+                secret_seed: Option<Vec<u8>>,
                 logger: Option<js_sys::Function>,
                 listener: Option<js_sys::Function>,
                 sender: Option<js_sys::Function>,
@@ -233,8 +253,14 @@ macro_rules! create_game {
             ) -> Self {
                 Self(arcadeum_state::Store::new(
                     player,
-                    $shared::default(),
-                    $local::default(),
+                    <$shared as arcadeum_state::SharedState>::new(
+                        match_seed,
+                        public_seed_1,
+                        public_seed_2,
+                    ),
+                    secret_seed.map(|secret_seed| {
+                        <$local as arcadeum_state::LocalState>::new(&secret_seed)
+                    }),
                     logger.map(|logger| {
                         Box::new(move |message: &JsValue| {
                             logger.call1(&JsValue::UNDEFINED, message).unwrap();
@@ -351,7 +377,7 @@ where
     pub player: Option<Player>,
 
     pub shared_state: Shared,
-    pub local_state: Local,
+    pub local_state: Option<Local>,
 
     #[cfg(feature = "bindings")]
     pub logger: Option<Box<dyn FnMut(&JsValue)>>,
@@ -387,9 +413,13 @@ impl fmt::Display for Player {
 
 pub trait SharedState {
     fn owner() -> Vec<u8>;
+
+    fn new(match_seed: &[u8], public_seed_1: &[u8], public_seed_2: &[u8]) -> Self;
 }
 
-pub trait LocalState {}
+pub trait LocalState {
+    fn new(secret_seed: &[u8]) -> Self;
+}
 
 pub trait State<Shared, Local>
 where
@@ -442,7 +472,7 @@ where
     pub fn new(
         player: Option<Player>,
         shared_state: Shared,
-        local_state: Local,
+        local_state: Option<Local>,
         listener: Option<Box<dyn FnMut()>>,
         sender: Option<Box<dyn FnMut(&[u8])>>,
         seeder: Option<Box<dyn rand_core::RngCore>>,
@@ -464,7 +494,7 @@ where
     pub fn new(
         player: Option<Player>,
         shared_state: Shared,
-        local_state: Local,
+        local_state: Option<Local>,
         logger: Option<Box<dyn FnMut(&JsValue)>>,
         listener: Option<Box<dyn FnMut()>>,
         sender: Option<Box<dyn FnMut(&[u8])>>,

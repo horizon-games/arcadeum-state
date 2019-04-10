@@ -44,14 +44,32 @@ decl_module! {
                 return Err("message.parent != [0; 32]");
             }
 
-            if message.message.len() != 16 + 2 * 20 {
-                return Err("message.message.len() != 16 + 2 * 20");
+            if message.message.len() < 16 + 2 * 20 + 4 {
+                return Err("message.message.len() < 16 + 2 * 20 + 4");
+            }
+
+            let match_seed_length = byteorder::LE::read_u32(&message.message[16 + 2 * 20..]) as usize;
+            if message.message.len() < 16 + 2 * 20 + 4 + match_seed_length + 4 {
+                return Err("message.message.len() < 16 + 2 * 20 + 4 + match_seed_length + 4");
+            }
+
+            let public_seed_1_length = byteorder::LE::read_u32(&message.message[16 + 2 * 20 + 4 + match_seed_length..]) as usize;
+            if message.message.len() < 16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length + 4 {
+                return Err("message.message.len() < 16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length + 4");
+            }
+
+            let public_seed_2_length = byteorder::LE::read_u32(&message.message[16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length..]) as usize;
+            if message.message.len() != 16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length + 4 + public_seed_2_length {
+                return Err("message.message.len() != 16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length + 4 + public_seed_2_length");
             }
 
             let mut account_1 = [0; 20];
             account_1.copy_from_slice(&message.message[16..16 + 20]);
             let mut account_2 = [0; 20];
-            account_2.copy_from_slice(&message.message[16 + 20..]);
+            account_2.copy_from_slice(&message.message[16 + 20..16 + 2 * 20]);
+            let match_seed = &message.message[16 + 2 * 20 + 4..16 + 2 * 20 + 4 + match_seed_length];
+            let public_seed_1 = &message.message[16 + 2 * 20 + 4 + match_seed_length + 4..16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length];
+            let public_seed_2 = &message.message[16 + 2 * 20 + 4 + match_seed_length + 4 + public_seed_1_length + 4..];
 
             let parent = &message.hash;
 
@@ -89,7 +107,7 @@ decl_module! {
 
             let subkey_2 = message.message;
 
-            let mut store = game::Game::new(None, None, None);
+            let mut store = game::Game::new(match_seed, public_seed_1, public_seed_2, None, None, None, None);
 
             let mut parent = [0; 32];
             parent.copy_from_slice(&message.hash);

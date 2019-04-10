@@ -20,6 +20,7 @@ process.on(`message`, async (message: any) => {
       coin.Game,
       rootMessage,
       account,
+      new Uint8Array(),
       (message: any) => {
         console.log(`client (${process.pid}): ${JSON.stringify(message)}`)
       },

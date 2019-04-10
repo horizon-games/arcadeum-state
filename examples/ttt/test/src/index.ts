@@ -53,6 +53,9 @@ client1.on(`message`, (message: any) => {
         owner,
         server.account1,
         server.account2,
+        new Uint8Array(),
+        new Uint8Array(),
+        new Uint8Array(),
         send
       )
     }
@@ -73,6 +76,9 @@ client2.on(`message`, (message: any) => {
         owner,
         server.account1,
         server.account2,
+        new Uint8Array(),
+        new Uint8Array(),
+        new Uint8Array(),
         send
       )
     }

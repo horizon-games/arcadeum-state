@@ -18,6 +18,15 @@ export class Store {
       throw Error(`rootMessage.author !== owner`)
     }
 
+    if (
+      rootMessage.parent !==
+      `0x0000000000000000000000000000000000000000000000000000000000000000`
+    ) {
+      throw Error(
+        'rootMessage.parent !== `0x0000000000000000000000000000000000000000000000000000000000000000`'
+      )
+    }
+
     if (rootMessage.data.length !== 16 + 2 * 20) {
       throw Error(`rootMessage.data.length !== 16 + 2 * 20`)
     }

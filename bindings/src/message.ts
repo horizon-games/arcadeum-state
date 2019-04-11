@@ -16,10 +16,11 @@ export class Message {
         throw Error(`this.encoding.length < 65 + 32 + 4`)
       }
 
-      const dataLength = new DataView(this.encoding.buffer).getUint32(
-        65 + 32,
-        true
-      )
+      const dataLength = new DataView(
+        this.encoding.buffer,
+        this.encoding.byteOffset,
+        this.encoding.length
+      ).getUint32(65 + 32, true)
 
       if (this.encoding.length !== 65 + 32 + 4 + dataLength) {
         throw Error(`this.encoding.length !== 65 + 32 + 4 + dataLength`)
@@ -52,7 +53,13 @@ export async function createMessage(
   const dataBytes = ethers.utils.arrayify(data)
 
   const encoding = new Uint8Array(65 + 32 + 4 + dataBytes.length)
-  new DataView(encoding.buffer).setUint32(65 + 32, dataBytes.length, true)
+
+  new DataView(encoding.buffer, encoding.byteOffset, encoding.length).setUint32(
+    65 + 32,
+    dataBytes.length,
+    true
+  )
+
   encoding.set(dataBytes, 65 + 32 + 4)
 
   if (parent !== undefined) {

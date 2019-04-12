@@ -30,18 +30,23 @@ export LIBCLANG_PATH=`echo /nix/store/*-clang-*-lib/lib` # doesn't work if you h
 
 ## run
 
-### prover
-
-```
-yarn node examples/ttt/test/src/index.js
-yarn node examples/coin/test/src/index.js
-```
-
 ### blockchain
 
 ```
 substrate/target/release/arcadeum-chain purge-chain --dev # optional
 substrate/target/release/arcadeum-chain --dev
+```
+
+### prover
+
+```
+yarn node examples/coin/test/src/index.js
+```
+
+or:
+
+```
+yarn node examples/ttt/test/src/index.js # must edit game dependency in substrate/runtime/Cargo.toml and re-build
 ```
 
 ### blockchain viewer
@@ -54,10 +59,6 @@ yarn start
 ```
 
 http://localhost:3000 → settings → local node (127.0.0.1:9944)
-
-#### submit proof
-
-http://localhost:3000 → extrinsics → alice → arcadeum → prove(proof) → proof → submit transaction
 
 #### view results
 

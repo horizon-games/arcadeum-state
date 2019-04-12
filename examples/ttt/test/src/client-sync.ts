@@ -1,3 +1,5 @@
+import * as polkadot from '@polkadot/api'
+import * as keyring from '@polkadot/keyring'
 import * as arcadeum from 'arcadeum-bindings'
 import * as ttt from 'arcadeum-ttt'
 import * as ethers from 'ethers'
@@ -38,15 +40,7 @@ process.on(`message`, async (message: any) => {
         await store.store.dispatch([0, 1])
         await store.store.opponentActions
         await store.store.dispatch([0, 2])
-
-        if (store.store.winner === store.store.player) {
-          console.log(
-            `client (${process.pid}): ${ethers.utils.hexlify(
-              await store.store.proof
-            )}`
-          )
-        }
-
+        await store.store.opponentActions
         break
 
       case arcadeum.Player.Two:
@@ -54,6 +48,31 @@ process.on(`message`, async (message: any) => {
         await store.store.dispatch([1, 0])
         await store.store.opponentActions
         await store.store.dispatch([1, 1])
+        await store.store.opponentActions
+        break
+    }
+
+    switch (store.store.winner) {
+      case store.store.player:
+        console.log(`client (${process.pid}): ${account.address} won`)
+
+        const provider = new polkadot.WsProvider(`ws://localhost:9944`)
+        const api = await polkadot.ApiPromise.create(provider)
+        const keys = new keyring.Keyring({ type: `sr25519` })
+        const key = keys.addFromUri(`//Alice`)
+
+        api.tx.arcadeum
+          .prove(ethers.utils.hexlify(await store.store.proof))
+          .signAndSend(key)
+
+        break
+
+      case undefined:
+        console.log(`client (${process.pid}): ${account.address} drew`)
+        break
+
+      default:
+        console.log(`client (${process.pid}): ${account.address} lost`)
         break
     }
   } else {

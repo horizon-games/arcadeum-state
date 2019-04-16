@@ -43,7 +43,7 @@ macro_rules! create_game {
 
         impl Game {
             pub fn owner() -> Vec<u8> {
-                <$shared as arcadeum_state::SharedState>::owner()
+                <$shared as arcadeum_state::SharedState<$local>>::owner()
             }
 
             pub fn new(
@@ -55,18 +55,23 @@ macro_rules! create_game {
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
-                Self(arcadeum_state::Store::new(
+                let mut store = arcadeum_state::Store::new(
                     player,
-                    <$shared as arcadeum_state::SharedState>::new(
-                        match_seed,
-                        public_seed_1,
-                        public_seed_2,
-                    ),
+                    <$shared as Default>::default(),
                     secret_seed.map(<$local as arcadeum_state::LocalState>::new),
                     listener,
                     sender,
                     Some(Box::new(arcadeum_state::rand::thread_rng())),
-                ))
+                );
+
+                arcadeum_state::SharedState::seed(
+                    &mut store,
+                    match_seed,
+                    public_seed_1,
+                    public_seed_2,
+                );
+
+                Self(store)
             }
 
             pub fn player(&self) -> Option<arcadeum_state::Player> {
@@ -124,7 +129,7 @@ macro_rules! create_game {
 
         impl Game {
             pub fn owner() -> Vec<u8> {
-                <$shared as arcadeum_state::SharedState>::owner()
+                <$shared as arcadeum_state::SharedState<$local>>::owner()
             }
 
             pub fn new(
@@ -136,18 +141,23 @@ macro_rules! create_game {
                 listener: Option<Box<dyn FnMut()>>,
                 sender: Option<Box<dyn FnMut(&[u8])>>,
             ) -> Self {
-                Self(arcadeum_state::Store::new(
+                let mut store = arcadeum_state::Store::new(
                     player,
-                    <$shared as arcadeum_state::SharedState>::new(
-                        match_seed,
-                        public_seed_1,
-                        public_seed_2,
-                    ),
+                    <$shared as Default>::default(),
                     secret_seed.map(<$local as arcadeum_state::LocalState>::new),
                     listener,
                     sender,
                     Some(Box::new(Seeder)),
-                ))
+                );
+
+                arcadeum_state::SharedState::seed(
+                    &mut store,
+                    match_seed,
+                    public_seed_1,
+                    public_seed_2,
+                );
+
+                Self(store)
             }
 
             pub fn player(&self) -> Option<arcadeum_state::Player> {
@@ -236,7 +246,7 @@ macro_rules! create_game {
         #[wasm_bindgen]
         impl Game {
             pub fn owner() -> Vec<u8> {
-                <$shared as arcadeum_state::SharedState>::owner()
+                <$shared as arcadeum_state::SharedState<$local>>::owner()
             }
 
             #[wasm_bindgen(constructor)]
@@ -251,13 +261,9 @@ macro_rules! create_game {
                 sender: Option<js_sys::Function>,
                 seeder: Option<js_sys::Function>,
             ) -> Self {
-                Self(arcadeum_state::Store::new(
+                let mut store = arcadeum_state::Store::new(
                     player,
-                    <$shared as arcadeum_state::SharedState>::new(
-                        match_seed,
-                        public_seed_1,
-                        public_seed_2,
-                    ),
+                    <$shared as Default>::default(),
                     secret_seed.map(|secret_seed| {
                         <$local as arcadeum_state::LocalState>::new(&secret_seed)
                     }),
@@ -279,7 +285,16 @@ macro_rules! create_game {
                         }) as Box<dyn FnMut(&[u8])>
                     }),
                     seeder.map(|seeder| Box::new(Seeder(seeder)) as Box<dyn RngCore>),
-                ))
+                );
+
+                arcadeum_state::SharedState::seed(
+                    &mut store,
+                    match_seed,
+                    public_seed_1,
+                    public_seed_2,
+                );
+
+                Self(store)
             }
 
             pub fn player(&self) -> Option<arcadeum_state::Player> {
@@ -411,10 +426,16 @@ impl fmt::Display for Player {
     }
 }
 
-pub trait SharedState {
+pub trait SharedState<Local>: State<Self, Local> + Default + Sized {
     fn owner() -> Vec<u8>;
 
-    fn new(match_seed: &[u8], public_seed_1: &[u8], public_seed_2: &[u8]) -> Self;
+    fn seed(
+        _store: &mut Store<Self, Local>,
+        _match_seed: &[u8],
+        _public_seed_1: &[u8],
+        _public_seed_2: &[u8],
+    ) {
+    }
 }
 
 pub trait LocalState {

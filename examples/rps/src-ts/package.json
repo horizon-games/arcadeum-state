@@ -1,0 +1,8 @@
+{
+  "name": "arcadeum-rps",
+  "version": "0.0.0",
+  "description": "Arcadeum rock-paper-scissors WebAssembly module",
+  "main": "src/index.js",
+  "author": "Horizon Blockchain Games",
+  "license": "MIT"
+}

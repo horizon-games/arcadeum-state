@@ -4,6 +4,7 @@
     "typescript": "^3.4.3"
   },
   "dependencies": {
-    "arcadeum-bindings": "link:../../../bindings"
+    "arcadeum-bindings": "link:../../../bindings",
+    "arcadeum-rps": "link:../src-ts"
   }
 }

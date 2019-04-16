@@ -4,4 +4,10 @@ version = "0.1.0"
 authors = ["William Hua <william@attente.ca>"]
 edition = "2018"
 
+[features]
+default = ["std"]
+std = ["arcadeum-state/std"]
+bindings = ["std", "arcadeum-state/bindings"]
+
 [dependencies]
+arcadeum-state = { path = "../../../state", default-features = false }

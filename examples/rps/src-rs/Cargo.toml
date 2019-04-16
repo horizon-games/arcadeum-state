@@ -7,8 +7,9 @@ edition = "2018"
 [features]
 default = ["std"]
 std = ["arcadeum-state/std"]
-bindings = ["std", "arcadeum-state/bindings", "js-sys"]
+bindings = ["std", "arcadeum-state/bindings", "js-sys", "serde"]
 
 [dependencies]
 arcadeum-state = { path = "../../../state", default-features = false }
 js-sys = { version = "0.3.17", optional = true }
+serde = { version = "1.0.90", optional = true }

@@ -688,24 +688,32 @@ where
     }
 
     fn process_requests(&mut self) {
-        while let Some(request) = self.requests.pop_front() {
+        let mut ready = true;
+
+        while let Some(mut request) = self.requests.pop_front() {
             let player = request.player;
 
             if Some(player) == self.player {
-                let action = request.reveal.unwrap()(self);
-                (request.verify)(self, player, &action).unwrap();
-                (request.mutate)(self, player, &action);
+                if let Some(reveal) = &mut request.reveal {
+                    let action = reveal(self);
+                    (request.verify)(self, player, &action).unwrap();
+                    (request.mutate)(self, player, &action);
 
-                if let Some(sender) = &mut self.sender {
-                    sender(&action);
+                    if let Some(sender) = &mut self.sender {
+                        sender(&action);
+                    }
+                } else {
+                    self.requests.push_front(request);
+                    break;
                 }
             } else {
                 self.requests.push_front(request);
+                ready = false;
                 break;
             }
         }
 
-        if self.requests.is_empty() {
+        if ready {
             if let Some(listener) = &mut self.listener {
                 listener()
             }

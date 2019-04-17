@@ -399,11 +399,13 @@ where
 
     listener: Option<Box<dyn FnMut()>>,
     sender: Option<Box<dyn FnMut(&[u8])>>,
-    requests: VecDeque<Request<Shared, Local>>,
+    requests: VecDeque<MetaRequest<Shared, Local>>,
+
+    secret: Option<Vec<u8>>,
+    commit: Option<[u8; 32]>,
+    reply: Option<Vec<u8>>,
 
     seeder: Option<Box<dyn rand_core::RngCore>>,
-    commit: Option<[u8; 32]>,
-    reply: Option<Seed>,
 }
 
 #[cfg_attr(feature = "bindings", wasm_bindgen)]
@@ -483,7 +485,21 @@ where
     pub mutate: Box<dyn FnOnce(&mut Store<Shared, Local>, Player, &[u8])>,
 }
 
-type Seed = <rand_xorshift::XorShiftRng as rand_core::SeedableRng>::Seed;
+struct MetaRequest<Shared, Local>
+where
+    Shared: State<Shared, Local>,
+{
+    r#type: MetaRequestType,
+
+    request: Request<Shared, Local>,
+}
+
+#[derive(PartialEq)]
+enum MetaRequestType {
+    Basic,
+    Commit,
+    Reveal,
+}
 
 impl<Shared, Local> Store<Shared, Local>
 where
@@ -506,6 +522,7 @@ where
             sender,
             requests: VecDeque::new(),
             seeder,
+            secret: None,
             commit: None,
             reply: None,
         }
@@ -530,6 +547,7 @@ where
             sender,
             requests: VecDeque::new(),
             seeder,
+            secret: None,
             commit: None,
             reply: None,
         }
@@ -544,7 +562,7 @@ where
             None
         } else {
             match self.requests.front() {
-                Some(request) => Some(request.player),
+                Some(request) => Some(request.request.player),
                 None => self.shared_state.next_player(),
             }
         }
@@ -556,17 +574,50 @@ where
         } else {
             match self.requests.pop_front() {
                 Some(request) => {
-                    let result = (request.verify)(self, player, action);
+                    if Some(player) != self.player || request.r#type == MetaRequestType::Basic {
+                        let result = (request.request.verify)(self, player, action);
 
-                    if result.is_ok() {
-                        (request.mutate)(self, player, action);
+                        if result.is_ok() {
+                            (request.request.mutate)(self, player, action);
 
-                        self.process_requests();
+                            if Some(player) == self.player {
+                                if let Some(sender) = &mut self.sender {
+                                    sender(action);
+                                }
+                            }
+
+                            self.process_requests();
+                        } else {
+                            self.requests.push_front(request);
+                        }
+
+                        result
+                    } else if request.r#type == MetaRequestType::Commit {
+                        let mut salt = [0; 8];
+                        self.seeder.as_mut().unwrap().fill_bytes(&mut salt);
+
+                        let secret = [action, &salt].concat();
+                        let commit = tiny_keccak::keccak256(&secret);
+                        let result = (request.request.verify)(self, player, &commit);
+
+                        if result.is_ok() {
+                            self.secret = Some(secret);
+
+                            (request.request.mutate)(self, player, &commit);
+
+                            if let Some(sender) = &mut self.sender {
+                                sender(&commit);
+                            }
+
+                            self.process_requests();
+                        } else {
+                            self.requests.push_front(request);
+                        }
+
+                        result
                     } else {
-                        self.requests.push_front(request);
+                        Err("Some(player) == self.player && request.r#type == MetaRequestType::Reveal")
                     }
-
-                    result
                 }
                 None => {
                     let result = Shared::verify(self, player, action);
@@ -590,7 +641,74 @@ where
     }
 
     pub fn request(&mut self, request: Request<Shared, Local>) {
-        self.requests.push_back(request);
+        self.requests.push_back(MetaRequest {
+            r#type: MetaRequestType::Basic,
+
+            request,
+        });
+    }
+
+    pub fn secret(&mut self, continuation: impl FnOnce(&mut Self, &[u8], &[u8]) + 'static) {
+        self.requests.push_back(MetaRequest {
+            r#type: MetaRequestType::Commit,
+
+            request: Request {
+                player: Player::One,
+
+                reveal: None,
+
+                verify: Box::new(|_, _, hash| match hash.len() {
+                    32 => Ok(()),
+                    _ => Err("hash.len() != 32"),
+                }),
+
+                mutate: Box::new(|store, _, hash| {
+                    let mut commit = [0; 32];
+                    commit.copy_from_slice(hash);
+                    store.commit = Some(commit);
+                }),
+            },
+        });
+
+        self.request(Request {
+            player: Player::Two,
+
+            reveal: None,
+
+            verify: Box::new(|_, _, _| Ok(())),
+
+            mutate: Box::new(|store, _, reply| {
+                store.reply = Some(reply.to_vec());
+            }),
+        });
+
+        self.requests.push_back(MetaRequest {
+            r#type: MetaRequestType::Reveal,
+
+            request: Request {
+                player: Player::One,
+
+                reveal: None,
+
+                verify: Box::new(|store, _, secret| {
+                    if secret.len() >= 8 {
+                        if &store.commit.unwrap() == &tiny_keccak::keccak256(secret) {
+                            Ok(())
+                        } else {
+                            Err("&store.commit.unwrap() != &tiny_keccak::keccak256(secret)")
+                        }
+                    } else {
+                        Err("secret.len() < 8")
+                    }
+                }),
+
+                mutate: Box::new(|store, _, secret| {
+                    store.commit = None;
+                    let reply = store.reply.take();
+                    continuation(store, &secret[..secret.len() - 8], &reply.unwrap());
+                }),
+            },
+        });
     }
 
     pub fn random(
@@ -643,9 +761,7 @@ where
             }),
 
             mutate: Box::new(|store, _, seed| {
-                let mut reply = [0; 16];
-                reply.copy_from_slice(seed);
-                store.reply = Some(reply);
+                store.reply = Some(seed.to_vec());
             }),
         });
 
@@ -670,17 +786,16 @@ where
             }),
 
             mutate: Box::new(|store, _, seed| {
+                store.commit = None;
+
                 let xor: Vec<u8> = seed
                     .iter()
-                    .zip(&store.reply.unwrap())
+                    .zip(store.reply.take().unwrap())
                     .map(|(x, y)| x ^ y)
                     .collect();
 
                 let mut seed = [0; 16];
                 seed.copy_from_slice(&xor);
-
-                store.commit = None;
-                store.reply = None;
 
                 continuation(store, rand_xorshift::XorShiftRng::from_seed(seed));
             }),
@@ -691,16 +806,24 @@ where
         let mut ready = true;
 
         while let Some(mut request) = self.requests.pop_front() {
-            let player = request.player;
+            let player = request.request.player;
 
             if Some(player) == self.player {
-                if let Some(reveal) = &mut request.reveal {
+                if let Some(reveal) = &mut request.request.reveal {
                     let action = reveal(self);
-                    (request.verify)(self, player, &action).unwrap();
-                    (request.mutate)(self, player, &action);
+                    (request.request.verify)(self, player, &action).unwrap();
+                    (request.request.mutate)(self, player, &action);
 
                     if let Some(sender) = &mut self.sender {
                         sender(&action);
+                    }
+                } else if request.r#type == MetaRequestType::Reveal {
+                    let secret = self.secret.take().unwrap();
+                    (request.request.verify)(self, player, &secret).unwrap();
+                    (request.request.mutate)(self, player, &secret);
+
+                    if let Some(sender) = &mut self.sender {
+                        sender(&secret);
                     }
                 } else {
                     self.requests.push_front(request);

@@ -88,7 +88,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "arcadeum-coin"
+name = "arcadeum-rps"
 version = "0.1.0"
 dependencies = [
  "arcadeum-state 0.1.0",
@@ -1819,7 +1819,7 @@ dependencies = [
 name = "node-template-runtime"
 version = "1.0.0"
 dependencies = [
- "arcadeum-coin 0.1.0",
+ "arcadeum-rps 0.1.0",
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "itoa 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 3.3.0 (registry+https://github.com/rust-lang/crates.io-index)",

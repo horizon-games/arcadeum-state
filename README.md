@@ -40,7 +40,13 @@ substrate/target/release/arcadeum-chain --dev
 ### prover
 
 ```
-yarn node examples/coin/test/src/index.js
+yarn node examples/rps/test/src/index.js
+```
+
+or:
+
+```
+yarn node examples/coin/test/src/index.js # must edit game dependency in substrate/runtime/Cargo.toml and re-build
 ```
 
 or:

@@ -469,7 +469,7 @@ macro_rules! log {
     ($store:ident, $message:expr) => {
         let message = $message;
         if let Some(logger) = &mut $store.logger {
-            logger(message);
+            logger(&wasm_bindgen::JsValue::from_serde(&message).unwrap());
         }
     };
 }

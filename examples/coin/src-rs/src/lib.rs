@@ -82,10 +82,10 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
 
             log!(
                 store,
-                &JsValue::from_str(&format!(
+                &format!(
                     "{:?}: {}: guess: {}, result: {}, correct: {}",
                     store.shared_state, player, guess, result, correct
-                ))
+                )
             );
         });
     }

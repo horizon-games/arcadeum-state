@@ -126,7 +126,7 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
                 _ => ' ',
             };
 
-            JsValue::from_str(&format!(
+            &format!(
                 "   |   |   \n {} | {} | {} \n   |   |   \n---+---+---\n   |   |   \n {} | {} | {} \n   |   |   \n---+---+---\n   |   |   \n {} | {} | {} \n   |   |   ",
                 square(0, 0),
                 square(0, 1),
@@ -137,7 +137,7 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
                 square(2, 0),
                 square(2, 1),
                 square(2, 2)
-            ))
+            )
         });
     }
 }

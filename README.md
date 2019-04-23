@@ -69,3 +69,7 @@ http://localhost:3000 → settings → local node (127.0.0.1:9944)
 #### view results
 
 http://localhost:3000 → chain state → results → wins/draws/losses → player account → +
+
+## licence
+
+GNU LGPL v3.0

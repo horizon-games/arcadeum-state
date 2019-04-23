@@ -711,7 +711,7 @@ where
 
                 verify: Box::new(|store, _, secret| {
                     if secret.len() >= 8 {
-                        if &store.commit.unwrap() == &tiny_keccak::keccak256(secret) {
+                        if store.commit.unwrap() == tiny_keccak::keccak256(secret) {
                             Ok(())
                         } else {
                             Err("&store.commit.unwrap() != &tiny_keccak::keccak256(secret)")
@@ -795,7 +795,7 @@ where
 
             verify: Box::new(|store, _, seed| match seed.len() {
                 16 => {
-                    if &store.commit.unwrap() == &tiny_keccak::keccak256(seed) {
+                    if store.commit.unwrap() == tiny_keccak::keccak256(seed) {
                         Ok(())
                     } else {
                         Err("&store.commit.unwrap() != &tiny_keccak::keccak256(seed)")

@@ -476,7 +476,18 @@ where
 
 pub type Error = &'static str;
 
-#[cfg(not(feature = "bindings"))]
+#[cfg(all(not(feature = "bindings"), feature = "std", debug_assertions))]
+#[macro_export]
+macro_rules! log {
+    ($store:ident, $message:expr) => {
+        dbg!($message)
+    };
+}
+
+#[cfg(all(
+    not(feature = "bindings"),
+    any(not(feature = "std"), not(debug_assertions))
+))]
 #[macro_export]
 macro_rules! log {
     ($store:ident, $message:expr) => {};

@@ -20,6 +20,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
+extern crate arcadeum_async;
+#[macro_use]
 extern crate arcadeum_state;
 
 create_game!(SharedState, LocalState);
@@ -79,33 +81,32 @@ impl arcadeum_state::State<SharedState, LocalState> for SharedState {
         }
     }
 
+    #[asynchronous]
     fn mutate(
         store: &mut arcadeum_state::Store<Self, LocalState>,
         player: arcadeum_state::Player,
         action: &[u8],
     ) {
         let guess = action[0];
+        let (store, mut random) = store.random().await;
+        let result = random.next_u32();
+        let correct = (result % 2) as u8 == guess % 2;
 
-        store.random(move |store, mut random| {
-            let result = random.next_u32();
-            let correct = (result % 2) as u8 == guess % 2;
-
-            if correct {
-                match player {
-                    arcadeum_state::Player::One => store.shared_state.score.0 += 1,
-                    arcadeum_state::Player::Two => store.shared_state.score.1 += 1,
-                }
+        if correct {
+            match player {
+                arcadeum_state::Player::One => store.shared_state.score.0 += 1,
+                arcadeum_state::Player::Two => store.shared_state.score.1 += 1,
             }
+        }
 
-            store.shared_state.count += 1;
+        store.shared_state.count += 1;
 
-            log!(
-                store,
-                &format!(
-                    "{:?}: {}: guess: {}, result: {}, correct: {}",
-                    store.shared_state, player, guess, result, correct
-                )
-            );
-        });
+        log!(
+            store,
+            &format!(
+                "{:?}: {}: guess: {}, result: {}, correct: {}",
+                store.shared_state, player, guess, result, correct
+            )
+        );
     }
 }

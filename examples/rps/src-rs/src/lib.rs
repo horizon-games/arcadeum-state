@@ -20,6 +20,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
+extern crate arcadeum_async;
+#[macro_use]
 extern crate arcadeum_state;
 
 create_game!(SharedState, LocalState);
@@ -46,20 +48,21 @@ impl arcadeum_state::SharedState<LocalState> for SharedState {
         _public_seed_1: &[u8],
         _public_seed_2: &[u8],
     ) {
+        #[asynchronous]
         fn process(store: &mut arcadeum_state::Store<SharedState, LocalState>) {
-            store.secret(|store, secret_1, secret_2| {
-                match (secret_1[0], secret_2[0]) {
-                    (0, 1) | (1, 2) | (2, 0) => store.shared_state.score.1 += 1,
-                    (0, 2) | (1, 0) | (2, 1) => store.shared_state.score.0 += 1,
-                    _ => {}
-                };
+            let (store, secret_1, secret_2) = store.secret().await;
 
-                store.shared_state.count += 1;
+            match (secret_1[0], secret_2[0]) {
+                (0, 1) | (1, 2) | (2, 0) => store.shared_state.score.1 += 1,
+                (0, 2) | (1, 0) | (2, 1) => store.shared_state.score.0 += 1,
+                _ => {}
+            };
 
-                if store.winner().is_none() {
-                    process(store);
-                }
-            });
+            store.shared_state.count += 1;
+
+            if store.winner().is_none() {
+                process(store);
+            }
         }
 
         process(store);

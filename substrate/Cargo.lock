@@ -82,6 +82,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arcadeum-async"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "arcadeum-chain"
 version = "1.0.0"
 dependencies = [
@@ -145,6 +154,7 @@ dependencies = [
 name = "arcadeum-rps"
 version = "0.1.0"
 dependencies = [
+ "arcadeum-async 0.1.0",
  "arcadeum-state 0.1.0",
 ]
 

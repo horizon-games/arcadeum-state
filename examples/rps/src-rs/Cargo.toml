@@ -14,3 +14,4 @@ arcadeum-state = { path = "../../../state", default-features = false }
 js-sys = { version = "0.3.17", optional = true }
 serde = { version = "1.0.90", optional = true }
 wasm-bindgen = { version = "0.2.40", optional = true }
+arcadeum-async = { path = "../../../async" }

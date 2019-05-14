@@ -19,5 +19,5 @@ for i in examples/* ; do
 done
 
 echo "= building substrate... ="
-(set -x ; cd substrate ; ./build.sh)
+(set -x ; cd substrate ; scripts/build.sh)
 echo

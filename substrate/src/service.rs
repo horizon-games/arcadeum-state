@@ -2,12 +2,12 @@
 
 #![warn(unused_extern_crates)]
 
+use arcadeum_chain_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi};
 use basic_authorship::ProposerFactory;
 use consensus::{import_queue, start_aura, AuraImportQueue, NothingExtra, SlotDuration};
 use inherents::InherentDataProviders;
 use log::info;
 use network::construct_simple_protocol;
-use node_template_runtime::{self, opaque::Block, GenesisConfig, RuntimeApi};
 use primitives::{ed25519::Pair, Pair as PairT};
 use std::sync::Arc;
 use substrate_client as client;
@@ -23,9 +23,9 @@ pub use substrate_executor::NativeExecutor;
 // Our native executor instance.
 native_executor_instance!(
 	pub Executor,
-	node_template_runtime::api::dispatch,
-	node_template_runtime::native_version,
-	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/node_template_runtime_wasm.compact.wasm")
+	arcadeum_chain_runtime::api::dispatch,
+	arcadeum_chain_runtime::native_version,
+	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/arcadeum_chain_runtime_wasm.compact.wasm")
 );
 
 #[derive(Default)]
@@ -86,14 +86,13 @@ construct_service_factory! {
             Self::Block,
         >
             { |config: &mut FactoryFullConfiguration<Self> , client: Arc<FullClient<Self>>| {
-                import_queue::<_, _, _, Pair>(
+                    import_queue::<_, _, _, Pair>(
                         SlotDuration::get_or_compute(&*client)?,
                         client.clone(),
                         None,
                         client,
                         NothingExtra,
                         config.custom.inherent_data_providers.clone(),
-                    true,
                     ).map_err(Into::into)
                 }
             },
@@ -101,14 +100,13 @@ construct_service_factory! {
             Self::Block,
         >
             { |config: &mut FactoryFullConfiguration<Self>, client: Arc<LightClient<Self>>| {
-                import_queue::<_, _, _, Pair>(
+                    import_queue::<_, _, _, Pair>(
                         SlotDuration::get_or_compute(&*client)?,
                         client.clone(),
                         None,
                         client,
                         NothingExtra,
                         config.custom.inherent_data_providers.clone(),
-                    true,
                     ).map_err(Into::into)
                 }
             },

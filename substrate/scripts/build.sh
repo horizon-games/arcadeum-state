@@ -2,7 +2,7 @@
 
 set -e
 
-PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null && pwd )"
 
 export CARGO_INCREMENTAL=0
 
@@ -26,4 +26,4 @@ done
 popd >/dev/null
 
 echo "${bold}Building node...${normal}"
-cargo build --release
+(cd "$PROJECT_ROOT" && cargo build --release)

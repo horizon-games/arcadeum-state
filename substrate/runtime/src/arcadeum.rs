@@ -31,7 +31,7 @@ use byteorder::ByteOrder;
 use itoa::Integer;
 use rstd::prelude::Vec;
 
-// The module's configuration trait.
+/// The module's configuration trait.
 pub trait Trait: system::Trait {
     // TODO: Add other types and constants required configure this module.
 

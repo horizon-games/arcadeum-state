@@ -22,86 +22,106 @@ import * as ttt from 'arcadeum-ttt'
 import * as child_process from 'child_process'
 import * as ethers from 'ethers'
 import * as path from 'path'
+import WebSocket from 'ws'
 
 const owner = ethers.Wallet.fromMnemonic(
   `winter off snap small sleep debate cheap drill elevator glove caution once`
 )
 
-const client1 = child_process.fork(path.join(__dirname, `client-async`))
-const client2 = child_process.fork(path.join(__dirname, `client-sync`))
-
-const send = (player: arcadeum.Player, message: arcadeum.Message) => {
-  switch (player) {
-    case arcadeum.Player.One:
-      console.log(
-        `server (${process.pid}) > client 1 (${
-          client1.pid
-        }): ${ethers.utils.hexlify(message.encoding)}`
-      )
-
-      client1.send(ethers.utils.hexlify(message.encoding))
-      break
-
-    case arcadeum.Player.Two:
-      console.log(
-        `server (${process.pid}) > client 2 (${
-          client2.pid
-        }): ${ethers.utils.hexlify(message.encoding)}`
-      )
-
-      client2.send(ethers.utils.hexlify(message.encoding))
-      break
-  }
-}
-
 const server = {
+  listener: new WebSocket.Server({ port: 8000 }),
+  sockets: [] as WebSocket[],
   account1: undefined as string | undefined,
   account2: undefined as string | undefined,
   server: undefined as arcadeum.Server | undefined
 }
 
-client1.on(`message`, (message: any) => {
-  console.log(`server (${process.pid}) < client 1 (${client1.pid}): ${message}`)
-
-  if (server.account1 === undefined) {
-    server.account1 = message
-
-    if (server.account2 !== undefined) {
-      server.server = new arcadeum.Server(
-        ttt.Game,
-        owner,
-        server.account1,
-        server.account2,
-        new Uint8Array(),
-        new Uint8Array(),
-        new Uint8Array(),
-        send
+const send = (player: arcadeum.Player, message: arcadeum.Message) => {
+  switch (player) {
+    case arcadeum.Player.One:
+      console.log(
+        `server (${process.pid}) > client 1: ${ethers.utils.hexlify(
+          message.encoding
+        )}`
       )
-    }
-  } else {
-    server.server.receive(ethers.utils.arrayify(message))
+
+      server.sockets[0].send(ethers.utils.hexlify(message.encoding))
+      break
+
+    case arcadeum.Player.Two:
+      console.log(
+        `server (${process.pid}) > client 2: ${ethers.utils.hexlify(
+          message.encoding
+        )}`
+      )
+
+      server.sockets[1].send(ethers.utils.hexlify(message.encoding))
+      break
+  }
+}
+
+server.listener.on(`connection`, socket => {
+  if (server.sockets.length >= 2) {
+    socket.close()
+    return
+  }
+
+  server.sockets.push(socket)
+
+  switch (server.sockets.length) {
+    case 1:
+      socket.on(`message`, message => {
+        console.log(`server (${process.pid}) < client 1: ${message}`)
+
+        if (server.account1 === undefined) {
+          server.account1 = message
+
+          if (server.account2 !== undefined) {
+            server.server = new arcadeum.Server(
+              ttt.Game,
+              owner,
+              server.account1,
+              server.account2,
+              new Uint8Array(),
+              new Uint8Array(),
+              new Uint8Array(),
+              send
+            )
+          }
+        } else {
+          server.server.receive(ethers.utils.arrayify(message))
+        }
+      })
+
+      break
+
+    case 2:
+      socket.on(`message`, message => {
+        console.log(`server (${process.pid}) < client 2: ${message}`)
+
+        if (server.account2 === undefined) {
+          server.account2 = message
+
+          if (server.account1 !== undefined) {
+            server.server = new arcadeum.Server(
+              ttt.Game,
+              owner,
+              server.account1,
+              server.account2,
+              new Uint8Array(),
+              new Uint8Array(),
+              new Uint8Array(),
+              send
+            )
+          }
+        } else {
+          server.server.receive(ethers.utils.arrayify(message))
+        }
+      })
+
+      break
   }
 })
 
-client2.on(`message`, (message: any) => {
-  console.log(`server (${process.pid}) < client 2 (${client2.pid}): ${message}`)
-
-  if (server.account2 === undefined) {
-    server.account2 = message
-
-    if (server.account1 !== undefined) {
-      server.server = new arcadeum.Server(
-        ttt.Game,
-        owner,
-        server.account1,
-        server.account2,
-        new Uint8Array(),
-        new Uint8Array(),
-        new Uint8Array(),
-        send
-      )
-    }
-  } else {
-    server.server.receive(ethers.utils.arrayify(message))
-  }
-})
+child_process.fork(path.join(__dirname, `client-async`))
+child_process.fork(path.join(__dirname, `client-sync`))

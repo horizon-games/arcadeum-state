@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 libsecp256k1 = "0.2.2"
+tiny-keccak = "1.4.2"

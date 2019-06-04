@@ -741,6 +741,7 @@ where
         });
     }
 
+    #[cfg(not(feature = "test"))]
     pub fn random(
         &mut self,
         continuation: impl FnOnce(&mut Self, rand_xorshift::XorShiftRng) + 'static,
@@ -830,6 +831,14 @@ where
                 continuation(store, rand_xorshift::XorShiftRng::from_seed(seed));
             }),
         });
+    }
+
+    #[cfg(feature = "test")]
+    pub fn random(
+        &mut self,
+        continuation: impl FnOnce(&mut Self, rand_xorshift::XorShiftRng) + 'static,
+    ) {
+        continuation(self, rand_xorshift::XorShiftRng::from_seed([0; 16]));
     }
 
     fn process_requests(&mut self) {

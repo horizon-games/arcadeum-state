@@ -11,6 +11,7 @@ crate-type = ["lib"]
 default = ["std"]
 std = ["rand"]
 bindings = ["std", "wasm-bindgen", "serde/derive"]
+test = ["std"]
 
 [dependencies]
 wasm-bindgen = { version = "0.2.45", optional = true }

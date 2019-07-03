@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 libsecp256k1 = "0.2.2"
 tiny-keccak = "1.4.2"
+
+[dev-dependencies]
+libsecp256k1-rand = { package = "rand", version = "0.4.6" }

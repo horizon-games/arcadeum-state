@@ -6,11 +6,12 @@ edition = "2018"
 
 [features]
 default = ["std"]
-std = []
+std = ["rand/std"]
 
 [dependencies]
 libsecp256k1 = "0.2.2"
 tiny-keccak = "1.4.2"
+rand = { version = "0.7.0", default-features = false }
 
 [dev-dependencies]
 libsecp256k1-rand = { package = "rand", version = "0.4.6" }

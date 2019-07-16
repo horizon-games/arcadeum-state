@@ -19,6 +19,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
+#![feature(async_await)]
 #![feature(try_reserve)]
 
 #[cfg(feature = "std")]
@@ -43,6 +44,8 @@ use {
         ops::{Deref, DerefMut, Range},
     },
 };
+
+pub mod store;
 
 pub mod crypto;
 

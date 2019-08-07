@@ -17,7 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#[cfg(feature = "std")]
 use std::mem::size_of;
+
+#[cfg(not(feature = "std"))]
+use {
+    alloc::{format, prelude::v1::*},
+    core::mem::size_of,
+};
 
 pub type Address = [u8; 20];
 pub type Signature = [u8; 65];

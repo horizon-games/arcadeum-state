@@ -17,8 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-use std::convert::TryInto;
-use std::mem::size_of;
+#[cfg(feature = "std")]
+use std::{convert::TryInto, mem::size_of};
+
+#[cfg(not(feature = "std"))]
+use {
+    alloc::{format, prelude::v1::*},
+    core::{convert::TryInto, mem::size_of},
+};
 
 pub fn hex(data: &[u8]) -> String {
     let mut hex = String::with_capacity("0x".len() + 2 * data.len());

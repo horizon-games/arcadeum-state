@@ -17,7 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#[cfg(feature = "std")]
 use std::fmt::Debug;
+
+#[cfg(not(feature = "std"))]
+use {
+    alloc::{format, prelude::v1::*},
+    core::fmt::Debug,
+};
 
 #[derive(Debug)]
 pub enum Error {

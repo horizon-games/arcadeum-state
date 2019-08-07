@@ -17,14 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 #![feature(try_reserve)]
 
+#[cfg(feature = "std")]
 use std::{
     collections::BTreeMap,
     convert::TryInto,
     fmt::{Debug, Error, Formatter},
     mem::size_of,
     ops::{Deref, DerefMut, Range},
+};
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use {
+    alloc::{collections::BTreeMap, format, prelude::v1::*, vec},
+    core::{
+        convert::TryInto,
+        fmt::{Debug, Error, Formatter},
+        mem::size_of,
+        ops::{Deref, DerefMut, Range},
+    },
 };
 
 pub mod crypto;

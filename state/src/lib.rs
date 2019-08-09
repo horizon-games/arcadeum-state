@@ -224,8 +224,18 @@ impl<S: State> Proof<S> {
 
                     match action.player {
                         None => {
-                            forbid!(range.is_none());
-                            forbid!(range.unwrap().end <= i);
+                            /*
+                             * XXX:
+                             *
+                             * state: temporarily disable validation of owner actions
+                             *
+                             * We discard the owner proof once we have all players' proofs, but really
+                             * we should be keeping the owner proof as long as there are owner actions
+                             * to be validated.
+                             */
+
+                            // forbid!(range.is_none());
+                            // forbid!(range.unwrap().end <= i);
                         }
                         Some(player) => {
                             if range.is_none() || range.unwrap().end <= i {

@@ -51,6 +51,9 @@ pub mod crypto;
 
 pub mod utils;
 
+#[cfg(feature = "debug")]
+pub mod debug;
+
 mod error;
 
 pub struct Proof<S: State> {

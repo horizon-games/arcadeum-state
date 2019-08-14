@@ -151,7 +151,7 @@ impl Action for CoinAction {
 }
 
 #[test]
-fn test_coin_async() {
+fn test_coin() {
     let mut random = libsecp256k1_rand::thread_rng();
 
     let owner = secp256k1::SecretKey::random(&mut random);

@@ -35,6 +35,42 @@ pub fn hex(data: &[u8]) -> String {
     hex
 }
 
+pub fn unhex(mut hex: &str) -> Result<Vec<u8>, String> {
+    crate::forbid!(hex.len() % 2 != 0);
+
+    if hex.starts_with("0x") || hex.starts_with("0X") {
+        hex = &hex["0x".len()..];
+    }
+
+    let value = |byte| match byte {
+        b'0' => Ok(0),
+        b'1' => Ok(1),
+        b'2' => Ok(2),
+        b'3' => Ok(3),
+        b'4' => Ok(4),
+        b'5' => Ok(5),
+        b'6' => Ok(6),
+        b'7' => Ok(7),
+        b'8' => Ok(8),
+        b'9' => Ok(9),
+        b'A' | b'a' => Ok(10),
+        b'B' | b'b' => Ok(11),
+        b'C' | b'c' => Ok(12),
+        b'D' | b'd' => Ok(13),
+        b'E' | b'e' => Ok(14),
+        b'F' | b'f' => Ok(15),
+        byte => Err(format!("byte = {}", byte)),
+    };
+
+    let mut data = Vec::with_capacity(hex.len() / 2);
+
+    for chunk in hex.as_bytes().chunks_exact(2) {
+        data.push(16 * value(chunk[0])? + value(chunk[1])?);
+    }
+
+    Ok(data)
+}
+
 pub(crate) fn read_u32_usize(data: &mut &[u8]) -> Result<usize, String> {
     crate::forbid!(data.len() < size_of::<u32>());
 

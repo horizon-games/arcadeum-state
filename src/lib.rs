@@ -587,11 +587,10 @@ pub struct RootProof<S: State> {
 
 impl<S: State> RootProof<S> {
     pub fn new(
-        state: ProofState<S>,
+        mut state: ProofState<S>,
         actions: Vec<ProofAction<S::Action>>,
         sign: &mut impl FnMut(&[u8]) -> Result<crypto::Signature, String>,
     ) -> Result<Self, String> {
-        let mut state = state.clone();
         let mut start = 0;
 
         let mut latest = state.clone();

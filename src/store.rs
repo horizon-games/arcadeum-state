@@ -52,6 +52,7 @@ use {
     },
 };
 
+/// Generates WebAssembly bindings for a [store::State].
 #[macro_export]
 macro_rules! bind {
     ($type:ty) => {
@@ -286,9 +287,11 @@ macro_rules! bind {
 }
 
 #[cfg(feature = "bindings")]
+/// WebAssembly-specific utilities
 pub mod bindings {
     use std::convert::TryInto;
 
+    /// Random number generator using an external JavaScript function for entropy
     pub struct JsRng(pub js_sys::Function);
 
     impl rand::RngCore for JsRng {
@@ -338,6 +341,7 @@ pub mod bindings {
     }
 }
 
+/// Client [State] store
 pub struct Store<S: State + Serialize> {
     player: crate::Player,
     proof: crate::Proof<StoreState<S>>,
@@ -349,6 +353,9 @@ pub struct Store<S: State + Serialize> {
 }
 
 impl<S: State + Serialize> Store<S> {
+    /// Constructs a new store for a given player.
+    ///
+    /// `root` must have been constructed using [RootProof::serialize](crate::RootProof::serialize).
     pub fn new(
         player: crate::Player,
         root: &[u8],
@@ -381,6 +388,9 @@ impl<S: State + Serialize> Store<S> {
         Ok(store)
     }
 
+    /// Constructs a store from its binary representation.
+    ///
+    /// `data` must have been constructed using [Store::serialize].
     pub fn deserialize(
         mut data: &[u8],
         ready: Box<dyn FnMut()>,
@@ -433,6 +443,9 @@ impl<S: State + Serialize> Store<S> {
         Ok(store)
     }
 
+    /// Generates a binary representation that can be used to reconstruct the store.
+    ///
+    /// See [Store::deserialize].
     pub fn serialize(&self) -> Vec<u8> {
         let root = self.proof.root.serialize();
         let proof = self.proof.serialize();
@@ -464,20 +477,28 @@ impl<S: State + Serialize> Store<S> {
         data
     }
 
+    /// Gets the player associated with the store.
     pub fn player(&self) -> crate::Player {
         self.player
     }
 
+    /// Gets the state of the store.
     pub fn state(&self) -> &crate::ProofState<StoreState<S>> {
         &self.proof.state
     }
 
+    /// Verifies and applies a cryptographically constructed diff to the store.
+    ///
+    /// `diff` must have been constructed using [Store::diff] on a store with the same state.
     pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
         crate::error::check(self.proof.apply(diff))?;
 
         self.flush()
     }
 
+    /// Generates a diff that can be applied to a store with the same state.
+    ///
+    /// See [Store::apply].
     pub fn diff(
         &mut self,
         actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
@@ -501,6 +522,11 @@ impl<S: State + Serialize> Store<S> {
         diff
     }
 
+    /// Unconditionally sets the state of the store using `proof`.
+    ///
+    /// `proof` must have been constructed using [Proof::serialize](crate::Proof::serialize) on a proof with the same root.
+    ///
+    /// It is possible to reset to a state with a lower nonce using this method.
     pub fn reset(&mut self, proof: &[u8]) -> Result<(), String> {
         // TODO XXX figure out why the logger doesn't exist on self.proof.state.state, and only in one of the player proofs.
 
@@ -633,6 +659,7 @@ impl<S: State + Serialize> Store<S> {
 
 type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
 
+#[doc(hidden)]
 pub enum StoreState<S: State + Serialize> {
     Ready {
         state: S,
@@ -818,6 +845,7 @@ impl<S: State + Serialize> Clone for StoreState<S> {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone)]
 pub enum StoreAction<A: crate::Action> {
     Action(A),
@@ -887,11 +915,18 @@ impl<A: crate::Action + Debug> Debug for StoreAction<A> {
     }
 }
 
+/// Domain-specific store state trait
 pub trait State: Clone {
+    /// Identifier type
     type ID: crate::ID;
+
+    /// Nonce type
     type Nonce: crate::Nonce;
+
+    /// Action type
     type Action: crate::Action + Debug;
 
+    /// Formats the message that must be signed in order to certify the subkey for a given address.
     fn certificate(address: &crate::crypto::Address) -> String {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
@@ -899,11 +934,20 @@ pub trait State: Clone {
         )
     }
 
+    /// Constructs a state from its binary representation.
+    ///
+    /// `data` must have been constructed using [State::serialize].
     fn deserialize(data: &[u8]) -> Result<Self, String>;
+
+    /// Generates a binary representation that can be used to reconstruct the state.
+    ///
+    /// See [State::deserialize].
     fn serialize(&self) -> Option<Vec<u8>>;
 
+    /// Verifies if an action by a given player is valid for the state.
     fn verify(&self, player: Option<crate::Player>, action: &Self::Action) -> Result<(), String>;
 
+    /// Applies an action by a given player to the state.
     fn apply(
         self,
         player: Option<crate::Player>,
@@ -912,6 +956,12 @@ pub trait State: Clone {
     ) -> Pin<Box<dyn Future<Output = (Self, Context)>>>;
 }
 
+/// Emits an event as a side effect of a state transition.
+///
+/// This can only be called from within [store::State::apply] since a [Context](store::Context) is required.
+///
+/// If the `bindings` feature is enabled, `$message` must implement [Serialize](serde::Serialize).
+/// Otherwise, `$message` must implement [Debug].
 #[cfg(feature = "bindings")]
 #[macro_export]
 macro_rules! log {
@@ -922,6 +972,12 @@ macro_rules! log {
     };
 }
 
+/// Emits an event as a side effect of a state transition.
+///
+/// This can only be called from within [store::State::apply] since a [Context](store::Context) is required.
+///
+/// If the `bindings` feature is enabled, `$message` must implement [Serialize](serde::Serialize).
+/// Otherwise, `$message` must implement [Debug].
 #[cfg(not(feature = "bindings"))]
 #[macro_export]
 macro_rules! log {
@@ -930,25 +986,16 @@ macro_rules! log {
     };
 }
 
+/// [State::apply] utilities
+///
+/// See [log].
 pub struct Context {
     phase: Rc<RefCell<Phase>>,
     log: Option<Logger>,
 }
 
 impl Context {
-    #[doc(hidden)]
-    pub fn with_phase(phase: Rc<RefCell<Phase>>) -> Self {
-        Self { phase, log: None }
-    }
-
-    pub fn log(&mut self, message: &Log) -> Result<(), String> {
-        if let Some(log) = &mut self.log {
-            log.log(message)
-        } else {
-            Ok(())
-        }
-    }
-
+    /// Construct a random number generator via commit-reveal.
     pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
         let idle = if let Phase::Idle = &*self.phase.try_borrow().unwrap() {
             true
@@ -962,8 +1009,23 @@ impl Context {
 
         XorShiftRngFuture(self.phase.clone())
     }
+
+    #[doc(hidden)]
+    pub fn log(&mut self, message: &Log) -> Result<(), String> {
+        if let Some(log) = &mut self.log {
+            log.log(message)
+        } else {
+            Ok(())
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn with_phase(phase: Rc<RefCell<Phase>>) -> Self {
+        Self { phase, log: None }
+    }
 }
 
+#[doc(hidden)]
 #[derive(Clone)]
 pub struct Logger {
     state: Rc<RefCell<LoggerState>>,
@@ -1003,6 +1065,7 @@ type Log = wasm_bindgen::JsValue;
 #[cfg(not(feature = "bindings"))]
 type Log = dyn Debug;
 
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub enum Phase {
     Idle,

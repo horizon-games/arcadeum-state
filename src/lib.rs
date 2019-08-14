@@ -45,17 +45,22 @@ use {
     },
 };
 
+/// Client store
 pub mod store;
 
+/// Cryptographic utilities
 pub mod crypto;
 
+/// Utilities
 pub mod utils;
 
 #[cfg(feature = "debug")]
+#[doc(hidden)]
 pub mod debug;
 
 mod error;
 
+/// Authenticated state
 pub struct Proof<S: State> {
     root: RootProof<S>,
     actions: Vec<ProofAction<S::Action>>,
@@ -65,6 +70,7 @@ pub struct Proof<S: State> {
 }
 
 impl<S: State> Proof<S> {
+    /// Constructs a bare proof from a root proof.
     pub fn new(root: RootProof<S>) -> Self {
         let actions = root.actions.clone();
 
@@ -93,6 +99,9 @@ impl<S: State> Proof<S> {
         proof
     }
 
+    /// Updates the proof's state from a binary representation.
+    ///
+    /// `data` must have been constructed using [Proof::serialize] on a proof with the same root.
     pub fn deserialize(&mut self, mut data: &[u8]) -> Result<(), String> {
         forbid!(
             data.len()
@@ -283,6 +292,9 @@ impl<S: State> Proof<S> {
         Ok(())
     }
 
+    /// Generates a binary representation that can be used to reconstruct the proof.
+    ///
+    /// See [Proof::deserialize].
     pub fn serialize(&self) -> Vec<u8> {
         let mut data = Vec::new();
 
@@ -323,14 +335,19 @@ impl<S: State> Proof<S> {
         data
     }
 
+    /// Gets the digest of the proof.
     pub fn hash(&self) -> &crypto::Hash {
         &self.hash
     }
 
+    /// Gets the state of the proof.
     pub fn state(&self) -> &ProofState<S> {
         &self.state
     }
 
+    /// Verifies and applies a cryptographically constructed diff to the proof.
+    ///
+    /// `diff` must have been constructed using [Proof::diff] on a proof with the same digest.
     pub fn apply(&mut self, diff: &Diff<S::Action>) -> Result<(), error::Error> {
         forbid!(diff.proof != self.hash);
 
@@ -479,6 +496,9 @@ impl<S: State> Proof<S> {
         Ok(())
     }
 
+    /// Generates a diff that can be applied to a proof with the same digest.
+    ///
+    /// See [Proof::apply].
     pub fn diff(
         &self,
         actions: Vec<ProofAction<S::Action>>,
@@ -575,6 +595,7 @@ impl<S: State> Clone for Proof<S> {
     }
 }
 
+/// Authenticated initial state
 #[derive(Clone)]
 pub struct RootProof<S: State> {
     state: ProofState<S>,
@@ -586,6 +607,9 @@ pub struct RootProof<S: State> {
 }
 
 impl<S: State> RootProof<S> {
+    /// Constructs a root proof from `state` and `actions`.
+    ///
+    /// `state` must be serializable.
     pub fn new(
         mut state: ProofState<S>,
         actions: Vec<ProofAction<S::Action>>,
@@ -625,6 +649,9 @@ impl<S: State> RootProof<S> {
         Ok(proof)
     }
 
+    /// Constructs a root proof from its binary representation.
+    ///
+    /// `data` must have been constructed using [RootProof::serialize].
     pub fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         forbid!(data.len() < size_of::<u32>() + size_of::<u32>() + size_of::<crypto::Signature>());
 
@@ -672,6 +699,9 @@ impl<S: State> RootProof<S> {
         })
     }
 
+    /// Generates a binary representation that can be used to reconstruct the root proof.
+    ///
+    /// See [RootProof::deserialize].
     pub fn serialize(&self) -> Vec<u8> {
         let mut data = Vec::new();
 
@@ -692,10 +722,12 @@ impl<S: State> RootProof<S> {
         data
     }
 
+    /// Gets the digest of the root proof.
     pub fn hash(&self) -> &crypto::Hash {
         &self.hash
     }
 
+    /// Gets the state of the root proof.
     pub fn state(&self) -> &ProofState<S> {
         &self.latest
     }
@@ -718,6 +750,7 @@ struct PlayerProof<S: State> {
     signature: crypto::Signature,
 }
 
+/// Authenticated state transition
 #[derive(Clone)]
 pub struct Diff<A: Action> {
     proof: crypto::Hash,
@@ -728,6 +761,9 @@ pub struct Diff<A: Action> {
 }
 
 impl<A: Action> Diff<A> {
+    /// Constructs a diff from its binary representation.
+    ///
+    /// `data` must have been constructed using [Diff::serialize].
     pub fn deserialize(data: &[u8]) -> Result<Self, String> {
         forbid!(
             data.len()
@@ -775,6 +811,9 @@ impl<A: Action> Diff<A> {
         })
     }
 
+    /// Generates a binary representation that can be used to reconstruct the diff.
+    ///
+    /// See [Diff::deserialize].
     pub fn serialize(&self) -> Vec<u8> {
         let mut data = Vec::new();
 
@@ -860,6 +899,7 @@ Diff {{
     }
 }
 
+/// Consensus state
 #[derive(Clone)]
 pub struct ProofState<S: State> {
     id: S::ID,
@@ -870,6 +910,9 @@ pub struct ProofState<S: State> {
 }
 
 impl<S: State> ProofState<S> {
+    /// Constructs a consensus state.
+    ///
+    /// `state` must be serializable.
     pub fn new(id: S::ID, players: [crypto::Address; 2], state: S) -> Result<Self, String> {
         forbid!(state.serialize().is_none());
 
@@ -882,6 +925,7 @@ impl<S: State> ProofState<S> {
         })
     }
 
+    /// Gets the player associated with the given `address`, if any, otherwise [None].
     pub fn player(&self, address: &crypto::Address) -> Option<Player> {
         if let Some(player) = self.players.iter().position(|player| player == address) {
             return player.try_into().ok();
@@ -898,6 +942,7 @@ impl<S: State> ProofState<S> {
         None
     }
 
+    /// Gets the domain-specific state.
     pub fn state(&self) -> &S {
         &self.state
     }
@@ -1021,9 +1066,13 @@ impl<S: State> ProofState<S> {
     }
 }
 
+/// Attributable state transition
 #[derive(Clone)]
 pub struct ProofAction<A: Action> {
+    /// The player performing the action, or [None] if performed by the root author.
     pub player: Option<Player>,
+
+    /// The action.
     pub action: PlayerAction<A>,
 }
 
@@ -1110,12 +1159,20 @@ ProofAction {{
     }
 }
 
+/// State transition
 #[derive(Clone)]
 pub enum PlayerAction<A: Action> {
+    /// A domain-specific state transition.
     Play(A),
 
+    /// A subkey certification.
     Certify {
+        /// The subkey address.
         address: crypto::Address,
+
+        /// The signature of the subkey address certificate.
+        ///
+        /// See [State::certificate].
         signature: crypto::Signature,
     },
 }
@@ -1151,13 +1208,21 @@ PlayerAction::Certify {{
     }
 }
 
+/// Player identifier
 pub type Player = u8;
 
+/// Domain-specific state trait
 pub trait State: Clone {
+    /// Identifier type
     type ID: ID;
+
+    /// Nonce type
     type Nonce: Nonce;
+
+    /// Action type
     type Action: Action;
 
+    /// Formats the message that must be signed in order to certify the subkey for a given address.
     fn certificate(address: &crypto::Address) -> String {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
@@ -1165,9 +1230,17 @@ pub trait State: Clone {
         )
     }
 
+    /// Constructs a state from its binary representation.
+    ///
+    /// `data` must have been constructed using [State::serialize].
     fn deserialize(data: &[u8]) -> Result<Self, String>;
+
+    /// Generates a binary representation that can be used to reconstruct the state.
+    ///
+    /// See [State::deserialize].
     fn serialize(&self) -> Option<Vec<u8>>;
 
+    /// Applies an action by a given player to the state.
     fn apply(&mut self, player: Option<Player>, action: &Self::Action) -> Result<(), String>;
 }
 
@@ -1189,15 +1262,32 @@ impl<S: State> State for Box<S> {
     }
 }
 
+/// Domain-specific identifier trait
 pub trait ID: Clone + Eq {
+    /// Consumes an identifier from binary data.
+    ///
+    /// The identifier must have been constructed using [ID::serialize].
     fn deserialize(data: &mut &[u8]) -> Result<Self, String>;
+
+    /// Generates a binary representation that can be used to reconstruct the identifier.
+    ///
+    /// See [ID::deserialize].
     fn serialize(&self) -> Vec<u8>;
 }
 
+/// Domain-specific nonce trait
 pub trait Nonce: Clone + Default {
+    /// Consumes a nonce from binary data.
+    ///
+    /// The nonce must have been constructed using [Nonce::serialize].
     fn deserialize(data: &mut &[u8]) -> Result<Self, String>;
+
+    /// Generates a binary representation that can be used to reconstruct the nonce.
+    ///
+    /// See [Nonce::deserialize].
     fn serialize(&self) -> Vec<u8>;
 
+    /// Gets the next nonce in sequence.
     fn next(&self) -> Self;
 }
 
@@ -1234,7 +1324,15 @@ macro_rules! impl_Nonce {
 impl_Nonce![i8, i16, i32, i64];
 impl_Nonce![u8, u16, u32, u64];
 
+/// Domain-specific state transition trait
 pub trait Action: Clone {
+    /// Constructs an action from its binary representation.
+    ///
+    /// `data` must have been constructed using [Action::serialize].
     fn deserialize(data: &[u8]) -> Result<Self, String>;
+
+    /// Generates a binary representation that can be used to reconstruct the action.
+    ///
+    /// See [Action::deserialize].
     fn serialize(&self) -> Vec<u8>;
 }

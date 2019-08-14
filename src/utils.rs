@@ -26,6 +26,21 @@ use {
     core::{convert::TryInto, mem::size_of},
 };
 
+/// Encodes a byte string to its hexadecimal representation.
+///
+/// Its hexadecimal representation begins with the characters `"0x"` followed by decimal digits and lowercase `'a'` to `'f'`.
+/// The length is always even, and each byte is always encoded with the most significant nibble preceding the least significant one.
+///
+/// See [unhex].
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(
+///     &arcadeum::utils::hex(b"quod erat demonstrandum"),
+///     "0x71756f6420657261742064656d6f6e737472616e64756d",
+/// );
+/// ```
 pub fn hex(data: &[u8]) -> String {
     let mut hex = String::with_capacity("0x".len() + 2 * data.len());
 
@@ -35,6 +50,23 @@ pub fn hex(data: &[u8]) -> String {
     hex
 }
 
+/// Decodes the hexadecimal representation of a byte string.
+///
+/// `hex` may begin with an optional `"0x"` or `"0X"` prefix.
+/// `hex` must have even length.
+/// Aside from any optional prefix, `hex` must consist only of decimal digits, and characters `'a'` to `'f'`, lowercase or uppercase.
+/// Each byte must be encoded with the most significant nibble preceding the least significant one.
+///
+/// See [hex].
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(
+///     arcadeum::utils::unhex("0x71756f6420657261742064656d6f6e737472616e64756d"),
+///     Ok(b"quod erat demonstrandum".to_vec()),
+/// );
+/// ```
 pub fn unhex(mut hex: &str) -> Result<Vec<u8>, String> {
     crate::forbid!(hex.len() % 2 != 0);
 

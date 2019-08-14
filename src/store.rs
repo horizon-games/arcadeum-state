@@ -891,7 +891,6 @@ pub trait State: Clone {
     type ID: crate::ID;
     type Nonce: crate::Nonce;
     type Action: crate::Action + Debug;
-    type Secret: Secret;
 
     fn certificate(address: &crate::crypto::Address) -> String {
         format!(
@@ -911,23 +910,6 @@ pub trait State: Clone {
         action: Self::Action,
         context: Context,
     ) -> Pin<Box<dyn Future<Output = (Self, Context)>>>;
-}
-
-pub trait Secret: Sized {
-    fn deserialize(data: &[u8]) -> Result<Self, String>;
-    fn serialize(&self) -> Vec<u8>;
-}
-
-impl Secret for () {
-    fn serialize(&self) -> Vec<u8> {
-        Vec::new()
-    }
-
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
-        crate::forbid!(!data.is_empty());
-
-        Ok(())
-    }
 }
 
 #[cfg(feature = "bindings")]

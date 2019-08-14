@@ -65,7 +65,6 @@ impl State for Coin {
     type ID = CoinID;
     type Nonce = u8;
     type Action = CoinAction;
-    type Secret = ();
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         forbid!(data.len() != 1 + 1 + 1);

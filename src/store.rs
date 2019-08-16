@@ -252,6 +252,11 @@ macro_rules! bind {
                 )))
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn serialize(&self) -> Vec<u8> {
+                self.0.serialize()
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> wasm_bindgen::JsValue {
                 wasm_bindgen::JsValue::from_serde(&self.0.state().state().state())

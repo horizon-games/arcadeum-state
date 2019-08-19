@@ -293,6 +293,15 @@ macro_rules! bind {
                 .player(&address)
                 .ok_or("root.state().player(player).is_none()".into())
         }
+
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
+        pub fn root_proof_id(root: &[u8]) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
+            Ok(arcadeum::ID::serialize(
+                arcadeum::RootProof::<arcadeum::store::StoreState<$type>>::deserialize(root)?
+                    .state()
+                    .id(),
+            ))
+        }
     };
 }
 

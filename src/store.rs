@@ -401,7 +401,7 @@ impl<S: State + Serialize> Store<S> {
         ready: Box<dyn FnMut()>,
         sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
         send: Box<dyn FnMut(&StoreDiff<S>)>,
-        _log: Box<dyn FnMut(&Log)>,
+        log: Box<dyn FnMut(&Log)>,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -423,6 +423,28 @@ impl<S: State + Serialize> Store<S> {
         proof.deserialize(&data[..size])?;
         data = &data[size..];
 
+        let log = Logger::new(log);
+
+        if let StoreState::Ready { log: logger, .. } = &mut proof.root.state.state {
+            *logger = Some(log.clone());
+        }
+
+        if let StoreState::Ready { log: logger, .. } = &mut proof.root.latest.state {
+            *logger = Some(log.clone());
+        }
+
+        for proof in &mut proof.proofs {
+            if let Some(proof) = proof {
+                if let StoreState::Ready { log: logger, .. } = &mut proof.state.state {
+                    *logger = Some(log.clone());
+                }
+            }
+        }
+
+        if let StoreState::Ready { log: logger, .. } = &mut proof.state.state {
+            *logger = Some(log.clone());
+        }
+
         let secret = if crate::utils::read_u8_bool(&mut data)? {
             Some(data.to_vec())
         } else {
@@ -430,8 +452,6 @@ impl<S: State + Serialize> Store<S> {
 
             None
         };
-
-        // XXX: set log on all states in proof
 
         let mut store = Self {
             player,

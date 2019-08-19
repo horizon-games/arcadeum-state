@@ -925,6 +925,11 @@ impl<S: State> ProofState<S> {
         })
     }
 
+    /// Gets the identifier of the state.
+    pub fn id(&self) -> &S::ID {
+        &self.id
+    }
+
     /// Gets the player associated with the given `address`, if any, otherwise [None].
     pub fn player(&self, address: &crypto::Address) -> Option<Player> {
         if let Some(player) = self.players.iter().position(|player| player == address) {

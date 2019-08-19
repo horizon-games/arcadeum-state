@@ -197,6 +197,11 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
+            pub fn id(&self) -> Vec<u8> {
+                arcadeum::ID::serialize(self.store.state().id())
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
                 wasm_bindgen::JsValue::from_serde(self.store.state().state().state().ok_or(
                     wasm_bindgen::JsValue::from("self.store.state().state().state().is_none()"),

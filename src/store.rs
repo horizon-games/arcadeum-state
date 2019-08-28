@@ -276,6 +276,14 @@ macro_rules! bind {
             }
         }
 
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        pub fn certificate(address: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
+            Ok(<$type as arcadeum::store::State>::certificate(
+                std::convert::TryInto::<_>::try_into(address)
+                    .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?,
+            ))
+        }
+
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofPlayer)]
         pub fn root_proof_player(
             root: &[u8],

@@ -269,6 +269,43 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn diff(&mut self, action: wasm_bindgen::JsValue, sign: js_sys::Function) -> Result<(), wasm_bindgen::JsValue> {
+                let action: <$type as arcadeum::store::State>::Action =
+                    action.into_serde().map_err(|err| format!("{:?}", err))?;
+
+                let diff = self.0.diff(vec![arcadeum::ProofAction {
+                    player: None,
+                    action: arcadeum::PlayerAction::Play(arcadeum::store::StoreAction::Action(action)),
+                }], &mut |message|{
+                    let data: Vec<_> = sign
+                        .call1(
+                            &wasm_bindgen::JsValue::UNDEFINED,
+                            &wasm_bindgen::JsValue::from_serde(message)
+                                .map_err(|error| format!("{}", error))?,
+                        )
+                        .map_err(|error| format!("{:?}", error))?
+                        .into_serde()
+                        .map_err(|error| format!("{}", error))?;
+
+                    if data.len() != std::mem::size_of::<arcadeum::crypto::Signature>() {
+                        return Err(
+                            "data.len() != std::mem::size_of::<arcadeum::crypto::Signature>()"
+                                .to_string(),
+                        );
+                    }
+
+                    let mut signature = [0; std::mem::size_of::<arcadeum::crypto::Signature>()];
+                    signature.copy_from_slice(&data);
+
+                    Ok(signature)
+                })?;
+
+                self.apply(&diff.serialize()).map_err(|err| format!("{:?}", err))?;
+
+                Ok(())
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
                 self.0
                     .apply(&arcadeum::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)

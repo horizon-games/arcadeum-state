@@ -45,7 +45,7 @@ macro_rules! forbid {
         if $condition {
             return Err(format!(
                 "{}:{}:{}: {}",
-                file!(),
+                module_path!(),
                 line!(),
                 column!(),
                 stringify!($condition)
@@ -62,7 +62,7 @@ macro_rules! slash {
         if $condition {
             return Err(crate::error::Error::Hard(format!(
                 "{}:{}:{}: {}",
-                file!(),
+                module_path!(),
                 line!(),
                 column!(),
                 stringify!($condition)

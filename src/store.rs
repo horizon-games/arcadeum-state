@@ -867,7 +867,7 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                         seed.copy_from_slice(&data);
 
                         let random: rand_xorshift::XorShiftRng = rand::SeedableRng::from_seed(seed);
-                        context.replace(Phase::Randomized(random));
+                        context.replace(Phase::Randomized(Rc::new(RefCell::new(random))));
                     } else {
                         return Err(
                             "*context.try_borrow().unwrap() != Phase::Reveal(_, _)".to_string()
@@ -1154,23 +1154,44 @@ pub enum Phase {
     Commit,
     Reply(crate::crypto::Hash),
     Reveal(crate::crypto::Hash, Vec<u8>),
-    Randomized(rand_xorshift::XorShiftRng),
+    Randomized(Rc<RefCell<rand_xorshift::XorShiftRng>>),
 }
 
 struct XorShiftRngFuture(Rc<RefCell<Phase>>);
 
 impl Future for XorShiftRngFuture {
-    type Output = rand_xorshift::XorShiftRng;
+    type Output = ContextRandom;
 
     fn poll(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Self::Output> {
-        match self.0.replace(Phase::Idle) {
-            Phase::Randomized(random) => Poll::Ready(random),
-            phase => {
-                self.0.replace(phase);
-
+        if let Ok(phase) = self.0.try_borrow() {
+            if let Phase::Randomized(random) = &*phase {
+                Poll::Ready(ContextRandom(random.clone()))
+            } else {
                 Poll::Pending
             }
+        } else {
+            Poll::Pending
         }
+    }
+}
+
+struct ContextRandom(Rc<RefCell<rand_xorshift::XorShiftRng>>);
+
+impl rand::RngCore for ContextRandom {
+    fn next_u32(&mut self) -> u32 {
+        self.0.try_borrow_mut().unwrap().next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.0.try_borrow_mut().unwrap().next_u64()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        self.0.try_borrow_mut().unwrap().fill_bytes(dest)
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+        self.0.try_borrow_mut().unwrap().try_fill_bytes(dest)
     }
 }
 

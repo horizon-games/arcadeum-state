@@ -1,6 +1,6 @@
 [package]
 name = "arcadeum"
-version = "0.2.5"
+version = "0.2.6"
 authors = ["Horizon Blockchain Games"]
 edition = "2018"
 
@@ -15,7 +15,7 @@ libsecp256k1 = "0.2.2"
 tiny-keccak = "1.4.2"
 rand = { version = "0.7.0", default-features = false }
 rand_xorshift = "0.2.0"
-serde = { version = "1.0.98", default-features = false, features = ["derive"] }
+serde = { version = "1.0.101", default-features = false, features = ["derive"] }
 replace_with = { version = "0.1.3", default-features = false, features = ["nightly"] }
 wasm-bindgen = { version = "0.2.48", optional = true, features = ["serde-serialize"] }
 js-sys = { version = "0.3.25", optional = true }

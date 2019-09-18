@@ -210,8 +210,20 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
-            pub fn is_pending(&self) -> bool {
-                self.store.state().state().state().is_none()
+            pub fn pending_player(&self) -> Result<Option<arcadeum::Player>, wasm_bindgen::JsValue> {
+                if let arcadeum::store::StoreState::Pending { phase: context, .. } = self.store.state().state() {
+                    Ok(
+                        match &*context.try_borrow().unwrap() {
+                            arcadeum::store::Phase::Commit => Some(0),
+                            arcadeum::store::Phase::Reply  { .. } => Some(1),
+                            arcadeum::store::Phase::Reveal { server_committed: false, .. } => Some(0),
+                            arcadeum::store::Phase::Reveal { server_committed: true, .. } => None,
+                            _ => unreachable!()
+                        }
+                    )
+                } else {
+                    Err(wasm_bindgen::JsValue::from("JsGame StoreState is not StoreState::Pending!"))
+                }
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]

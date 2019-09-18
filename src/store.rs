@@ -66,7 +66,7 @@ macro_rules! bind {
         impl JsGame {
             #[wasm_bindgen::prelude::wasm_bindgen(constructor)]
             pub fn new(
-                player: arcadeum::Player,
+                player: Option<arcadeum::Player>,
                 root: &[u8],
                 ready: js_sys::Function,
                 sign: js_sys::Function,
@@ -191,8 +191,13 @@ macro_rules! bind {
                 self.store.serialize()
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = serializeProof)]
+            pub fn serialize_proof(&self) -> Vec<u8> {
+                self.store.serialize_proof()
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
-            pub fn player(&self) -> arcadeum::Player {
+            pub fn player(&self) -> Option<arcadeum::Player> {
                 self.store.player()
             }
 
@@ -209,13 +214,37 @@ macro_rules! bind {
                 .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen(getter, js_name = pendingPlayer)]
+            pub fn pending_player(&self) -> Result<Option<arcadeum::Player>, wasm_bindgen::JsValue> {
+                if let arcadeum::store::StoreState::Pending { phase, .. } = self.store.state().state() {
+                    match *phase
+                        .try_borrow()
+                        .map_err(|error| wasm_bindgen::JsValue::from(error.to_string()))?
+                    {
+                        arcadeum::store::Phase::Commit => Ok(Some(0)),
+                        arcadeum::store::Phase::Reply { .. } => Ok(Some(1)),
+                        arcadeum::store::Phase::Reveal {
+                            owner_hash: false, ..
+                        } => Ok(Some(0)),
+                        arcadeum::store::Phase::Reveal {
+                            owner_hash: true, ..
+                        } => Ok(None),
+                        _ => unreachable!(),
+                    }
+                } else {
+                    Err(wasm_bindgen::JsValue::from(
+                        "self.store.state().state() != arcadeum::store::StoreState::Pending { .. }",
+                    ))
+                }
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
                 let action: <$type as arcadeum::store::State>::Action =
                     action.into_serde().map_err(|err| format!("{:?}", err))?;
 
                 let diff = self.store.diff(vec![arcadeum::ProofAction {
-                    player: Some(self.store.player()),
+                    player: self.store.player(),
                     action: arcadeum::PlayerAction::Play(arcadeum::store::StoreAction::Action(action)),
                 }])?;
 
@@ -230,6 +259,13 @@ macro_rules! bind {
                     .map_err(|err| format!("{:?}", err))?;
 
                 Ok(())
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = dispatchTimeout)]
+            pub fn dispatch_timeout(&mut self) -> Result<(), wasm_bindgen::JsValue> {
+                self.store
+                    .dispatch_timeout()
+                    .map_err(wasm_bindgen::JsValue::from)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -269,36 +305,48 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
-            pub fn diff(&mut self, action: wasm_bindgen::JsValue, sign: js_sys::Function) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
+            pub fn diff(
+                &mut self,
+                action: wasm_bindgen::JsValue,
+                sign: js_sys::Function,
+            ) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
                 let action: <$type as arcadeum::store::State>::Action =
                     action.into_serde().map_err(|err| format!("{:?}", err))?;
 
-                let diff = self.0.diff(vec![arcadeum::ProofAction {
-                    player: None,
-                    action: arcadeum::PlayerAction::Play(arcadeum::store::StoreAction::Action(action)),
-                }], &mut |message|{
-                    let data: Vec<_> = sign
-                        .call1(
-                            &wasm_bindgen::JsValue::UNDEFINED,
-                            &wasm_bindgen::JsValue::from_serde(message)
-                                .map_err(|error| format!("{}", error))?,
-                        )
-                        .map_err(|error| format!("{:?}", error))?
-                        .into_serde()
-                        .map_err(|error| format!("{}", error))?;
+                let diff = self
+                    .0
+                    .diff(
+                        vec![arcadeum::ProofAction {
+                            player: None,
+                            action: arcadeum::PlayerAction::Play(arcadeum::store::StoreAction::Action(
+                                action,
+                            )),
+                        }],
+                        &mut |message| {
+                            let data: Vec<_> = sign
+                                .call1(
+                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                    &wasm_bindgen::JsValue::from_serde(message)
+                                        .map_err(|error| format!("{}", error))?,
+                                )
+                                .map_err(|error| format!("{:?}", error))?
+                                .into_serde()
+                                .map_err(|error| format!("{}", error))?;
 
-                    if data.len() != std::mem::size_of::<arcadeum::crypto::Signature>() {
-                        return Err(
-                            "data.len() != std::mem::size_of::<arcadeum::crypto::Signature>()"
-                                .to_string(),
-                        );
-                    }
+                            if data.len() != std::mem::size_of::<arcadeum::crypto::Signature>() {
+                                return Err(
+                                    "data.len() != std::mem::size_of::<arcadeum::crypto::Signature>()"
+                                        .to_string(),
+                                );
+                            }
 
-                    let mut signature = [0; std::mem::size_of::<arcadeum::crypto::Signature>()];
-                    signature.copy_from_slice(&data);
+                            let mut signature = [0; std::mem::size_of::<arcadeum::crypto::Signature>()];
+                            signature.copy_from_slice(&data);
 
-                    Ok(signature)
-                })?.serialize();
+                            Ok(signature)
+                        },
+                    )?
+                    .serialize();
 
                 Ok(diff)
             }
@@ -405,7 +453,7 @@ pub mod bindings {
 
 /// Client [State] store
 pub struct Store<S: State + Serialize> {
-    player: crate::Player,
+    player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
     ready: Box<dyn FnMut()>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
@@ -419,7 +467,7 @@ impl<S: State + Serialize> Store<S> {
     ///
     /// `root` must have been constructed using [RootProof::serialize](crate::RootProof::serialize).
     pub fn new(
-        player: crate::Player,
+        player: Option<crate::Player>,
         root: &[u8],
         ready: Box<dyn FnMut()>,
         sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
@@ -463,7 +511,10 @@ impl<S: State + Serialize> Store<S> {
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
 
-        let player = crate::utils::read_u8(&mut data)?;
+        let player = match crate::utils::read_u8(&mut data)? {
+            0 => None,
+            byte => Some(byte - 1),
+        };
 
         let size = crate::utils::read_u32_usize(&mut data)?;
 
@@ -471,7 +522,9 @@ impl<S: State + Serialize> Store<S> {
         let root = crate::RootProof::deserialize(&data[..size])?;
         data = &data[size..];
 
-        crate::forbid!(usize::from(player) >= root.state.players.len());
+        if let Some(player) = player {
+            crate::forbid!(usize::from(player) >= root.state.players.len());
+        }
 
         let size = crate::utils::read_u32_usize(&mut data)?;
 
@@ -541,7 +594,13 @@ impl<S: State + Serialize> Store<S> {
                 + self.secret.as_ref().map_or(0, Vec::len),
         );
 
-        crate::utils::write_u8(&mut data, self.player);
+        crate::utils::write_u8(
+            &mut data,
+            match self.player {
+                None => 0,
+                Some(player) => 1 + player,
+            },
+        );
 
         crate::utils::write_u32_usize(&mut data, root.len()).unwrap();
         data.extend(root);
@@ -559,14 +618,109 @@ impl<S: State + Serialize> Store<S> {
         data
     }
 
+    /// Generates a binary representation of the proof that can be used to reset the store.
+    ///
+    /// See [Store::reset].
+    pub fn serialize_proof(&self) -> Vec<u8> {
+        self.proof.serialize()
+    }
+
     /// Gets the player associated with the store.
-    pub fn player(&self) -> crate::Player {
+    pub fn player(&self) -> Option<crate::Player> {
         self.player
     }
 
-    /// Gets the state of the store.
+    /// Gets the state of the store's proof.
     pub fn state(&self) -> &crate::ProofState<StoreState<S>> {
         &self.proof.state
+    }
+
+    /// Dispatches an action that will continue a stalled commit-reveal sequence.
+    /// Only call this if the pending player isn't live.
+    /// Only the owner can call this.
+    pub fn dispatch_timeout(&mut self) -> Result<(), String> {
+        crate::forbid!(self.player.is_some());
+
+        let diff = if let StoreState::Pending { phase, .. } = &self.proof.state.state {
+            // XXX: do we need to lock and unlock log here?
+
+            match &*phase.try_borrow().unwrap() {
+                Phase::Commit => {
+                    let seed = {
+                        let mut seed =
+                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                        self.random.fill_bytes(&mut seed);
+                        seed
+                    };
+
+                    self.secret = Some(seed.to_vec());
+
+                    Some(self.proof.diff(
+                        vec![crate::ProofAction {
+                            player: None,
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Commit(
+                                tiny_keccak::keccak256(&seed),
+                            )),
+                        }],
+                        &mut self.sign,
+                    )?)
+                }
+                Phase::Reply { .. } => {
+                    let seed = {
+                        let mut seed =
+                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                        self.random.fill_bytes(&mut seed);
+                        seed
+                    };
+
+                    Some(self.proof.diff(
+                        vec![crate::ProofAction {
+                            player: None,
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
+                                seed.to_vec(),
+                            )),
+                        }],
+                        &mut self.sign,
+                    )?)
+                }
+                Phase::Reveal {
+                    owner_hash: false, ..
+                } => {
+                    let seed = {
+                        let mut seed =
+                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                        self.random.fill_bytes(&mut seed);
+                        seed
+                    };
+
+                    Some(self.proof.diff(
+                        vec![crate::ProofAction {
+                            player: None,
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reveal(
+                                seed.to_vec(),
+                            )),
+                        }],
+                        &mut self.sign,
+                    )?)
+                }
+                _ => None,
+            }
+        } else {
+            (self.ready)();
+
+            None
+        };
+
+        if let Some(diff) = &diff {
+            (self.send)(diff);
+
+            self.apply(diff)?;
+        }
+
+        Ok(())
     }
 
     /// Verifies and applies a cryptographically constructed diff to the store.
@@ -664,7 +818,7 @@ impl<S: State + Serialize> Store<S> {
             // XXX: do we need to lock and unlock log here?
 
             match (&*phase.try_borrow().unwrap(), self.player) {
-                (Phase::Commit, 0) => {
+                (Phase::Commit, Some(0)) => {
                     let seed = {
                         let mut seed =
                             <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
@@ -685,7 +839,7 @@ impl<S: State + Serialize> Store<S> {
                         &mut self.sign,
                     )?)
                 }
-                (Phase::Reply(_), 1) => {
+                (Phase::Reply { .. }, Some(1)) => {
                     let seed = {
                         let mut seed =
                             <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
@@ -704,13 +858,28 @@ impl<S: State + Serialize> Store<S> {
                         &mut self.sign,
                     )?)
                 }
-                (Phase::Reveal(hash, _), 0) => {
+                (
+                    Phase::Reveal {
+                        hash,
+                        owner_hash: false,
+                        ..
+                    },
+                    Some(0),
+                )
+                | (
+                    Phase::Reveal {
+                        hash,
+                        owner_hash: true,
+                        ..
+                    },
+                    None,
+                ) => {
                     if let Some(secret) = &self.secret {
                         crate::forbid!(&tiny_keccak::keccak256(secret) != hash);
 
                         Some(self.proof.diff(
                             vec![crate::ProofAction {
-                                player: Some(0),
+                                player: self.player,
                                 action: crate::PlayerAction::Play(
                                     StoreAction::<S::Action>::Reveal(secret.to_vec()),
                                 ),
@@ -830,36 +999,63 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                 (Self::Ready { .. }, Self::Action::Action(_)) => unreachable!(),
 
                 (Self::Pending { phase: context, .. }, Self::Action::Commit(hash)) => {
-                    let phase = context.try_borrow().unwrap().clone();
-
-                    crate::forbid!(player != Some(0));
+                    let phase = context
+                        .try_borrow()
+                        .map_err(|error| error.to_string())?
+                        .clone();
 
                     if let Phase::Commit = phase {
-                        context.replace(Phase::Reply(*hash));
+                        crate::forbid!(player != None && player != Some(0));
+
+                        context.replace(Phase::Reply {
+                            hash: *hash,
+                            owner_hash: player.is_none(),
+                        });
                     } else {
-                        return Err("*context.try_borrow().unwrap() != Phase::Commit".to_string());
+                        return Err("context.try_borrow().map_err(|error| error.to_string())?.clone() != Phase::Commit".to_string());
                     }
                 }
 
                 (Self::Pending { phase: context, .. }, Self::Action::Reply(secret)) => {
-                    let phase = context.try_borrow().unwrap().clone();
+                    let phase = context
+                        .try_borrow()
+                        .map_err(|error| error.to_string())?
+                        .clone();
 
-                    crate::forbid!(player != Some(1));
+                    if let Phase::Reply { hash, owner_hash } = phase {
+                        crate::forbid!(player != None && player != Some(1));
 
-                    if let Phase::Reply(hash) = phase {
-                        context.replace(Phase::Reveal(hash, secret.to_vec()));
+                        context.replace(Phase::Reveal {
+                            hash,
+                            owner_hash,
+                            reply: secret.to_vec(),
+                        });
                     } else {
-                        return Err("*context.try_borrow().unwrap() != Phase::Reply(_)".to_string());
+                        return Err("context.try_borrow().map_err(|error| error.to_string())?.clone() != Phase::Reply { .. }".to_string());
                     }
                 }
 
                 (Self::Pending { phase: context, .. }, Self::Action::Reveal(secret)) => {
-                    let phase = context.try_borrow().unwrap().clone();
+                    let phase = context
+                        .try_borrow()
+                        .map_err(|error| error.to_string())?
+                        .clone();
 
-                    crate::forbid!(player != Some(0));
+                    if let Phase::Reveal {
+                        hash,
+                        owner_hash,
+                        reply,
+                    } = phase
+                    {
+                        if owner_hash {
+                            crate::forbid!(player != None);
+                        } else {
+                            crate::forbid!(player != None && player != Some(0));
+                        }
 
-                    if let Phase::Reveal(hash, reply) = &phase {
-                        crate::forbid!(&tiny_keccak::keccak256(&secret) != hash);
+                        if player.is_some() || owner_hash {
+                            crate::forbid!(tiny_keccak::keccak256(secret) != hash);
+                        }
 
                         let data: Vec<_> = reply.iter().zip(secret).map(|(x, y)| x ^ y).collect();
 
@@ -869,9 +1065,7 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                         let random: rand_xorshift::XorShiftRng = rand::SeedableRng::from_seed(seed);
                         context.replace(Phase::Randomized(Rc::new(RefCell::new(random))));
                     } else {
-                        return Err(
-                            "*context.try_borrow().unwrap() != Phase::Reveal(_, _)".to_string()
-                        );
+                        return Err("context.try_borrow().map_err(|error| error.to_string())?.clone() != Phase::Reveal { .. }".to_string());
                     }
                 }
 
@@ -1152,8 +1346,15 @@ type Log = dyn Debug;
 pub enum Phase {
     Idle,
     Commit,
-    Reply(crate::crypto::Hash),
-    Reveal(crate::crypto::Hash, Vec<u8>),
+    Reply {
+        hash: crate::crypto::Hash,
+        owner_hash: bool,
+    },
+    Reveal {
+        hash: crate::crypto::Hash,
+        owner_hash: bool,
+        reply: Vec<u8>,
+    },
     Randomized(Rc<RefCell<rand_xorshift::XorShiftRng>>),
 }
 

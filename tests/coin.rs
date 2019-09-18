@@ -220,7 +220,7 @@ fn test_coin() {
         let opponent_queue = queue2.clone();
 
         arcadeum::store::Store::<Coin>::new(
-            0,
+            Some(0),
             &root.serialize(),
             Box::new(|| {
                 println!("0: ready");
@@ -245,7 +245,7 @@ fn test_coin() {
         let opponent_queue = queue1.clone();
 
         arcadeum::store::Store::<Coin>::new(
-            1,
+            Some(1),
             &root.serialize(),
             Box::new(|| {
                 println!("1: ready");

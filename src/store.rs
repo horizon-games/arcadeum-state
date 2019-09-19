@@ -191,6 +191,11 @@ macro_rules! bind {
                 self.store.serialize()
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn serialize_proof(&self) -> Vec<u8> {
+                self.store.serialize_proof()
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn player(&self) -> Option<arcadeum::Player> {
                 self.store.player()
@@ -590,6 +595,13 @@ impl<S: State + Serialize> Store<S> {
         }
 
         data
+    }
+
+    /// Generates a binary representation of the proof that can be used to reset the store.
+    ///
+    /// See [Store::reset].
+    pub fn serialize_proof(&self) -> Vec<u8> {
+        self.proof.serialize()
     }
 
     /// Gets the player associated with the store.

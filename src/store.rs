@@ -714,6 +714,7 @@ impl<S: State + Serialize> Store<S> {
                 }
             }
         };
+        (self.send)(&timeout_diff);
         self.apply(&timeout_diff)
     }
 

@@ -19,7 +19,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
-#![feature(try_reserve)]
 
 #[cfg(feature = "std")]
 use std::{
@@ -1118,17 +1117,16 @@ impl<A: Action> ProofAction<A> {
             PlayerAction::Play(action) => {
                 let action = action.serialize();
 
-                data.try_reserve_exact(1 + action.len()).unwrap();
+                data.reserve_exact(1 + action.len());
 
                 utils::write_u8(&mut data, 0);
                 data.extend(action);
             }
 
             PlayerAction::Certify { address, signature } => {
-                data.try_reserve_exact(
+                data.reserve_exact(
                     1 + size_of::<crypto::Address>() + size_of::<crypto::Signature>(),
-                )
-                .unwrap();
+                );
 
                 utils::write_u8(&mut data, 1);
                 data.extend(address);

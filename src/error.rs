@@ -60,7 +60,7 @@ macro_rules! forbid {
 macro_rules! slash {
     ($condition:expr) => {
         if $condition {
-            return Err(crate::error::Error::Hard(format!(
+            return Err($crate::error::Error::Hard(format!(
                 "{}:{}:{}: {}",
                 module_path!(),
                 line!(),

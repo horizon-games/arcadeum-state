@@ -58,7 +58,7 @@ macro_rules! bind {
     ($type:ty) => {
         #[wasm_bindgen::prelude::wasm_bindgen]
         pub struct JsGame {
-            store: arcadeum::store::Store<$type>,
+            store: $crate::store::Store<$type>,
             send: js_sys::Function,
         }
 
@@ -66,7 +66,7 @@ macro_rules! bind {
         impl JsGame {
             #[wasm_bindgen::prelude::wasm_bindgen(constructor)]
             pub fn new(
-                player: Option<arcadeum::Player>,
+                player: Option<$crate::Player>,
                 root: &[u8],
                 ready: js_sys::Function,
                 sign: js_sys::Function,
@@ -76,7 +76,7 @@ macro_rules! bind {
             ) -> Result<JsGame, wasm_bindgen::JsValue> {
                 Ok(Self {
                     store: {
-                        arcadeum::store::Store::new(
+                        $crate::store::Store::new(
                             player,
                             root,
                             Box::new(move || {
@@ -93,14 +93,14 @@ macro_rules! bind {
                                     .into_serde()
                                     .map_err(|error| format!("{}", error))?;
 
-                                if data.len() != std::mem::size_of::<arcadeum::crypto::Signature>() {
+                                if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
                                     return Err(
-                                        "data.len() != std::mem::size_of::<arcadeum::crypto::Signature>()"
+                                        "data.len() != std::mem::size_of::<$crate::crypto::Signature>()"
                                             .to_string(),
                                     );
                                 }
 
-                                let mut signature = [0; std::mem::size_of::<arcadeum::crypto::Signature>()];
+                                let mut signature = [0; std::mem::size_of::<$crate::crypto::Signature>()];
                                 signature.copy_from_slice(&data);
 
                                 Ok(signature)
@@ -118,7 +118,7 @@ macro_rules! bind {
                             Box::new(move |message| {
                                 drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message));
                             }),
-                            Box::new(arcadeum::store::bindings::JsRng(random)),
+                            Box::new($crate::store::bindings::JsRng(random)),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
                     },
@@ -137,7 +137,7 @@ macro_rules! bind {
             ) -> Result<JsGame, wasm_bindgen::JsValue> {
                 Ok(Self {
                     store: {
-                        arcadeum::store::Store::deserialize(
+                        $crate::store::Store::deserialize(
                             data,
                             Box::new(move || {
                                 drop(ready.call0(&wasm_bindgen::JsValue::UNDEFINED));
@@ -153,14 +153,14 @@ macro_rules! bind {
                                     .into_serde()
                                     .map_err(|error| format!("{}", error))?;
 
-                                if data.len() != std::mem::size_of::<arcadeum::crypto::Signature>() {
+                                if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
                                     return Err(
-                                        "data.len() != std::mem::size_of::<arcadeum::crypto::Signature>()"
+                                        "data.len() != std::mem::size_of::<$crate::crypto::Signature>()"
                                             .to_string(),
                                     );
                                 }
 
-                                let mut signature = [0; std::mem::size_of::<arcadeum::crypto::Signature>()];
+                                let mut signature = [0; std::mem::size_of::<$crate::crypto::Signature>()];
                                 signature.copy_from_slice(&data);
 
                                 Ok(signature)
@@ -178,7 +178,7 @@ macro_rules! bind {
                             Box::new(move |message| {
                                 drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message));
                             }),
-                            Box::new(arcadeum::store::bindings::JsRng(random)),
+                            Box::new($crate::store::bindings::JsRng(random)),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
                     },
@@ -197,13 +197,13 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
-            pub fn player(&self) -> Option<arcadeum::Player> {
+            pub fn player(&self) -> Option<$crate::Player> {
                 self.store.player()
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn id(&self) -> Vec<u8> {
-                arcadeum::ID::serialize(self.store.state().id())
+                $crate::ID::serialize(self.store.state().id())
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
@@ -215,37 +215,37 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter, js_name = pendingPlayer)]
-            pub fn pending_player(&self) -> Result<Option<arcadeum::Player>, wasm_bindgen::JsValue> {
-                if let arcadeum::store::StoreState::Pending { phase, .. } = self.store.state().state() {
+            pub fn pending_player(&self) -> Result<Option<$crate::Player>, wasm_bindgen::JsValue> {
+                if let $crate::store::StoreState::Pending { phase, .. } = self.store.state().state() {
                     match *phase
                         .try_borrow()
                         .map_err(|error| wasm_bindgen::JsValue::from(error.to_string()))?
                     {
-                        arcadeum::store::Phase::Commit => Ok(Some(0)),
-                        arcadeum::store::Phase::Reply { .. } => Ok(Some(1)),
-                        arcadeum::store::Phase::Reveal {
+                        $crate::store::Phase::Commit => Ok(Some(0)),
+                        $crate::store::Phase::Reply { .. } => Ok(Some(1)),
+                        $crate::store::Phase::Reveal {
                             owner_hash: false, ..
                         } => Ok(Some(0)),
-                        arcadeum::store::Phase::Reveal {
+                        $crate::store::Phase::Reveal {
                             owner_hash: true, ..
                         } => Ok(None),
                         _ => unreachable!(),
                     }
                 } else {
                     Err(wasm_bindgen::JsValue::from(
-                        "self.store.state().state() != arcadeum::store::StoreState::Pending { .. }",
+                        "self.store.state().state() != $crate::store::StoreState::Pending { .. }",
                     ))
                 }
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as arcadeum::store::State>::Action =
+                let action: <$type as $crate::store::State>::Action =
                     action.into_serde().map_err(|err| format!("{:?}", err))?;
 
-                let diff = self.store.diff(vec![arcadeum::ProofAction {
+                let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
-                    action: arcadeum::PlayerAction::Play(arcadeum::store::StoreAction::Action(action)),
+                    action: $crate::PlayerAction::Play($crate::store::StoreAction::Action(action)),
                 }])?;
 
                 self.send.call1(
@@ -271,7 +271,7 @@ macro_rules! bind {
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
                 self.store
-                    .apply(&arcadeum::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
+                    .apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
                     .map_err(|err| wasm_bindgen::JsValue::from(format!("{:?}", err)))
             }
 
@@ -282,14 +282,14 @@ macro_rules! bind {
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen]
-        pub struct JsProof(arcadeum::Proof<arcadeum::store::StoreState<$type>>);
+        pub struct JsProof($crate::Proof<$crate::store::StoreState<$type>>);
 
         #[wasm_bindgen::prelude::wasm_bindgen]
         impl JsProof {
             #[wasm_bindgen::prelude::wasm_bindgen(constructor)]
             pub fn new(root: &[u8]) -> Result<JsProof, wasm_bindgen::JsValue> {
-                Ok(Self(arcadeum::Proof::new(
-                    arcadeum::RootProof::deserialize(root).map_err(wasm_bindgen::JsValue::from)?,
+                Ok(Self($crate::Proof::new(
+                    $crate::RootProof::deserialize(root).map_err(wasm_bindgen::JsValue::from)?,
                 )))
             }
 
@@ -310,17 +310,15 @@ macro_rules! bind {
                 action: wasm_bindgen::JsValue,
                 sign: js_sys::Function,
             ) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
-                let action: <$type as arcadeum::store::State>::Action =
+                let action: <$type as $crate::store::State>::Action =
                     action.into_serde().map_err(|err| format!("{:?}", err))?;
 
                 let diff = self
                     .0
                     .diff(
-                        vec![arcadeum::ProofAction {
+                        vec![$crate::ProofAction {
                             player: None,
-                            action: arcadeum::PlayerAction::Play(arcadeum::store::StoreAction::Action(
-                                action,
-                            )),
+                            action: $crate::PlayerAction::Play($crate::store::StoreAction::Action(action)),
                         }],
                         &mut |message| {
                             let data: Vec<_> = sign
@@ -333,14 +331,14 @@ macro_rules! bind {
                                 .into_serde()
                                 .map_err(|error| format!("{}", error))?;
 
-                            if data.len() != std::mem::size_of::<arcadeum::crypto::Signature>() {
+                            if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
                                 return Err(
-                                    "data.len() != std::mem::size_of::<arcadeum::crypto::Signature>()"
+                                    "data.len() != std::mem::size_of::<$crate::crypto::Signature>()"
                                         .to_string(),
                                 );
                             }
 
-                            let mut signature = [0; std::mem::size_of::<arcadeum::crypto::Signature>()];
+                            let mut signature = [0; std::mem::size_of::<$crate::crypto::Signature>()];
                             signature.copy_from_slice(&data);
 
                             Ok(signature)
@@ -354,14 +352,14 @@ macro_rules! bind {
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
                 self.0
-                    .apply(&arcadeum::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
+                    .apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
                     .map_err(|err| wasm_bindgen::JsValue::from(format!("{:?}", err)))
             }
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen]
         pub fn certificate(address: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok(<$type as arcadeum::store::State>::certificate(
+            Ok(<$type as $crate::store::State>::certificate(
                 std::convert::TryInto::<_>::try_into(address)
                     .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?,
             ))
@@ -371,15 +369,15 @@ macro_rules! bind {
         pub fn root_proof_player(
             root: &[u8],
             player: &[u8],
-        ) -> Result<arcadeum::Player, wasm_bindgen::JsValue> {
-            if player.len() != std::mem::size_of::<arcadeum::crypto::Address>() {
-                return Err("player.len() != std::mem::size_of::<arcadeum::crypto::Address>()".into());
+        ) -> Result<$crate::Player, wasm_bindgen::JsValue> {
+            if player.len() != std::mem::size_of::<$crate::crypto::Address>() {
+                return Err("player.len() != std::mem::size_of::<$crate::crypto::Address>()".into());
             }
 
-            let mut address = arcadeum::crypto::Address::default();
+            let mut address = $crate::crypto::Address::default();
             address.copy_from_slice(player);
 
-            arcadeum::RootProof::<arcadeum::store::StoreState<$type>>::deserialize(root)?
+            $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
                 .state()
                 .player(&address)
                 .ok_or("root.state().player(player).is_none()".into())
@@ -387,8 +385,8 @@ macro_rules! bind {
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
         pub fn root_proof_id(root: &[u8]) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
-            Ok(arcadeum::ID::serialize(
-                arcadeum::RootProof::<arcadeum::store::StoreState<$type>>::deserialize(root)?
+            Ok($crate::ID::serialize(
+                $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
                     .state()
                     .id(),
             ))

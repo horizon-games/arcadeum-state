@@ -88,7 +88,7 @@ impl<S: State> Proof<S> {
             root,
             actions,
             proofs,
-            hash: [0; size_of::<crypto::Hash>()],
+            hash: Default::default(),
             state,
         };
 
@@ -637,7 +637,7 @@ impl<S: State> RootProof<S> {
             state,
             actions,
             signature,
-            hash: [0; size_of::<crypto::Hash>()],
+            hash: Default::default(),
             author: crypto::recover(&message, &signature)?,
             latest,
         };
@@ -776,8 +776,10 @@ impl<A: Action> Diff<A> {
             &data[data.len() - size_of::<crypto::Signature>()..],
         )?;
 
-        let mut proof = [0; size_of::<crypto::Hash>()];
-        proof.copy_from_slice(&data[..size_of::<crypto::Hash>()]);
+        let proof = data[..size_of::<crypto::Hash>()]
+            .try_into()
+            .map_err(|error| format!("{}", error))?;
+
         let mut data = &data[size_of::<crypto::Hash>()..];
 
         let length = utils::read_u32_usize(&mut data)?;
@@ -842,7 +844,7 @@ impl<A: Action> Diff<A> {
             actions,
             proof_signature,
             signature: [0; size_of::<crypto::Signature>()],
-            author: [0; size_of::<crypto::Address>()],
+            author: Default::default(),
         };
 
         let message = diff.serialize();
@@ -956,13 +958,16 @@ impl<S: State> ProofState<S> {
 
         forbid!(data.len() < 2 * size_of::<crypto::Address>() + size_of::<u32>());
 
-        let mut players = [[0; size_of::<crypto::Address>()]; 2];
+        let players: [crypto::Address; 2] = [
+            data[..size_of::<crypto::Address>()]
+                .try_into()
+                .map_err(|error| format!("{}", error))?,
+            data[size_of::<crypto::Address>()..2 * size_of::<crypto::Address>()]
+                .try_into()
+                .map_err(|error| format!("{}", error))?,
+        ];
 
-        for player in &mut players {
-            forbid!(data.len() < size_of::<crypto::Address>());
-            player.copy_from_slice(&data[..size_of::<crypto::Address>()]);
-            data = &data[size_of::<crypto::Address>()..];
-        }
+        data = &data[2 * size_of::<crypto::Address>()..];
 
         let length = utils::read_u32_usize(&mut data)?;
 
@@ -974,8 +979,10 @@ impl<S: State> ProofState<S> {
         let mut previous = None;
 
         for _ in 0..length {
-            let mut address = [0; size_of::<crypto::Address>()];
-            address.copy_from_slice(&data[..size_of::<crypto::Address>()]);
+            let address = data[..size_of::<crypto::Address>()]
+                .try_into()
+                .map_err(|error| format!("{}", error))?;
+
             data = &data[size_of::<crypto::Address>()..];
 
             if let Some(previous) = previous {
@@ -1093,8 +1100,9 @@ impl<A: Action> ProofAction<A> {
                     data.len() != size_of::<crypto::Address>() + size_of::<crypto::Signature>()
                 );
 
-                let mut address = [0; size_of::<crypto::Address>()];
-                address.copy_from_slice(&data[..size_of::<crypto::Address>()]);
+                let address = data[..size_of::<crypto::Address>()]
+                    .try_into()
+                    .map_err(|error| format!("{}", error))?;
 
                 let mut signature = [0; size_of::<crypto::Signature>()];
                 signature.copy_from_slice(&data[size_of::<crypto::Address>()..]);

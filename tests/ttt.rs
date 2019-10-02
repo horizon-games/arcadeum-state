@@ -22,15 +22,17 @@
 
 use {
     arcadeum::{
-        crypto::{address, sign, Address},
-        utils::hex,
+        crypto::{address, sign},
         Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
     },
     libsecp256k1_rand::Rng,
 };
 
 #[cfg(feature = "std")]
-use std::{convert::TryInto, mem::size_of};
+use {
+    arcadeum::utils::hex,
+    std::{convert::TryInto, mem::size_of},
+};
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -43,12 +45,16 @@ use {
 
 #[cfg(not(feature = "std"))]
 macro_rules! println {
-    () => {};
-    ($($arg:tt)*) => {};
+    () => {
+        ()
+    };
+    ($($arg:tt)*) => {
+        ()
+    };
 }
 
 #[derive(Clone, Default)]
-pub struct TTT {
+struct TTT {
     nonce: u8,
     board: [[Option<Player>; 3]; 3],
 }
@@ -137,7 +143,7 @@ impl State for TTT {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct ID([u8; 16]);
+struct ID([u8; 16]);
 
 impl arcadeum::ID for ID {
     fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
@@ -145,8 +151,7 @@ impl arcadeum::ID for ID {
             return Err("data.len() < size_of::<ID>()".to_string());
         }
 
-        let mut id = [0; size_of::<ID>()];
-        id.copy_from_slice(&data[..size_of::<ID>()]);
+        let id = data[..size_of::<ID>()].try_into().unwrap();
         *data = &data[size_of::<ID>()..];
 
         Ok(Self(id))
@@ -158,7 +163,7 @@ impl arcadeum::ID for ID {
 }
 
 #[derive(Clone, Debug)]
-pub struct Action(usize, usize);
+struct Action(usize, usize);
 
 impl arcadeum::Action for Action {
     fn deserialize(data: &[u8]) -> Result<Self, String> {
@@ -202,14 +207,13 @@ fn test_ttt() {
     random.fill_bytes(&mut id);
     let id = ID(id);
 
-    let mut players = [[0; size_of::<Address>()]; 2];
-
-    players.copy_from_slice(
-        &secrets
-            .iter()
-            .map(|secret| address(&secp256k1::PublicKey::from_secret_key(secret)))
-            .collect::<Vec<_>>(),
-    );
+    let players = secrets
+        .iter()
+        .map(|secret| address(&secp256k1::PublicKey::from_secret_key(secret)))
+        .collect::<Vec<_>>()
+        .as_slice()
+        .try_into()
+        .unwrap();
 
     let state = ProofState::<Box<TTT>>::new(id, players, Default::default()).unwrap();
 

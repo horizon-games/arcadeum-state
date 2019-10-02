@@ -121,14 +121,9 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
 
 /// Computes the address of a secp256k1 ECDSA public key.
 pub fn address(public: &secp256k1::PublicKey) -> Address {
-    let mut address = [0; size_of::<Address>()];
-
-    address.copy_from_slice(
-        &tiny_keccak::keccak256(&public.serialize()[1..])
-            [size_of::<Hash>() - size_of::<Address>()..],
-    );
-
-    address
+    tiny_keccak::keccak256(&public.serialize()[1..])[size_of::<Hash>() - size_of::<Address>()..]
+        .try_into()
+        .unwrap()
 }
 
 /// Computes the EIP 55 representation of an address.

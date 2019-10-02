@@ -23,6 +23,7 @@ use serde::Serialize;
 #[cfg(feature = "std")]
 use std::{
     cell::RefCell,
+    convert::TryInto,
     fmt::{Debug, Error, Formatter},
     future::Future,
     mem::size_of,
@@ -44,6 +45,7 @@ use {
     },
     core::{
         cell::RefCell,
+        convert::TryInto,
         future::Future,
         mem::size_of,
         pin::Pin,
@@ -378,12 +380,9 @@ macro_rules! bind {
                 return Err("player.len() != std::mem::size_of::<$crate::crypto::Address>()".into());
             }
 
-            let mut address = $crate::crypto::Address::default();
-            address.copy_from_slice(player);
-
             $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
                 .state()
-                .player(&address)
+                .player(std::convert::TryInto::<_>::try_into(player).map_err(|error| format!("{}", error))?)
                 .ok_or("root.state().player(player).is_none()".into())
         }
 
@@ -643,7 +642,7 @@ impl<S: State + Serialize> Store<S> {
     pub fn dispatch_timeout(&mut self) -> Result<(), String> {
         crate::forbid!(self.player.is_some());
 
-        let diff = match &self.proof.state.state {
+        let action = match &self.proof.state.state {
             StoreState::Pending { phase, .. } => {
                 // XXX: do we need to lock and unlock log here?
 
@@ -659,15 +658,12 @@ impl<S: State + Serialize> Store<S> {
 
                         self.secret = Some(seed.to_vec());
 
-                        Some(self.proof.diff(
-                            vec![crate::ProofAction {
-                                player: None,
-                                action: crate::PlayerAction::Play(
-                                    StoreAction::<S::Action>::Commit(tiny_keccak::keccak256(&seed)),
-                                ),
-                            }],
-                            &mut self.sign,
-                        )?)
+                        Some(crate::ProofAction {
+                            player: None,
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Commit(
+                                tiny_keccak::keccak256(&seed),
+                            )),
+                        })
                     }
                     Phase::Reply { .. } => {
                         let seed = {
@@ -678,15 +674,12 @@ impl<S: State + Serialize> Store<S> {
                             seed
                         };
 
-                        Some(self.proof.diff(
-                            vec![crate::ProofAction {
-                                player: None,
-                                action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
-                                    seed.to_vec(),
-                                )),
-                            }],
-                            &mut self.sign,
-                        )?)
+                        Some(crate::ProofAction {
+                            player: None,
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
+                                seed.to_vec(),
+                            )),
+                        })
                     }
                     Phase::Reveal {
                         owner_hash: false, ..
@@ -699,15 +692,12 @@ impl<S: State + Serialize> Store<S> {
                             seed
                         };
 
-                        Some(self.proof.diff(
-                            vec![crate::ProofAction {
-                                player: None,
-                                action: crate::PlayerAction::Play(
-                                    StoreAction::<S::Action>::Reveal(seed.to_vec()),
-                                ),
-                            }],
-                            &mut self.sign,
-                        )?)
+                        Some(crate::ProofAction {
+                            player: None,
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reveal(
+                                seed.to_vec(),
+                            )),
+                        })
                     }
                     _ => None,
                 }
@@ -719,10 +709,12 @@ impl<S: State + Serialize> Store<S> {
             }
         };
 
-        if let Some(diff) = &diff {
-            (self.send)(diff);
+        if let Some(action) = action {
+            let diff = self.proof.diff(vec![action], &mut self.sign)?;
 
-            self.apply(diff)?;
+            (self.send)(&diff);
+
+            self.apply(&diff)?;
         }
 
         Ok(())
@@ -819,7 +811,7 @@ impl<S: State + Serialize> Store<S> {
     }
 
     fn flush(&mut self) -> Result<(), String> {
-        let diff = match &self.proof.state.state {
+        let action = match &self.proof.state.state {
             StoreState::Pending { phase, .. } => {
                 // XXX: do we need to lock and unlock log here?
 
@@ -835,15 +827,12 @@ impl<S: State + Serialize> Store<S> {
 
                         self.secret = Some(seed.to_vec());
 
-                        Some(self.proof.diff(
-                            vec![crate::ProofAction {
-                                player: Some(0),
-                                action: crate::PlayerAction::Play(
-                                    StoreAction::<S::Action>::Commit(tiny_keccak::keccak256(&seed)),
-                                ),
-                            }],
-                            &mut self.sign,
-                        )?)
+                        Some(crate::ProofAction {
+                            player: Some(0),
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Commit(
+                                tiny_keccak::keccak256(&seed),
+                            )),
+                        })
                     }
                     (Phase::Reply { .. }, Some(1)) => {
                         let seed = {
@@ -854,15 +843,12 @@ impl<S: State + Serialize> Store<S> {
                             seed
                         };
 
-                        Some(self.proof.diff(
-                            vec![crate::ProofAction {
-                                player: Some(1),
-                                action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
-                                    seed.to_vec(),
-                                )),
-                            }],
-                            &mut self.sign,
-                        )?)
+                        Some(crate::ProofAction {
+                            player: Some(1),
+                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
+                                seed.to_vec(),
+                            )),
+                        })
                     }
                     (
                         Phase::Reveal {
@@ -883,15 +869,12 @@ impl<S: State + Serialize> Store<S> {
                         if let Some(secret) = &self.secret {
                             crate::forbid!(&tiny_keccak::keccak256(secret) != hash);
 
-                            Some(self.proof.diff(
-                                vec![crate::ProofAction {
-                                    player: self.player,
-                                    action: crate::PlayerAction::Play(
-                                        StoreAction::<S::Action>::Reveal(secret.to_vec()),
-                                    ),
-                                }],
-                                &mut self.sign,
-                            )?)
+                            Some(crate::ProofAction {
+                                player: self.player,
+                                action: crate::PlayerAction::Play(
+                                    StoreAction::<S::Action>::Reveal(secret.to_vec()),
+                                ),
+                            })
                         } else {
                             return Err("self.secret.is_none()".to_string());
                         }
@@ -906,10 +889,12 @@ impl<S: State + Serialize> Store<S> {
             }
         };
 
-        if let Some(diff) = &diff {
-            (self.send)(diff);
+        if let Some(action) = action {
+            let diff = self.proof.diff(vec![action], &mut self.sign)?;
 
-            self.apply(diff)?;
+            (self.send)(&diff);
+
+            self.apply(&diff)?;
         }
 
         Ok(())
@@ -1065,10 +1050,14 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                             crate::forbid!(tiny_keccak::keccak256(secret) != hash);
                         }
 
-                        let data: Vec<_> = reply.iter().zip(secret).map(|(x, y)| x ^ y).collect();
-
-                        let mut seed = [0; 16];
-                        seed.copy_from_slice(&data);
+                        let seed = reply
+                            .iter()
+                            .zip(secret)
+                            .map(|(x, y)| x ^ y)
+                            .collect::<Vec<_>>()
+                            .as_slice()
+                            .try_into()
+                            .map_err(|error| format!("{}", error))?;
 
                         let random: rand_xorshift::XorShiftRng = rand::SeedableRng::from_seed(seed);
                         context.replace(Phase::Randomized(Rc::new(RefCell::new(random))));
@@ -1142,14 +1131,9 @@ impl<A: crate::Action> crate::Action for StoreAction<A> {
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         match crate::utils::read_u8(&mut data)? {
             0 => Ok(Self::Action(A::deserialize(data)?)),
-            1 => {
-                crate::forbid!(data.len() != size_of::<crate::crypto::Hash>());
-
-                let mut hash = crate::crypto::Hash::default();
-                hash.copy_from_slice(data);
-
-                Ok(Self::Commit(hash))
-            }
+            1 => Ok(Self::Commit(
+                data.try_into().map_err(|error| format!("{}", error))?,
+            )),
             2 => Ok(Self::Reply(data.to_vec())),
             3 => Ok(Self::Reveal(data.to_vec())),
             byte => Err(format!("byte == {}", byte)),
@@ -1281,13 +1265,11 @@ pub struct Context {
 impl Context {
     /// Constructs a random number generator via commit-reveal.
     pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
-        let idle = if let Phase::Idle = &*self.phase.try_borrow().unwrap() {
-            true
-        } else {
-            false
-        };
+        let phase = self.phase.try_borrow().unwrap();
 
-        if idle {
+        if let Phase::Idle = *phase {
+            drop(phase);
+
             self.phase.replace(Phase::Commit);
         }
 

@@ -23,12 +23,11 @@
 use arcadeum::{
     crypto, log,
     store::{Context, State, StoreState},
-    Action, Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
+    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
 
-use libsecp256k1_rand::Rng;
-use rand_core::RngCore;
-use serde::{Deserialize, Serialize};
+use rand_core::{RngCore, SeedableRng};
+use serde::Serialize;
 
 #[cfg(feature = "std")]
 use std::{
@@ -47,37 +46,41 @@ use {
 
 #[cfg(not(feature = "std"))]
 macro_rules! println {
-    () => {};
-    ($($arg:tt)*) => {};
+    () => {
+        ()
+    };
+    ($($arg:tt)*) => {
+        ()
+    };
 }
 
 #[cfg(feature = "bindings")]
 arcadeum::bind!(Coin);
 
 #[derive(Serialize, Clone, Debug, Default)]
-pub struct Coin {
+struct Coin {
     nonce: u8,
-    score: (u8, u8),
+    score: [u8; 2],
 }
 
 impl State for Coin {
     type ID = CoinID;
     type Nonce = u8;
-    type Action = CoinAction;
+    type Action = bool;
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {
-        if data.len() != 1 + 1 + 1 {
-            return Err("data.len() != 1 + 1 + 1".to_string());
+        if data.len() != 1 + 2 {
+            return Err("data.len() != 1 + 2".to_string());
         }
 
         Ok(Self {
             nonce: data[0],
-            score: (data[1], data[2]),
+            score: [data[1], data[2]],
         })
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
-        Some(vec![self.nonce, self.score.0, self.score.1])
+        Some(vec![self.nonce, self.score[0], self.score[1]])
     }
 
     fn verify(&self, player: Option<crate::Player>, _action: &Self::Action) -> Result<(), String> {
@@ -95,16 +98,12 @@ impl State for Coin {
         mut context: Context,
     ) -> Pin<Box<dyn Future<Output = (Self, Context)>>> {
         Box::pin(async move {
-            let random = context.random().await.next_u32();
+            let random: u32 = context.random().await.next_u32();
 
             log!(context, random);
 
-            if action.0 == (random % 2 == 1) {
-                match player {
-                    Some(0) => self.score.0 += 1,
-                    Some(1) => self.score.1 += 1,
-                    _ => unreachable!(),
-                }
+            if action == (random % 2 != 0) {
+                self.score[usize::from(player.unwrap())] += 1;
             }
 
             self.nonce += 1;
@@ -115,17 +114,18 @@ impl State for Coin {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct CoinID([u8; 16]);
+struct CoinID([u8; 16]);
 
 impl ID for CoinID {
     fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
-        let mut id = [0; size_of::<CoinID>()];
-
         if data.len() < size_of::<CoinID>() {
             return Err("data.len() < size_of::<CoinID>()".to_string());
         }
 
-        id.copy_from_slice(&data[..size_of::<CoinID>()]);
+        let id = data[..size_of::<CoinID>()]
+            .try_into()
+            .map_err(|error| format!("{}", error))?;
+
         *data = &data[size_of::<CoinID>()..];
 
         Ok(Self(id))
@@ -133,27 +133,6 @@ impl ID for CoinID {
 
     fn serialize(&self) -> Vec<u8> {
         self.0.to_vec()
-    }
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct CoinAction(bool);
-
-impl Action for CoinAction {
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
-        if data.len() != 1 {
-            return Err("data.len() != 1".to_string());
-        }
-
-        Ok(CoinAction(match data[0] {
-            0 => false,
-            1 => true,
-            byte => return Err(format!("byte == {}", byte)),
-        }))
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        vec![if self.0 { 1 } else { 0 }]
     }
 }
 
@@ -173,17 +152,18 @@ fn test_coin() {
         secp256k1::SecretKey::random(&mut random),
     ];
 
+    let mut random = rand::rngs::StdRng::from_seed([0; 32]);
+
     let mut id = [0; size_of::<CoinID>()];
     random.fill_bytes(&mut id);
 
-    let mut players = [[0; size_of::<crypto::Address>()]; 2];
-
-    players.copy_from_slice(
-        &secrets
-            .iter()
-            .map(|secret| crypto::address(&secp256k1::PublicKey::from_secret_key(secret)))
-            .collect::<Vec<_>>(),
-    );
+    let players = secrets
+        .iter()
+        .map(|secret| crypto::address(&secp256k1::PublicKey::from_secret_key(secret)))
+        .collect::<Vec<_>>()
+        .as_slice()
+        .try_into()
+        .unwrap();
 
     let state = ProofState::<StoreState<Coin>>::new(
         CoinID(id),
@@ -244,7 +224,7 @@ fn test_coin() {
             Box::new(|message| {
                 println!("0: {:?}", message);
             }),
-            Box::new(rand::thread_rng()),
+            Box::new(rand::rngs::StdRng::from_seed([1; 32])),
         )
         .unwrap()
     };
@@ -269,7 +249,7 @@ fn test_coin() {
             Box::new(|message| {
                 println!("1: {:?}", message);
             }),
-            Box::new(rand::thread_rng()),
+            Box::new(rand::rngs::StdRng::from_seed([2; 32])),
         )
         .unwrap()
     };
@@ -347,13 +327,13 @@ fn test_coin() {
         });
     };
 
-    apply(0, arcadeum::store::StoreAction::Action(CoinAction(true)));
-    apply(1, arcadeum::store::StoreAction::Action(CoinAction(true)));
-    apply(0, arcadeum::store::StoreAction::Action(CoinAction(true)));
-    apply(1, arcadeum::store::StoreAction::Action(CoinAction(true)));
-    apply(0, arcadeum::store::StoreAction::Action(CoinAction(true)));
-    apply(1, arcadeum::store::StoreAction::Action(CoinAction(true)));
-    apply(0, arcadeum::store::StoreAction::Action(CoinAction(true)));
+    apply(0, arcadeum::store::StoreAction::Action(true));
+    apply(1, arcadeum::store::StoreAction::Action(true));
+    apply(0, arcadeum::store::StoreAction::Action(true));
+    apply(1, arcadeum::store::StoreAction::Action(true));
+    apply(0, arcadeum::store::StoreAction::Action(true));
+    apply(1, arcadeum::store::StoreAction::Action(true));
+    apply(0, arcadeum::store::StoreAction::Action(true));
 
     println!("{:?}", proof.serialize());
 }

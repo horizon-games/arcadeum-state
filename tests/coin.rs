@@ -142,7 +142,7 @@ fn test_coin() {
 
     let owner = secp256k1::SecretKey::random(&mut random);
 
-    let secrets = [
+    let keys = [
         secp256k1::SecretKey::random(&mut random),
         secp256k1::SecretKey::random(&mut random),
     ];
@@ -157,9 +157,9 @@ fn test_coin() {
     let mut id = [0; size_of::<CoinID>()];
     random.fill_bytes(&mut id);
 
-    let players = secrets
+    let players = keys
         .iter()
-        .map(|secret| crypto::address(&secp256k1::PublicKey::from_secret_key(secret)))
+        .map(|key| crypto::address(&secp256k1::PublicKey::from_secret_key(key)))
         .collect::<Vec<_>>()
         .as_slice()
         .try_into()
@@ -246,19 +246,19 @@ fn test_coin() {
         .unwrap()
     };
 
-    for (i, secret) in secrets.iter().enumerate() {
+    for (i, key) in keys.iter().enumerate() {
         let address = crypto::address(&secp256k1::PublicKey::from_secret_key(&subkeys[i]));
 
         let action = ProofAction {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: crypto::sign(Coin::certificate(&address).as_bytes(), secret).unwrap(),
+                signature: crypto::sign(Coin::certificate(&address).as_bytes(), key).unwrap(),
             },
         };
 
         let diff = proof
-            .diff(vec![action], &mut |message| crypto::sign(message, secret))
+            .diff(vec![action], &mut |message| crypto::sign(message, key))
             .unwrap();
 
         proof.apply(&diff).unwrap();

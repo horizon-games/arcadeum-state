@@ -992,12 +992,11 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                 (Self::Ready { .. }, Self::Action::Action(_)) => unreachable!(),
 
                 (Self::Pending { phase: context, .. }, Self::Action::Commit(hash)) => {
-                    let phase = context
-                        .try_borrow()
-                        .map_err(|error| error.to_string())?
-                        .clone();
+                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
 
-                    if let Phase::Commit = phase {
+                    if let Phase::Commit = *phase {
+                        drop(phase);
+
                         crate::forbid!(player != None && player != Some(0));
 
                         context.replace(Phase::Reply {
@@ -1005,17 +1004,16 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                             owner_hash: player.is_none(),
                         });
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())?.clone() != Phase::Commit".to_string());
+                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::Commit".to_string());
                     }
                 }
 
                 (Self::Pending { phase: context, .. }, Self::Action::Reply(secret)) => {
-                    let phase = context
-                        .try_borrow()
-                        .map_err(|error| error.to_string())?
-                        .clone();
+                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
 
-                    if let Phase::Reply { hash, owner_hash } = phase {
+                    if let Phase::Reply { hash, owner_hash } = *phase {
+                        drop(phase);
+
                         crate::forbid!(player != None && player != Some(1));
 
                         context.replace(Phase::Reveal {
@@ -1024,30 +1022,27 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                             reply: secret.to_vec(),
                         });
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())?.clone() != Phase::Reply { .. }".to_string());
+                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::Reply { .. }".to_string());
                     }
                 }
 
                 (Self::Pending { phase: context, .. }, Self::Action::Reveal(secret)) => {
-                    let phase = context
-                        .try_borrow()
-                        .map_err(|error| error.to_string())?
-                        .clone();
+                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::Reveal {
                         hash,
                         owner_hash,
                         reply,
-                    } = phase
+                    } = &*phase
                     {
-                        if owner_hash {
+                        if *owner_hash {
                             crate::forbid!(player != None);
                         } else {
                             crate::forbid!(player != None && player != Some(0));
                         }
 
-                        if player.is_some() || owner_hash {
-                            crate::forbid!(tiny_keccak::keccak256(secret) != hash);
+                        if player.is_some() || *owner_hash {
+                            crate::forbid!(tiny_keccak::keccak256(secret) != *hash);
                         }
 
                         let seed = reply
@@ -1059,10 +1054,12 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                             .try_into()
                             .map_err(|error| format!("{}", error))?;
 
+                        drop(phase);
+
                         let random: rand_xorshift::XorShiftRng = rand::SeedableRng::from_seed(seed);
                         context.replace(Phase::Randomized(Rc::new(RefCell::new(random))));
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())?.clone() != Phase::Reveal { .. }".to_string());
+                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::Reveal { .. }".to_string());
                     }
                 }
 
@@ -1332,7 +1329,7 @@ type Log = wasm_bindgen::JsValue;
 type Log = dyn Debug;
 
 #[doc(hidden)]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Phase {
     Idle,
     Commit,

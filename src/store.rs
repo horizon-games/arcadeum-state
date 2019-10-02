@@ -70,6 +70,7 @@ macro_rules! bind {
             pub fn new(
                 player: Option<$crate::Player>,
                 root: &[u8],
+                secret: wasm_bindgen::JsValue,
                 ready: js_sys::Function,
                 sign: js_sys::Function,
                 send: js_sys::Function,
@@ -81,6 +82,7 @@ macro_rules! bind {
                         $crate::store::Store::new(
                             player,
                             root,
+                            secret.into_serde().map_err(|error| format!("{}", error))?,
                             move |state| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
                                     drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
@@ -452,6 +454,7 @@ pub mod bindings {
 pub struct Store<S: State + Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
+    secret: S::Secret,
     ready: Box<dyn FnMut(&S)>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
@@ -466,6 +469,7 @@ impl<S: State + Serialize> Store<S> {
     pub fn new(
         player: Option<crate::Player>,
         root: &[u8],
+        secret: S::Secret,
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
@@ -483,6 +487,7 @@ impl<S: State + Serialize> Store<S> {
 
                 root
             }),
+            secret,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -552,6 +557,12 @@ impl<S: State + Serialize> Store<S> {
             *logger = Some(log.clone());
         }
 
+        let size = crate::utils::read_u32_usize(&mut data)?;
+
+        crate::forbid!(data.len() < size);
+        let secret = S::Secret::deserialize(&data[..size])?;
+        data = &data[size..];
+
         let seed = if crate::utils::read_u8_bool(&mut data)? {
             Some(data.to_vec())
         } else {
@@ -563,6 +574,7 @@ impl<S: State + Serialize> Store<S> {
         let mut store = Self {
             player,
             proof,
+            secret,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -581,6 +593,7 @@ impl<S: State + Serialize> Store<S> {
     pub fn serialize(&self) -> Vec<u8> {
         let root = self.proof.root.serialize();
         let proof = self.proof.serialize();
+        let secret = self.secret.serialize();
 
         let mut data = Vec::with_capacity(
             1 + size_of::<u32>()
@@ -604,6 +617,9 @@ impl<S: State + Serialize> Store<S> {
 
         crate::utils::write_u32_usize(&mut data, proof.len()).unwrap();
         data.extend(proof);
+
+        crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
+        data.extend(secret);
 
         if let Some(seed) = &self.seed {
             crate::utils::write_u8_bool(&mut data, true);
@@ -879,6 +895,33 @@ impl<S: State + Serialize> Store<S> {
                             return Err("self.seed.is_none()".to_string());
                         }
                     }
+                    (
+                        Phase::Reveal {
+                            request:
+                                RevealRequest {
+                                    player,
+                                    reveal,
+                                    verify,
+                                },
+                            ..
+                        },
+                        _,
+                    ) => {
+                        if Some(*player) == self.player {
+                            let secret = reveal(&self.secret);
+
+                            crate::forbid!(!verify(&secret));
+
+                            Some(crate::ProofAction {
+                                player: self.player,
+                                action: crate::PlayerAction::Play(
+                                    StoreAction::<S::Action>::Reveal(secret),
+                                ),
+                            })
+                        } else {
+                            None
+                        }
+                    }
                     _ => None,
                 }
             }
@@ -911,8 +954,8 @@ pub enum StoreState<S: State + Serialize> {
         log: Option<Logger>,
     },
     Pending {
-        phase: Rc<RefCell<Phase>>,
-        state: Pin<Box<dyn Future<Output = (S, Context)>>>,
+        phase: Rc<RefCell<Phase<S>>>,
+        state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
 
         log: Option<Logger>,
     },
@@ -963,7 +1006,10 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
         replace_with_or_abort(self, |state| {
             if let Self::Action::Action(action) = action {
                 if let Self::Ready { state, log } = state {
-                    let phase = Rc::new(RefCell::new(Phase::Idle { random: None }));
+                    let phase = Rc::new(RefCell::new(Phase::Idle {
+                        random: None,
+                        secret: None,
+                    }));
 
                     handled = true;
 
@@ -1058,9 +1104,39 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
 
                         context.replace(Phase::Idle {
                             random: Some(Rc::new(RefCell::new(rand::SeedableRng::from_seed(seed)))),
+                            secret: None,
                         });
                     } else {
                         return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReveal { .. }".to_string());
+                    }
+                }
+
+                (Self::Pending { phase: context, .. }, Self::Action::Reveal(secret)) => {
+                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
+
+                    if let Phase::Reveal {
+                        random,
+                        request:
+                            RevealRequest {
+                                player: revealer,
+                                verify,
+                                ..
+                            },
+                    } = &*phase
+                    {
+                        crate::forbid!(player != None && player != Some(*revealer));
+                        crate::forbid!(!verify(secret));
+
+                        let random = random.clone();
+
+                        drop(phase);
+
+                        context.replace(Phase::Idle {
+                            random,
+                            secret: Some(secret.clone()),
+                        });
+                    } else {
+                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::Reveal { .. }".to_string());
                     }
                 }
 
@@ -1123,6 +1199,7 @@ pub enum StoreAction<A: crate::Action> {
     RandomCommit(crate::crypto::Hash),
     RandomReply(Vec<u8>),
     RandomReveal(Vec<u8>),
+    Reveal(Vec<u8>),
 }
 
 impl<A: crate::Action> crate::Action for StoreAction<A> {
@@ -1134,6 +1211,7 @@ impl<A: crate::Action> crate::Action for StoreAction<A> {
             )),
             2 => Ok(Self::RandomReply(data.to_vec())),
             3 => Ok(Self::RandomReveal(data.to_vec())),
+            4 => Ok(Self::Reveal(data.to_vec())),
             byte => Err(format!("byte == {}", byte)),
         }
     }
@@ -1157,6 +1235,10 @@ impl<A: crate::Action> crate::Action for StoreAction<A> {
             Self::RandomReveal(seed) => {
                 crate::utils::write_u8(&mut data, 3);
                 data.extend(seed);
+            }
+            Self::Reveal(secret) => {
+                crate::utils::write_u8(&mut data, 4);
+                data.extend(secret);
             }
         }
 
@@ -1183,6 +1265,7 @@ impl<A: crate::Action + Debug> Debug for StoreAction<A> {
             Self::RandomReveal(data) => {
                 write!(f, "StoreAction::RandomReveal({})", crate::utils::hex(data))
             }
+            Self::Reveal(data) => write!(f, "StoreAction::Reveal({})", crate::utils::hex(data)),
         }
     }
 }
@@ -1197,6 +1280,9 @@ pub trait State: Clone {
 
     /// Action type
     type Action: crate::Action + Debug;
+
+    /// Secret type
+    type Secret: Secret;
 
     /// Formats the message that must be signed in order to certify the subkey for a given address.
     fn certificate(address: &crate::crypto::Address) -> String {
@@ -1224,8 +1310,43 @@ pub trait State: Clone {
         self,
         player: Option<crate::Player>,
         action: Self::Action,
-        context: Context,
-    ) -> Pin<Box<dyn Future<Output = (Self, Context)>>>;
+        context: Context<Self>,
+    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>>;
+}
+
+/// Domain-specific store state secret trait
+pub trait Secret: Clone {
+    /// Constructs a state secret from its binary representation.
+    ///
+    /// `data` must have been constructed using [Secret::serialize].
+    fn deserialize(data: &[u8]) -> Result<Self, String>;
+
+    /// Generates a binary representation that can be used to reconstruct the state secret.
+    ///
+    /// See [Secret::deserialize].
+    fn serialize(&self) -> Vec<u8>;
+}
+
+impl<T: crate::crypto::MerkleLeaf> Secret for crate::crypto::MerkleTree<T> {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        Self::deserialize(data)
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        self.serialize()
+    }
+}
+
+impl Secret for () {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        crate::forbid!(!data.is_empty());
+
+        Ok(())
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        Vec::new()
+    }
 }
 
 /// Emits an event as a side effect of a state transition.
@@ -1261,23 +1382,76 @@ macro_rules! log {
 /// [State::apply] utilities
 ///
 /// See [log].
-pub struct Context {
-    phase: Rc<RefCell<Phase>>,
+pub struct Context<S: State> {
+    phase: Rc<RefCell<Phase<S>>>,
     log: Option<Logger>,
 }
 
-impl Context {
+impl<S: State> Context<S> {
     /// Constructs a random number generator via commit-reveal.
     pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
         let phase = self.phase.try_borrow().unwrap();
 
-        if let Phase::Idle { random: None } = *phase {
+        if let Phase::Idle { random: None, .. } = *phase {
             drop(phase);
 
             self.phase.replace(Phase::RandomCommit);
         }
 
         SharedXorShiftRngFuture(self.phase.clone())
+    }
+
+    /// Requests a player's secret information.
+    ///
+    /// The random number generator is re-seeded after this call to prevent players from influencing the randomness of the state via trial and error.
+    ///
+    /// See [Context::reveal_unique] for a faster non-re-seeding version of this method.
+    pub fn reveal(
+        &mut self,
+        player: crate::Player,
+        reveal: impl Fn(&S::Secret) -> Vec<u8> + 'static,
+        verify: impl Fn(&[u8]) -> bool + 'static,
+    ) -> impl Future<Output = Vec<u8>> {
+        self.phase.replace(Phase::Reveal {
+            random: None,
+            request: RevealRequest {
+                player,
+                reveal: Box::new(reveal),
+                verify: Box::new(verify),
+            },
+        });
+
+        RevealFuture(self.phase.clone())
+    }
+
+    /// Requests a player's secret information.
+    ///
+    /// The random number generator is not re-seeded after this call, so care must be taken to guarantee that the verify function accepts only one possible input.
+    /// Without this guarantee, players can influence the randomness of the state via trial and error.
+    ///
+    /// See [Context::reveal] for a slower re-seeding version of this method.
+    pub fn reveal_unique(
+        &mut self,
+        player: crate::Player,
+        reveal: impl Fn(&S::Secret) -> Vec<u8> + 'static,
+        verify: impl Fn(&[u8]) -> bool + 'static,
+    ) -> impl Future<Output = Vec<u8>> {
+        let random = if let Phase::Idle { random, .. } = &*self.phase.try_borrow().unwrap() {
+            random.clone()
+        } else {
+            None
+        };
+
+        self.phase.replace(Phase::Reveal {
+            random,
+            request: RevealRequest {
+                player,
+                reveal: Box::new(reveal),
+                verify: Box::new(verify),
+            },
+        });
+
+        RevealFuture(self.phase.clone())
     }
 
     #[doc(hidden)]
@@ -1290,7 +1464,7 @@ impl Context {
     }
 
     #[doc(hidden)]
-    pub fn with_phase(phase: Rc<RefCell<Phase>>) -> Self {
+    pub fn with_phase(phase: Rc<RefCell<Phase<S>>>) -> Self {
         Self { phase, log: None }
     }
 }
@@ -1337,9 +1511,10 @@ type Log = dyn Debug;
 
 #[doc(hidden)]
 #[derive(Debug)]
-pub enum Phase {
+pub enum Phase<S: State> {
     Idle {
         random: Option<Rc<RefCell<rand_xorshift::XorShiftRng>>>,
+        secret: Option<Vec<u8>>,
     },
     RandomCommit,
     RandomReply {
@@ -1351,17 +1526,35 @@ pub enum Phase {
         owner_hash: bool,
         reply: Vec<u8>,
     },
+    Reveal {
+        random: Option<Rc<RefCell<rand_xorshift::XorShiftRng>>>,
+        request: RevealRequest<S>,
+    },
 }
 
-struct SharedXorShiftRngFuture(Rc<RefCell<Phase>>);
+#[doc(hidden)]
+pub struct RevealRequest<S: State> {
+    player: crate::Player,
+    reveal: Box<dyn Fn(&S::Secret) -> Vec<u8>>,
+    verify: Box<dyn Fn(&[u8]) -> bool>,
+}
 
-impl Future for SharedXorShiftRngFuture {
+impl<S: State> Debug for RevealRequest<S> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f, "RevealRequest {{ player: {} }}", self.player)
+    }
+}
+
+struct SharedXorShiftRngFuture<S: State>(Rc<RefCell<Phase<S>>>);
+
+impl<S: State> Future for SharedXorShiftRngFuture<S> {
     type Output = SharedXorShiftRng;
 
     fn poll(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Self::Output> {
         if let Ok(phase) = self.0.try_borrow() {
             if let Phase::Idle {
                 random: Some(random),
+                ..
             } = &*phase
             {
                 Poll::Ready(SharedXorShiftRng(random.clone()))
@@ -1391,6 +1584,28 @@ impl rand::RngCore for SharedXorShiftRng {
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
         self.0.try_borrow_mut().unwrap().try_fill_bytes(dest)
+    }
+}
+
+struct RevealFuture<S: State>(Rc<RefCell<Phase<S>>>);
+
+impl<S: State> Future for RevealFuture<S> {
+    type Output = Vec<u8>;
+
+    fn poll(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Self::Output> {
+        if let Ok(phase) = self.0.try_borrow() {
+            if let Phase::Idle {
+                secret: Some(secret),
+                ..
+            } = &*phase
+            {
+                Poll::Ready(secret.clone())
+            } else {
+                Poll::Pending
+            }
+        } else {
+            Poll::Pending
+        }
     }
 }
 

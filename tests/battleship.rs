@@ -22,7 +22,7 @@
 
 use arcadeum::{
     crypto, log,
-    store::{Context, State, StoreState},
+    store::{Context, Secret, State, StoreState},
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
 
@@ -30,9 +30,12 @@ use rand_core::{RngCore, SeedableRng};
 use serde::Serialize;
 
 #[cfg(feature = "std")]
-use std::{
-    cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, mem::size_of, pin::Pin,
-    rc::Rc,
+use {
+    serde::Deserialize,
+    std::{
+        cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, mem::size_of,
+        pin::Pin, rc::Rc,
+    },
 };
 
 #[cfg(not(feature = "std"))]
@@ -55,38 +58,50 @@ macro_rules! println {
 }
 
 #[cfg(feature = "bindings")]
-arcadeum::bind!(Coin);
+arcadeum::bind!(Battleship);
 
 #[derive(Serialize, Clone, Debug, Default)]
-struct Coin {
+struct Battleship {
     nonce: u8,
     score: [u8; 2],
+    roots: [crypto::Hash; 2],
 }
 
-impl State for Coin {
-    type ID = CoinID;
+impl State for Battleship {
+    type ID = BattleshipID;
     type Nonce = u8;
-    type Action = bool;
-    type Secret = ();
+    type Action = u8;
+    type Secret = BattleshipSecret;
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {
-        if data.len() != 1 + 2 {
-            return Err("data.len() != 1 + 2".to_string());
+        if data.len() != 1 + 2 + 2 * size_of::<crypto::Hash>() {
+            return Err("data.len() != 1 + 2 + 2 * size_of::<crypto::Hash>()".to_string());
         }
 
         Ok(Self {
             nonce: data[0],
             score: [data[1], data[2]],
+            roots: [
+                data[3..3 + size_of::<crypto::Hash>()].try_into().unwrap(),
+                data[3 + size_of::<crypto::Hash>()..].try_into().unwrap(),
+            ],
         })
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
-        Some(vec![self.nonce, self.score[0], self.score[1]])
+        let mut data = vec![self.nonce, self.score[0], self.score[1]];
+        data.extend(self.roots.concat());
+
+        Some(data)
     }
 
-    fn verify(&self, player: Option<crate::Player>, _action: &Self::Action) -> Result<(), String> {
+    fn verify(&self, player: Option<crate::Player>, action: &Self::Action) -> Result<(), String> {
         if player != Some(self.nonce % 2) {
             return Err("player != Some(self.nonce % 2)".to_string());
+        }
+
+        if *action > 100 {
+            return Err("*action > 100".to_string());
         }
 
         Ok(())
@@ -99,11 +114,33 @@ impl State for Coin {
         mut context: Context<Self>,
     ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>> {
         Box::pin(async move {
-            let random: u32 = context.random().await.next_u32();
+            let proof: Vec<u8> = context
+                .reveal_unique(
+                    1 - player.unwrap(),
+                    move |secret| secret.0.proof(usize::from(action)).unwrap().serialize(),
+                    {
+                        let roots = self.roots;
 
-            log!(context, random);
+                        move |data| {
+                            let proof = crypto::MerkleProof::<bool>::deserialize(data);
 
-            if action == (random % 2 != 0) {
+                            if let Ok(proof) = proof {
+                                proof.index() == usize::from(action)
+                                    && proof.length() == 100
+                                    && *proof.root() == roots[1 - usize::from(player.unwrap())]
+                            } else {
+                                false
+                            }
+                        }
+                    },
+                )
+                .await;
+
+            let proof = crypto::MerkleProof::deserialize(&proof).unwrap();
+
+            log!(context, *proof.element());
+
+            if *proof.element() {
                 self.score[usize::from(player.unwrap())] += 1;
             }
 
@@ -115,19 +152,19 @@ impl State for Coin {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-struct CoinID([u8; 16]);
+struct BattleshipID([u8; 16]);
 
-impl ID for CoinID {
+impl ID for BattleshipID {
     fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
-        if data.len() < size_of::<CoinID>() {
-            return Err("data.len() < size_of::<CoinID>()".to_string());
+        if data.len() < size_of::<BattleshipID>() {
+            return Err("data.len() < size_of::<BattleshipID>()".to_string());
         }
 
-        let id = data[..size_of::<CoinID>()]
+        let id = data[..size_of::<BattleshipID>()]
             .try_into()
             .map_err(|error| format!("{}", error))?;
 
-        *data = &data[size_of::<CoinID>()..];
+        *data = &data[size_of::<BattleshipID>()..];
 
         Ok(Self(id))
     }
@@ -137,8 +174,22 @@ impl ID for CoinID {
     }
 }
 
+#[cfg_attr(feature = "std", derive(Deserialize))]
+#[derive(Clone)]
+struct BattleshipSecret(crypto::MerkleTree<bool>);
+
+impl Secret for BattleshipSecret {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        Ok(Self(crypto::MerkleTree::deserialize(data)?))
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        self.0.serialize()
+    }
+}
+
 #[test]
-fn test_coin() {
+fn test_battleship() {
     let mut random = libsecp256k1_rand::thread_rng();
 
     let owner = secp256k1::SecretKey::random(&mut random);
@@ -155,7 +206,7 @@ fn test_coin() {
 
     let mut random = rand::rngs::StdRng::from_seed([0; 32]);
 
-    let mut id = [0; size_of::<CoinID>()];
+    let mut id = [0; size_of::<BattleshipID>()];
     random.fill_bytes(&mut id);
 
     let players = keys
@@ -166,11 +217,44 @@ fn test_coin() {
         .try_into()
         .unwrap();
 
-    let state = ProofState::<StoreState<Coin>>::new(
-        CoinID(id),
+    let secret0 = BattleshipSecret(
+        crypto::MerkleTree::with_salt(
+            {
+                let mut elements = [0; 100];
+                random.fill_bytes(&mut elements);
+                elements.iter().map(|element| element % 2 != 0).collect()
+            },
+            16,
+            &mut random,
+        )
+        .unwrap(),
+    );
+
+    let secret1 = BattleshipSecret(
+        crypto::MerkleTree::with_salt(
+            {
+                let mut elements = [0; 100];
+                random.fill_bytes(&mut elements);
+                elements.iter().map(|element| element % 2 != 0).collect()
+            },
+            16,
+            &mut random,
+        )
+        .unwrap(),
+    );
+
+    let state = ProofState::<StoreState<Battleship>>::new(
+        BattleshipID(id),
         players,
         StoreState::Ready {
-            state: Default::default(),
+            state: Battleship {
+                nonce: Default::default(),
+                score: Default::default(),
+                roots: [
+                    secret0.0.root()[..].try_into().unwrap(),
+                    secret1.0.root()[..].try_into().unwrap(),
+                ],
+            },
             log: None,
         },
     )
@@ -185,7 +269,7 @@ fn test_coin() {
 
     assert_eq!(
         root.serialize(),
-        RootProof::<StoreState<Coin>>::deserialize(&root.serialize())
+        RootProof::<StoreState<Battleship>>::deserialize(&root.serialize())
             .unwrap()
             .serialize()
     );
@@ -209,10 +293,10 @@ fn test_coin() {
         let subkey = subkeys[0].clone();
         let opponent_queue = queue2.clone();
 
-        arcadeum::store::Store::<Coin>::new(
+        arcadeum::store::Store::<Battleship>::new(
             Some(0),
             &root.serialize(),
-            (),
+            secret0,
             |state| println!("0: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
             move |diff| {
@@ -231,10 +315,10 @@ fn test_coin() {
         let subkey = subkeys[1].clone();
         let opponent_queue = queue1.clone();
 
-        arcadeum::store::Store::<Coin>::new(
+        arcadeum::store::Store::<Battleship>::new(
             Some(1),
             &root.serialize(),
-            (),
+            secret1,
             |state| println!("1: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
             move |diff| {
@@ -256,7 +340,7 @@ fn test_coin() {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: crypto::sign(Coin::certificate(&address).as_bytes(), key).unwrap(),
+                signature: crypto::sign(Battleship::certificate(&address).as_bytes(), key).unwrap(),
             },
         };
 
@@ -322,13 +406,17 @@ fn test_coin() {
         });
     };
 
-    apply(0, arcadeum::store::StoreAction::Action(true));
-    apply(1, arcadeum::store::StoreAction::Action(true));
-    apply(0, arcadeum::store::StoreAction::Action(true));
-    apply(1, arcadeum::store::StoreAction::Action(true));
-    apply(0, arcadeum::store::StoreAction::Action(true));
-    apply(1, arcadeum::store::StoreAction::Action(true));
-    apply(0, arcadeum::store::StoreAction::Action(true));
+    for _ in 0..20 {
+        apply(
+            0,
+            arcadeum::store::StoreAction::Action((random.next_u32() % 100).try_into().unwrap()),
+        );
+
+        apply(
+            1,
+            arcadeum::store::StoreAction::Action((random.next_u32() % 100).try_into().unwrap()),
+        );
+    }
 
     println!("{:?}", proof.serialize());
 }

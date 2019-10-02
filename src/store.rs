@@ -1279,7 +1279,7 @@ pub struct Context {
 }
 
 impl Context {
-    /// Construct a random number generator via commit-reveal.
+    /// Constructs a random number generator via commit-reveal.
     pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
         let idle = if let Phase::Idle = &*self.phase.try_borrow().unwrap() {
             true

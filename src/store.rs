@@ -963,7 +963,7 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
         replace_with_or_abort(self, |state| {
             if let Self::Action::Action(action) = action {
                 if let Self::Ready { state, log } = state {
-                    let phase = Rc::new(RefCell::new(Phase::Idle));
+                    let phase = Rc::new(RefCell::new(Phase::Idle { random: None }));
 
                     handled = true;
 
@@ -1056,8 +1056,9 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
 
                         drop(phase);
 
-                        let random: rand_xorshift::XorShiftRng = rand::SeedableRng::from_seed(seed);
-                        context.replace(Phase::Randomized(Rc::new(RefCell::new(random))));
+                        context.replace(Phase::Idle {
+                            random: Some(Rc::new(RefCell::new(rand::SeedableRng::from_seed(seed)))),
+                        });
                     } else {
                         return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::Reveal { .. }".to_string());
                     }
@@ -1264,7 +1265,7 @@ impl Context {
     pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
         let phase = self.phase.try_borrow().unwrap();
 
-        if let Phase::Idle = *phase {
+        if let Phase::Idle { random: None } = *phase {
             drop(phase);
 
             self.phase.replace(Phase::Commit);
@@ -1331,7 +1332,9 @@ type Log = dyn Debug;
 #[doc(hidden)]
 #[derive(Debug)]
 pub enum Phase {
-    Idle,
+    Idle {
+        random: Option<Rc<RefCell<rand_xorshift::XorShiftRng>>>,
+    },
     Commit,
     Reply {
         hash: crate::crypto::Hash,
@@ -1342,7 +1345,6 @@ pub enum Phase {
         owner_hash: bool,
         reply: Vec<u8>,
     },
-    Randomized(Rc<RefCell<rand_xorshift::XorShiftRng>>),
 }
 
 struct XorShiftRngFuture(Rc<RefCell<Phase>>);
@@ -1352,7 +1354,10 @@ impl Future for XorShiftRngFuture {
 
     fn poll(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Self::Output> {
         if let Ok(phase) = self.0.try_borrow() {
-            if let Phase::Randomized(random) = &*phase {
+            if let Phase::Idle {
+                random: Some(random),
+            } = &*phase
+            {
                 Poll::Ready(ContextRandom(random.clone()))
             } else {
                 Poll::Pending

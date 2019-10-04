@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 use arcadeum::{
-    crypto, forbid, log,
+    crypto, log,
     store::{Context, State, StoreState},
     Action, Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
@@ -66,7 +66,9 @@ impl State for Coin {
     type Action = CoinAction;
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {
-        forbid!(data.len() != 1 + 1 + 1);
+        if data.len() != 1 + 1 + 1 {
+            return Err("data.len() != 1 + 1 + 1".to_string());
+        }
 
         Ok(Self {
             nonce: data[0],
@@ -79,7 +81,9 @@ impl State for Coin {
     }
 
     fn verify(&self, player: Option<crate::Player>, _action: &Self::Action) -> Result<(), String> {
-        forbid!(player != Some(self.nonce % 2));
+        if player != Some(self.nonce % 2) {
+            return Err("player != Some(self.nonce % 2)".to_string());
+        }
 
         Ok(())
     }
@@ -117,7 +121,10 @@ impl ID for CoinID {
     fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
         let mut id = [0; size_of::<CoinID>()];
 
-        forbid!(data.len() < size_of::<CoinID>());
+        if data.len() < size_of::<CoinID>() {
+            return Err("data.len() < size_of::<CoinID>()".to_string());
+        }
+
         id.copy_from_slice(&data[..size_of::<CoinID>()]);
         *data = &data[size_of::<CoinID>()..];
 
@@ -134,7 +141,9 @@ pub struct CoinAction(bool);
 
 impl Action for CoinAction {
     fn deserialize(data: &[u8]) -> Result<Self, String> {
-        forbid!(data.len() != 1);
+        if data.len() != 1 {
+            return Err("data.len() != 1".to_string());
+        }
 
         Ok(CoinAction(match data[0] {
             0 => false,

@@ -81,12 +81,12 @@ macro_rules! bind {
                         $crate::store::Store::new(
                             player,
                             root,
-                            Box::new(move |state| {
+                            move |state| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
                                     drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
                                 }
-                            }),
-                            Box::new(move |message| {
+                            },
+                            move |message| {
                                 let data: Vec<_> = sign
                                     .call1(
                                         &wasm_bindgen::JsValue::UNDEFINED,
@@ -108,8 +108,8 @@ macro_rules! bind {
                                 signature.copy_from_slice(&data);
 
                                 Ok(signature)
-                            }),
-                            Box::new({
+                            },
+                            {
                                 let send = send.clone();
 
                                 move |diff| {
@@ -118,10 +118,8 @@ macro_rules! bind {
                                         drop(send.call1(&wasm_bindgen::JsValue::UNDEFINED, value));
                                     }
                                 }
-                            }),
-                            Box::new(move |message| {
-                                drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message));
-                            }),
+                            },
+                            move |message| drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message)),
                             Box::new($crate::store::bindings::JsRng(random)),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
@@ -143,12 +141,12 @@ macro_rules! bind {
                     store: {
                         $crate::store::Store::deserialize(
                             data,
-                            Box::new(move |state| {
+                            move |state| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
                                     drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
                                 }
-                            }),
-                            Box::new(move |message| {
+                            },
+                            move |message| {
                                 let data: Vec<_> = sign
                                     .call1(
                                         &wasm_bindgen::JsValue::UNDEFINED,
@@ -170,8 +168,8 @@ macro_rules! bind {
                                 signature.copy_from_slice(&data);
 
                                 Ok(signature)
-                            }),
-                            Box::new({
+                            },
+                            {
                                 let send = send.clone();
 
                                 move |diff| {
@@ -180,10 +178,8 @@ macro_rules! bind {
                                         drop(send.call1(&wasm_bindgen::JsValue::UNDEFINED, value));
                                     }
                                 }
-                            }),
-                            Box::new(move |message| {
-                                drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message));
-                            }),
+                            },
+                            move |message| drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message)),
                             Box::new($crate::store::bindings::JsRng(random)),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
@@ -470,10 +466,10 @@ impl<S: State + Serialize> Store<S> {
     pub fn new(
         player: Option<crate::Player>,
         root: &[u8],
-        ready: Box<dyn FnMut(&S)>,
-        sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
-        send: Box<dyn FnMut(&StoreDiff<S>)>,
-        log: Box<dyn FnMut(&Log)>,
+        ready: impl FnMut(&S) + 'static,
+        sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
+        send: impl FnMut(&StoreDiff<S>) + 'static,
+        log: impl FnMut(&Log) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         let mut store = Self {
@@ -487,9 +483,9 @@ impl<S: State + Serialize> Store<S> {
 
                 root
             }),
-            ready,
-            sign,
-            send,
+            ready: Box::new(ready),
+            sign: Box::new(sign),
+            send: Box::new(send),
             random,
             secret: None,
         };
@@ -504,10 +500,10 @@ impl<S: State + Serialize> Store<S> {
     /// `data` must have been constructed using [Store::serialize].
     pub fn deserialize(
         mut data: &[u8],
-        ready: Box<dyn FnMut(&S)>,
-        sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
-        send: Box<dyn FnMut(&StoreDiff<S>)>,
-        log: Box<dyn FnMut(&Log)>,
+        ready: impl FnMut(&S) + 'static,
+        sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
+        send: impl FnMut(&StoreDiff<S>) + 'static,
+        log: impl FnMut(&Log) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -567,9 +563,9 @@ impl<S: State + Serialize> Store<S> {
         let mut store = Self {
             player,
             proof,
-            ready,
-            sign,
-            send,
+            ready: Box::new(ready),
+            sign: Box::new(sign),
+            send: Box::new(send),
             random,
             secret,
         };
@@ -1297,9 +1293,9 @@ pub struct Logger {
 }
 
 impl Logger {
-    fn new(log: Box<dyn FnMut(&Log)>) -> Self {
+    fn new(log: impl FnMut(&Log) + 'static) -> Self {
         Self {
-            state: Rc::new(RefCell::new((log, 0))),
+            state: Rc::new(RefCell::new((Box::new(log), 0))),
             nonce: 0,
         }
     }

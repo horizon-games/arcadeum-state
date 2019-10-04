@@ -211,19 +211,15 @@ fn test_coin() {
         arcadeum::store::Store::<Coin>::new(
             Some(0),
             &root.serialize(),
-            Box::new(|state| {
-                println!("0: ready: {:?}", state);
-            }),
-            Box::new(move |message| crypto::sign(message, &subkey)),
-            Box::new(move |diff| {
+            |state| println!("0: ready: {:?}", state),
+            move |message| crypto::sign(message, &subkey),
+            move |diff| {
                 opponent_queue
                     .try_borrow_mut()
                     .unwrap()
                     .push_back(diff.clone());
-            }),
-            Box::new(|message| {
-                println!("0: {:?}", message);
-            }),
+            },
+            |message| println!("0: {:?}", message),
             Box::new(rand::rngs::StdRng::from_seed([1; 32])),
         )
         .unwrap()
@@ -236,19 +232,15 @@ fn test_coin() {
         arcadeum::store::Store::<Coin>::new(
             Some(1),
             &root.serialize(),
-            Box::new(|state| {
-                println!("1: ready: {:?}", state);
-            }),
-            Box::new(move |message| crypto::sign(message, &subkey)),
-            Box::new(move |diff| {
+            |state| println!("1: ready: {:?}", state),
+            move |message| crypto::sign(message, &subkey),
+            move |diff| {
                 opponent_queue
                     .try_borrow_mut()
                     .unwrap()
                     .push_back(diff.clone());
-            }),
-            Box::new(|message| {
-                println!("1: {:?}", message);
-            }),
+            },
+            |message| println!("1: {:?}", message),
             Box::new(rand::rngs::StdRng::from_seed([2; 32])),
         )
         .unwrap()

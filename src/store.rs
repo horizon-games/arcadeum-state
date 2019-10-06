@@ -79,8 +79,10 @@ macro_rules! bind {
                         $crate::store::Store::new(
                             player,
                             root,
-                            Box::new(move || {
-                                drop(ready.call0(&wasm_bindgen::JsValue::UNDEFINED));
+                            Box::new(move |state| {
+                                if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
+                                    drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                }
                             }),
                             Box::new(move |message| {
                                 let data: Vec<_> = sign
@@ -139,8 +141,10 @@ macro_rules! bind {
                     store: {
                         $crate::store::Store::deserialize(
                             data,
-                            Box::new(move || {
-                                drop(ready.call0(&wasm_bindgen::JsValue::UNDEFINED));
+                            Box::new(move |state| {
+                                if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
+                                    drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                }
                             }),
                             Box::new(move |message| {
                                 let data: Vec<_> = sign
@@ -453,7 +457,7 @@ pub mod bindings {
 pub struct Store<S: State + Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
-    ready: Box<dyn FnMut()>,
+    ready: Box<dyn FnMut(&S)>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
     random: Box<dyn rand::RngCore>,
@@ -467,7 +471,7 @@ impl<S: State + Serialize> Store<S> {
     pub fn new(
         player: Option<crate::Player>,
         root: &[u8],
-        ready: Box<dyn FnMut()>,
+        ready: Box<dyn FnMut(&S)>,
         sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
         send: Box<dyn FnMut(&StoreDiff<S>)>,
         log: Box<dyn FnMut(&Log)>,
@@ -501,7 +505,7 @@ impl<S: State + Serialize> Store<S> {
     /// `data` must have been constructed using [Store::serialize].
     pub fn deserialize(
         mut data: &[u8],
-        ready: Box<dyn FnMut()>,
+        ready: Box<dyn FnMut(&S)>,
         sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
         send: Box<dyn FnMut(&StoreDiff<S>)>,
         log: Box<dyn FnMut(&Log)>,
@@ -639,77 +643,80 @@ impl<S: State + Serialize> Store<S> {
     pub fn dispatch_timeout(&mut self) -> Result<(), String> {
         crate::forbid!(self.player.is_some());
 
-        let diff = if let StoreState::Pending { phase, .. } = &self.proof.state.state {
-            // XXX: do we need to lock and unlock log here?
+        let diff = match &self.proof.state.state {
+            StoreState::Pending { phase, .. } => {
+                // XXX: do we need to lock and unlock log here?
 
-            match &*phase.try_borrow().unwrap() {
-                Phase::Commit => {
-                    let seed = {
-                        let mut seed =
-                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+                match &*phase.try_borrow().unwrap() {
+                    Phase::Commit => {
+                        let seed = {
+                            let mut seed =
+                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-                        self.random.fill_bytes(&mut seed);
-                        seed
-                    };
+                            self.random.fill_bytes(&mut seed);
+                            seed
+                        };
 
-                    self.secret = Some(seed.to_vec());
+                        self.secret = Some(seed.to_vec());
 
-                    Some(self.proof.diff(
-                        vec![crate::ProofAction {
-                            player: None,
-                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Commit(
-                                tiny_keccak::keccak256(&seed),
-                            )),
-                        }],
-                        &mut self.sign,
-                    )?)
+                        Some(self.proof.diff(
+                            vec![crate::ProofAction {
+                                player: None,
+                                action: crate::PlayerAction::Play(
+                                    StoreAction::<S::Action>::Commit(tiny_keccak::keccak256(&seed)),
+                                ),
+                            }],
+                            &mut self.sign,
+                        )?)
+                    }
+                    Phase::Reply { .. } => {
+                        let seed = {
+                            let mut seed =
+                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                            self.random.fill_bytes(&mut seed);
+                            seed
+                        };
+
+                        Some(self.proof.diff(
+                            vec![crate::ProofAction {
+                                player: None,
+                                action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
+                                    seed.to_vec(),
+                                )),
+                            }],
+                            &mut self.sign,
+                        )?)
+                    }
+                    Phase::Reveal {
+                        owner_hash: false, ..
+                    } => {
+                        let seed = {
+                            let mut seed =
+                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                            self.random.fill_bytes(&mut seed);
+                            seed
+                        };
+
+                        Some(self.proof.diff(
+                            vec![crate::ProofAction {
+                                player: None,
+                                action: crate::PlayerAction::Play(
+                                    StoreAction::<S::Action>::Reveal(seed.to_vec()),
+                                ),
+                            }],
+                            &mut self.sign,
+                        )?)
+                    }
+                    _ => None,
                 }
-                Phase::Reply { .. } => {
-                    let seed = {
-                        let mut seed =
-                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-
-                        self.random.fill_bytes(&mut seed);
-                        seed
-                    };
-
-                    Some(self.proof.diff(
-                        vec![crate::ProofAction {
-                            player: None,
-                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
-                                seed.to_vec(),
-                            )),
-                        }],
-                        &mut self.sign,
-                    )?)
-                }
-                Phase::Reveal {
-                    owner_hash: false, ..
-                } => {
-                    let seed = {
-                        let mut seed =
-                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-
-                        self.random.fill_bytes(&mut seed);
-                        seed
-                    };
-
-                    Some(self.proof.diff(
-                        vec![crate::ProofAction {
-                            player: None,
-                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reveal(
-                                seed.to_vec(),
-                            )),
-                        }],
-                        &mut self.sign,
-                    )?)
-                }
-                _ => None,
             }
-        } else {
-            (self.ready)();
+            StoreState::Ready { state, .. } => {
+                (self.ready)(state);
 
-            None
+                None
+            }
         };
 
         if let Some(diff) = &diff {
@@ -812,88 +819,91 @@ impl<S: State + Serialize> Store<S> {
     }
 
     fn flush(&mut self) -> Result<(), String> {
-        let diff = if let StoreState::Pending { phase, .. } = &self.proof.state.state {
-            // XXX: do we need to lock and unlock log here?
+        let diff = match &self.proof.state.state {
+            StoreState::Pending { phase, .. } => {
+                // XXX: do we need to lock and unlock log here?
 
-            match (&*phase.try_borrow().unwrap(), self.player) {
-                (Phase::Commit, Some(0)) => {
-                    let seed = {
-                        let mut seed =
-                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+                match (&*phase.try_borrow().unwrap(), self.player) {
+                    (Phase::Commit, Some(0)) => {
+                        let seed = {
+                            let mut seed =
+                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-                        self.random.fill_bytes(&mut seed);
-                        seed
-                    };
+                            self.random.fill_bytes(&mut seed);
+                            seed
+                        };
 
-                    self.secret = Some(seed.to_vec());
-
-                    Some(self.proof.diff(
-                        vec![crate::ProofAction {
-                            player: Some(0),
-                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Commit(
-                                tiny_keccak::keccak256(&seed),
-                            )),
-                        }],
-                        &mut self.sign,
-                    )?)
-                }
-                (Phase::Reply { .. }, Some(1)) => {
-                    let seed = {
-                        let mut seed =
-                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-
-                        self.random.fill_bytes(&mut seed);
-                        seed
-                    };
-
-                    Some(self.proof.diff(
-                        vec![crate::ProofAction {
-                            player: Some(1),
-                            action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
-                                seed.to_vec(),
-                            )),
-                        }],
-                        &mut self.sign,
-                    )?)
-                }
-                (
-                    Phase::Reveal {
-                        hash,
-                        owner_hash: false,
-                        ..
-                    },
-                    Some(0),
-                )
-                | (
-                    Phase::Reveal {
-                        hash,
-                        owner_hash: true,
-                        ..
-                    },
-                    None,
-                ) => {
-                    if let Some(secret) = &self.secret {
-                        crate::forbid!(&tiny_keccak::keccak256(secret) != hash);
+                        self.secret = Some(seed.to_vec());
 
                         Some(self.proof.diff(
                             vec![crate::ProofAction {
-                                player: self.player,
+                                player: Some(0),
                                 action: crate::PlayerAction::Play(
-                                    StoreAction::<S::Action>::Reveal(secret.to_vec()),
+                                    StoreAction::<S::Action>::Commit(tiny_keccak::keccak256(&seed)),
                                 ),
                             }],
                             &mut self.sign,
                         )?)
-                    } else {
-                        return Err("self.secret.is_none()".to_string());
                     }
-                }
-                _ => None,
-            }
-        } else {
-            (self.ready)();
+                    (Phase::Reply { .. }, Some(1)) => {
+                        let seed = {
+                            let mut seed =
+                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-            None
+                            self.random.fill_bytes(&mut seed);
+                            seed
+                        };
+
+                        Some(self.proof.diff(
+                            vec![crate::ProofAction {
+                                player: Some(1),
+                                action: crate::PlayerAction::Play(StoreAction::<S::Action>::Reply(
+                                    seed.to_vec(),
+                                )),
+                            }],
+                            &mut self.sign,
+                        )?)
+                    }
+                    (
+                        Phase::Reveal {
+                            hash,
+                            owner_hash: false,
+                            ..
+                        },
+                        Some(0),
+                    )
+                    | (
+                        Phase::Reveal {
+                            hash,
+                            owner_hash: true,
+                            ..
+                        },
+                        None,
+                    ) => {
+                        if let Some(secret) = &self.secret {
+                            crate::forbid!(&tiny_keccak::keccak256(secret) != hash);
+
+                            Some(self.proof.diff(
+                                vec![crate::ProofAction {
+                                    player: self.player,
+                                    action: crate::PlayerAction::Play(
+                                        StoreAction::<S::Action>::Reveal(secret.to_vec()),
+                                    ),
+                                }],
+                                &mut self.sign,
+                            )?)
+                        } else {
+                            return Err("self.secret.is_none()".to_string());
+                        }
+                    }
+                    _ => None,
+                }
+            }
+            StoreState::Ready { state, .. } => {
+                (self.ready)(state);
+
+                None
+            }
         };
 
         if let Some(diff) = &diff {

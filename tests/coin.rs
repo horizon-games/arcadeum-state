@@ -54,7 +54,7 @@ macro_rules! println {
 #[cfg(feature = "bindings")]
 arcadeum::bind!(Coin);
 
-#[derive(Serialize, Clone, Default)]
+#[derive(Serialize, Clone, Debug, Default)]
 pub struct Coin {
     nonce: u8,
     score: (u8, u8),
@@ -222,8 +222,8 @@ fn test_coin() {
         arcadeum::store::Store::<Coin>::new(
             Some(0),
             &root.serialize(),
-            Box::new(|| {
-                println!("0: ready");
+            Box::new(|state| {
+                println!("0: ready: {:?}", state);
             }),
             Box::new(move |message| crypto::sign(message, &subkey)),
             Box::new(move |diff| {
@@ -247,8 +247,8 @@ fn test_coin() {
         arcadeum::store::Store::<Coin>::new(
             Some(1),
             &root.serialize(),
-            Box::new(|| {
-                println!("1: ready");
+            Box::new(|state| {
+                println!("1: ready: {:?}", state);
             }),
             Box::new(move |message| crypto::sign(message, &subkey)),
             Box::new(move |diff| {

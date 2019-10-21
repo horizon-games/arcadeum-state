@@ -1338,3 +1338,47 @@ pub trait Action: Clone {
     /// See [Action::deserialize].
     fn serialize(&self) -> Vec<u8>;
 }
+
+impl Action for Vec<u8> {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        Ok(data.to_vec())
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        self.clone()
+    }
+}
+
+macro_rules! impl_Action {
+    ($($type:ty),*) => {
+        $(
+            impl Action for $type {
+                fn deserialize(data: &[u8]) -> Result<Self, String> {
+                    forbid!(data.len() != size_of::<Self>());
+
+                    Ok(Self::from_le_bytes(error::check(data.try_into())?))
+                }
+
+                fn serialize(&self) -> Vec<u8> {
+                    self.to_le_bytes().to_vec()
+                }
+            }
+        )*
+    };
+}
+
+impl_Action![i8, i16, i32, i64];
+impl_Action![u8, u16, u32, u64];
+
+impl Action for bool {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        forbid!(data.len() != size_of::<Self>());
+        forbid!(data[0] != 0 && data[0] != 1);
+
+        Ok(data[0] != 0)
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        vec![(*self).into()]
+    }
+}

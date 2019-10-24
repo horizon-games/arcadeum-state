@@ -217,31 +217,32 @@ fn test_battleship() {
         .try_into()
         .unwrap();
 
-    let secret0 = BattleshipSecret(
-        crypto::MerkleTree::with_salt(
-            {
-                let mut elements = [0; 100];
-                random.fill_bytes(&mut elements);
-                elements.iter().map(|element| element % 2 != 0).collect()
-            },
-            16,
-            &mut random,
-        )
-        .unwrap(),
-    );
-
-    let secret1 = BattleshipSecret(
-        crypto::MerkleTree::with_salt(
-            {
-                let mut elements = [0; 100];
-                random.fill_bytes(&mut elements);
-                elements.iter().map(|element| element % 2 != 0).collect()
-            },
-            16,
-            &mut random,
-        )
-        .unwrap(),
-    );
+    let secrets = [
+        BattleshipSecret(
+            crypto::MerkleTree::with_salt(
+                {
+                    let mut elements = [0; 100];
+                    random.fill_bytes(&mut elements);
+                    elements.iter().map(|element| element % 2 != 0).collect()
+                },
+                16,
+                &mut random,
+            )
+            .unwrap(),
+        ),
+        BattleshipSecret(
+            crypto::MerkleTree::with_salt(
+                {
+                    let mut elements = [0; 100];
+                    random.fill_bytes(&mut elements);
+                    elements.iter().map(|element| element % 2 != 0).collect()
+                },
+                16,
+                &mut random,
+            )
+            .unwrap(),
+        ),
+    ];
 
     let state = ProofState::<StoreState<Battleship>>::new(
         BattleshipID(id),
@@ -250,8 +251,8 @@ fn test_battleship() {
             nonce: Default::default(),
             score: Default::default(),
             roots: [
-                secret0.0.root()[..].try_into().unwrap(),
-                secret1.0.root()[..].try_into().unwrap(),
+                secrets[0].0.root()[..].try_into().unwrap(),
+                secrets[1].0.root()[..].try_into().unwrap(),
             ],
         }),
     )
@@ -283,26 +284,40 @@ fn test_battleship() {
         proof.serialize()
     });
 
-    let queue1 = Rc::new(RefCell::new(VecDeque::new()));
-    let queue2 = Rc::new(RefCell::new(VecDeque::new()));
+    let queues = [
+        Rc::new(RefCell::new(VecDeque::new())),
+        Rc::new(RefCell::new(VecDeque::new())),
+        Rc::new(RefCell::new(VecDeque::new())),
+    ];
+
+    let mut store0 = {
+        let queue = queues[0].clone();
+
+        arcadeum::store::Store::<Battleship>::new(
+            None,
+            &root.serialize(),
+            [Some(secrets[0].clone()), Some(secrets[1].clone())],
+            |state| println!("0: ready: {:?}", state),
+            move |message| crypto::sign(message, &owner),
+            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
+            |message| println!("0: {:?}", message),
+            Box::new(rand::rngs::StdRng::from_seed([0; 32])),
+        )
+        .unwrap()
+    };
 
     let mut store1 = {
         let subkey = subkeys[0].clone();
-        let opponent_queue = queue2.clone();
+        let queue = queues[1].clone();
 
         arcadeum::store::Store::<Battleship>::new(
             Some(0),
             &root.serialize(),
-            secret0,
-            |state| println!("0: ready: {:?}", state),
+            [Some(secrets[0].clone()), None],
+            |state| println!("1: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
-            move |diff| {
-                opponent_queue
-                    .try_borrow_mut()
-                    .unwrap()
-                    .push_back(diff.clone());
-            },
-            |message| println!("0: {:?}", message),
+            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
+            |message| println!("1: {:?}", message),
             Box::new(rand::rngs::StdRng::from_seed([1; 32])),
         )
         .unwrap()
@@ -310,21 +325,16 @@ fn test_battleship() {
 
     let mut store2 = {
         let subkey = subkeys[1].clone();
-        let opponent_queue = queue1.clone();
+        let queue = queues[2].clone();
 
         arcadeum::store::Store::<Battleship>::new(
             Some(1),
             &root.serialize(),
-            secret1,
-            |state| println!("1: ready: {:?}", state),
+            [None, Some(secrets[1].clone())],
+            |state| println!("2: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
-            move |diff| {
-                opponent_queue
-                    .try_borrow_mut()
-                    .unwrap()
-                    .push_back(diff.clone());
-            },
-            |message| println!("1: {:?}", message),
+            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
+            |message| println!("2: {:?}", message),
             Box::new(rand::rngs::StdRng::from_seed([2; 32])),
         )
         .unwrap()
@@ -346,6 +356,7 @@ fn test_battleship() {
             .unwrap();
 
         proof.apply(&diff).unwrap();
+        store0.apply(&diff).unwrap();
         store1.apply(&diff).unwrap();
         store2.apply(&diff).unwrap();
 
@@ -373,21 +384,44 @@ fn test_battleship() {
             .unwrap();
 
         proof.apply(&diff).unwrap();
+        store0.apply(&diff).unwrap();
         store1.apply(&diff).unwrap();
         store2.apply(&diff).unwrap();
 
         loop {
-            while let Some(diff) = queue1.try_borrow_mut().unwrap().pop_front() {
-                store1.apply(&diff).unwrap();
+            while let Some(diff) = queues[1].try_borrow_mut().unwrap().pop_front() {
+                store0.apply(&diff).unwrap();
+                store2.apply(&diff).unwrap();
                 proof.apply(&diff).unwrap();
+
+                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
+                    store1.apply(&diff).unwrap();
+                    store2.apply(&diff).unwrap();
+                    proof.apply(&diff).unwrap();
+                }
             }
 
-            while let Some(diff) = queue2.try_borrow_mut().unwrap().pop_front() {
+            while let Some(diff) = queues[2].try_borrow_mut().unwrap().pop_front() {
+                store0.apply(&diff).unwrap();
+                store1.apply(&diff).unwrap();
+                proof.apply(&diff).unwrap();
+
+                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
+                    store1.apply(&diff).unwrap();
+                    store2.apply(&diff).unwrap();
+                    proof.apply(&diff).unwrap();
+                }
+            }
+
+            while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
+                store1.apply(&diff).unwrap();
                 store2.apply(&diff).unwrap();
                 proof.apply(&diff).unwrap();
             }
 
-            if queue1.try_borrow().unwrap().is_empty() && queue2.try_borrow().unwrap().is_empty() {
+            if queues[1].try_borrow().unwrap().is_empty()
+                && queues[2].try_borrow().unwrap().is_empty()
+            {
                 break;
             }
         }

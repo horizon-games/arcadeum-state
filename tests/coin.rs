@@ -199,26 +199,40 @@ fn test_coin() {
         proof.serialize()
     });
 
-    let queue1 = Rc::new(RefCell::new(VecDeque::new()));
-    let queue2 = Rc::new(RefCell::new(VecDeque::new()));
+    let queues = [
+        Rc::new(RefCell::new(VecDeque::new())),
+        Rc::new(RefCell::new(VecDeque::new())),
+        Rc::new(RefCell::new(VecDeque::new())),
+    ];
+
+    let mut store0 = {
+        let queue = queues[0].clone();
+
+        arcadeum::store::Store::<Coin>::new(
+            None,
+            &root.serialize(),
+            [Some(()), Some(())],
+            |state| println!("0: ready: {:?}", state),
+            move |message| crypto::sign(message, &owner),
+            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
+            |message| println!("0: {:?}", message),
+            Box::new(rand::rngs::StdRng::from_seed([0; 32])),
+        )
+        .unwrap()
+    };
 
     let mut store1 = {
         let subkey = subkeys[0].clone();
-        let opponent_queue = queue2.clone();
+        let queue = queues[1].clone();
 
         arcadeum::store::Store::<Coin>::new(
             Some(0),
             &root.serialize(),
-            (),
-            |state| println!("0: ready: {:?}", state),
+            [Some(()), None],
+            |state| println!("1: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
-            move |diff| {
-                opponent_queue
-                    .try_borrow_mut()
-                    .unwrap()
-                    .push_back(diff.clone());
-            },
-            |message| println!("0: {:?}", message),
+            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
+            |message| println!("1: {:?}", message),
             Box::new(rand::rngs::StdRng::from_seed([1; 32])),
         )
         .unwrap()
@@ -226,21 +240,16 @@ fn test_coin() {
 
     let mut store2 = {
         let subkey = subkeys[1].clone();
-        let opponent_queue = queue1.clone();
+        let queue = queues[2].clone();
 
         arcadeum::store::Store::<Coin>::new(
             Some(1),
             &root.serialize(),
-            (),
-            |state| println!("1: ready: {:?}", state),
+            [None, Some(())],
+            |state| println!("2: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
-            move |diff| {
-                opponent_queue
-                    .try_borrow_mut()
-                    .unwrap()
-                    .push_back(diff.clone());
-            },
-            |message| println!("1: {:?}", message),
+            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
+            |message| println!("2: {:?}", message),
             Box::new(rand::rngs::StdRng::from_seed([2; 32])),
         )
         .unwrap()
@@ -262,6 +271,7 @@ fn test_coin() {
             .unwrap();
 
         proof.apply(&diff).unwrap();
+        store0.apply(&diff).unwrap();
         store1.apply(&diff).unwrap();
         store2.apply(&diff).unwrap();
 
@@ -289,21 +299,44 @@ fn test_coin() {
             .unwrap();
 
         proof.apply(&diff).unwrap();
+        store0.apply(&diff).unwrap();
         store1.apply(&diff).unwrap();
         store2.apply(&diff).unwrap();
 
         loop {
-            while let Some(diff) = queue1.try_borrow_mut().unwrap().pop_front() {
-                store1.apply(&diff).unwrap();
+            while let Some(diff) = queues[1].try_borrow_mut().unwrap().pop_front() {
+                store0.apply(&diff).unwrap();
+                store2.apply(&diff).unwrap();
                 proof.apply(&diff).unwrap();
+
+                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
+                    store1.apply(&diff).unwrap();
+                    store2.apply(&diff).unwrap();
+                    proof.apply(&diff).unwrap();
+                }
             }
 
-            while let Some(diff) = queue2.try_borrow_mut().unwrap().pop_front() {
+            while let Some(diff) = queues[2].try_borrow_mut().unwrap().pop_front() {
+                store0.apply(&diff).unwrap();
+                store1.apply(&diff).unwrap();
+                proof.apply(&diff).unwrap();
+
+                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
+                    store1.apply(&diff).unwrap();
+                    store2.apply(&diff).unwrap();
+                    proof.apply(&diff).unwrap();
+                }
+            }
+
+            while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
+                store1.apply(&diff).unwrap();
                 store2.apply(&diff).unwrap();
                 proof.apply(&diff).unwrap();
             }
 
-            if queue1.try_borrow().unwrap().is_empty() && queue2.try_borrow().unwrap().is_empty() {
+            if queues[1].try_borrow().unwrap().is_empty()
+                && queues[2].try_borrow().unwrap().is_empty()
+            {
                 break;
             }
         }

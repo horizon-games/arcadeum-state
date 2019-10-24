@@ -82,7 +82,18 @@ macro_rules! bind {
                         $crate::store::Store::new(
                             player,
                             root,
-                            secret.into_serde().map_err(|error| format!("{}", error))?,
+                            match player {
+                                None => secret.into_serde().map_err(|error| format!("{}", error))?,
+                                Some(0) => [
+                                    Some(secret.into_serde().map_err(|error| format!("{}", error))?),
+                                    None,
+                                ],
+                                Some(1) => [
+                                    None,
+                                    Some(secret.into_serde().map_err(|error| format!("{}", error))?),
+                                ],
+                                _ => return Err("player.is_some() && player.unwrap() >= 2".into()),
+                            },
                             move |state| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
                                     drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
@@ -454,7 +465,7 @@ pub mod bindings {
 pub struct Store<S: State + Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
-    secret: S::Secret,
+    secrets: [Option<S::Secret>; 2],
     ready: Box<dyn FnMut(&S)>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
@@ -470,7 +481,7 @@ impl<S: State + Serialize> Store<S> {
     pub fn new(
         player: Option<crate::Player>,
         root: &[u8],
-        secret: S::Secret,
+        secrets: [Option<S::Secret>; 2],
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
@@ -494,7 +505,7 @@ impl<S: State + Serialize> Store<S> {
 
                 root
             }),
-            secret,
+            secrets,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -565,11 +576,30 @@ impl<S: State + Serialize> Store<S> {
             *logger = log.clone();
         }
 
-        let size = crate::utils::read_u32_usize(&mut data)?;
+        let secrets = [
+            if crate::utils::read_u8_bool(&mut data)? {
+                let size = crate::utils::read_u32_usize(&mut data)?;
 
-        crate::forbid!(data.len() < size);
-        let secret = S::Secret::deserialize(&data[..size])?;
-        data = &data[size..];
+                crate::forbid!(data.len() < size);
+                let secret = S::Secret::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some(secret)
+            } else {
+                None
+            },
+            if crate::utils::read_u8_bool(&mut data)? {
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let secret = S::Secret::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some(secret)
+            } else {
+                None
+            },
+        ];
 
         let seed = if crate::utils::read_u8_bool(&mut data)? {
             Some(data.to_vec())
@@ -582,7 +612,7 @@ impl<S: State + Serialize> Store<S> {
         let mut store = Self {
             player,
             proof,
-            secret,
+            secrets,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -602,7 +632,6 @@ impl<S: State + Serialize> Store<S> {
     pub fn serialize(&self) -> Vec<u8> {
         let root = self.proof.root.serialize();
         let proof = self.proof.serialize();
-        let secret = self.secret.serialize();
 
         let mut data = Vec::with_capacity(
             1 + size_of::<u32>()
@@ -627,8 +656,20 @@ impl<S: State + Serialize> Store<S> {
         crate::utils::write_u32_usize(&mut data, proof.len()).unwrap();
         data.extend(proof);
 
-        crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
-        data.extend(secret);
+        for secret in &self.secrets {
+            match secret {
+                Some(secret) => {
+                    crate::utils::write_u8_bool(&mut data, true);
+
+                    let secret = secret.serialize();
+                    crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
+                    data.extend(secret);
+                }
+                None => {
+                    crate::utils::write_u8_bool(&mut data, false);
+                }
+            }
+        }
 
         if let Some(seed) = &self.seed {
             crate::utils::write_u8_bool(&mut data, true);
@@ -888,17 +929,21 @@ impl<S: State + Serialize> Store<S> {
                         },
                         _,
                     ) => {
-                        if Some(*player) == self.player {
-                            let secret = reveal(&self.secret);
+                        if self.player.is_none() {
+                            if let Some(secret) = &self.secrets[usize::from(*player)] {
+                                let secret = reveal(secret);
 
-                            crate::forbid!(!verify(&secret));
+                                crate::forbid!(!verify(&secret));
 
-                            Some(crate::ProofAction {
-                                player: self.player,
-                                action: crate::PlayerAction::Play(
-                                    StoreAction::<S::Action>::Reveal(secret),
-                                ),
-                            })
+                                Some(crate::ProofAction {
+                                    player: self.player,
+                                    action: crate::PlayerAction::Play(
+                                        StoreAction::<S::Action>::Reveal(secret),
+                                    ),
+                                })
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }

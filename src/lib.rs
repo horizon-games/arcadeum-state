@@ -231,18 +231,8 @@ impl<S: State> Proof<S> {
 
                     match action.player {
                         None => {
-                            /*
-                             * XXX:
-                             *
-                             * state: temporarily disable validation of owner actions
-                             *
-                             * We discard the owner proof once we have all players' proofs, but really
-                             * we should be keeping the owner proof as long as there are owner actions
-                             * to be validated.
-                             */
-
-                            // forbid!(range.is_none());
-                            // forbid!(range.unwrap().end <= i);
+                            forbid!(range.is_none());
+                            forbid!(range.unwrap().end <= i);
                         }
                         Some(player) => {
                             if range.is_none() || range.unwrap().end <= i {
@@ -473,7 +463,10 @@ impl<S: State> Proof<S> {
                     signature: diff.proof_signature,
                 });
 
-                if consensus {
+                if consensus
+                    && self.proofs[0].as_ref().is_some()
+                    && self.proofs[0].as_ref().unwrap().range.end <= offset
+                {
                     self.proofs[0] = None;
                 }
 

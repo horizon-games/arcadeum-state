@@ -82,7 +82,7 @@ impl State for Battleship {
             nonce: data[0],
             score: [data[1], data[2]],
             roots: [
-                data[3..3 + size_of::<crypto::Hash>()].try_into().unwrap(),
+                data[3..][..size_of::<crypto::Hash>()].try_into().unwrap(),
                 data[3 + size_of::<crypto::Hash>()..].try_into().unwrap(),
             ],
         })

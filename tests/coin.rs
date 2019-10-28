@@ -169,10 +169,7 @@ fn test_coin() {
     let state = ProofState::<StoreState<Coin>>::new(
         CoinID(id),
         players,
-        StoreState::Ready {
-            state: Default::default(),
-            log: None,
-        },
+        StoreState::new(Default::default()),
     )
     .unwrap();
 

@@ -458,6 +458,7 @@ pub struct Store<S: State + Serialize> {
     ready: Box<dyn FnMut(&S)>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
+    logger: Rc<RefCell<Logger>>,
     random: Box<dyn rand::RngCore>,
     seed: Option<Vec<u8>>,
 }
@@ -473,16 +474,22 @@ impl<S: State + Serialize> Store<S> {
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(&Log) + 'static,
+        log: impl FnMut(&Message) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
+        let log = Rc::new(RefCell::new(Logger::new(log)));
+
         let mut store = Self {
             player,
             proof: crate::Proof::new({
                 let mut root = crate::RootProof::deserialize(root)?;
 
-                if let StoreState::Ready { log: logger, .. } = &mut root.state.state {
-                    *logger = Some(Logger::new(log));
+                if let StoreState::Ready { logger, .. } = &mut root.state.state {
+                    *logger = log.clone();
+                }
+
+                if let StoreState::Ready { logger, .. } = &mut root.latest.state {
+                    *logger = log.clone();
                 }
 
                 root
@@ -491,6 +498,7 @@ impl<S: State + Serialize> Store<S> {
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
+            logger: log,
             random,
             seed: None,
         };
@@ -508,7 +516,7 @@ impl<S: State + Serialize> Store<S> {
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(&Log) + 'static,
+        log: impl FnMut(&Message) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -535,26 +543,26 @@ impl<S: State + Serialize> Store<S> {
         proof.deserialize(&data[..size])?;
         data = &data[size..];
 
-        let log = Logger::new(log);
+        let log = Rc::new(RefCell::new(Logger::new(log)));
 
-        if let StoreState::Ready { log: logger, .. } = &mut proof.root.state.state {
-            *logger = Some(log.clone());
+        if let StoreState::Ready { logger, .. } = &mut proof.root.state.state {
+            *logger = log.clone();
         }
 
-        if let StoreState::Ready { log: logger, .. } = &mut proof.root.latest.state {
-            *logger = Some(log.clone());
+        if let StoreState::Ready { logger, .. } = &mut proof.root.latest.state {
+            *logger = log.clone();
         }
 
         for proof in &mut proof.proofs {
             if let Some(proof) = proof {
-                if let StoreState::Ready { log: logger, .. } = &mut proof.state.state {
-                    *logger = Some(log.clone());
+                if let StoreState::Ready { logger, .. } = &mut proof.state.state {
+                    *logger = log.clone();
                 }
             }
         }
 
-        if let StoreState::Ready { log: logger, .. } = &mut proof.state.state {
-            *logger = Some(log.clone());
+        if let StoreState::Ready { logger, .. } = &mut proof.state.state {
+            *logger = log.clone();
         }
 
         let size = crate::utils::read_u32_usize(&mut data)?;
@@ -578,6 +586,7 @@ impl<S: State + Serialize> Store<S> {
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
+            logger: log,
             random,
             seed,
         };
@@ -655,67 +664,61 @@ impl<S: State + Serialize> Store<S> {
         crate::forbid!(self.player.is_some());
 
         let action = match &self.proof.state.state {
-            StoreState::Pending { phase, .. } => {
-                // XXX: do we need to lock and unlock log here?
+            StoreState::Pending { phase, .. } => match &*phase.try_borrow().unwrap() {
+                Phase::RandomCommit => {
+                    let seed = {
+                        let mut seed =
+                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-                match &*phase.try_borrow().unwrap() {
-                    Phase::RandomCommit => {
-                        let seed = {
-                            let mut seed =
-                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+                        self.random.fill_bytes(&mut seed);
+                        seed
+                    };
 
-                            self.random.fill_bytes(&mut seed);
-                            seed
-                        };
+                    self.seed = Some(seed.to_vec());
 
-                        self.seed = Some(seed.to_vec());
-
-                        Some(crate::ProofAction {
-                            player: None,
-                            action: crate::PlayerAction::Play(
-                                StoreAction::<S::Action>::RandomCommit(tiny_keccak::keccak256(
-                                    &seed,
-                                )),
-                            ),
-                        })
-                    }
-                    Phase::RandomReply { .. } => {
-                        let seed = {
-                            let mut seed =
-                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-
-                            self.random.fill_bytes(&mut seed);
-                            seed
-                        };
-
-                        Some(crate::ProofAction {
-                            player: None,
-                            action: crate::PlayerAction::Play(
-                                StoreAction::<S::Action>::RandomReply(seed.to_vec()),
-                            ),
-                        })
-                    }
-                    Phase::RandomReveal {
-                        owner_hash: false, ..
-                    } => {
-                        let seed = {
-                            let mut seed =
-                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-
-                            self.random.fill_bytes(&mut seed);
-                            seed
-                        };
-
-                        Some(crate::ProofAction {
-                            player: None,
-                            action: crate::PlayerAction::Play(
-                                StoreAction::<S::Action>::RandomReveal(seed.to_vec()),
-                            ),
-                        })
-                    }
-                    _ => None,
+                    Some(crate::ProofAction {
+                        player: None,
+                        action: crate::PlayerAction::Play(StoreAction::<S::Action>::RandomCommit(
+                            tiny_keccak::keccak256(&seed),
+                        )),
+                    })
                 }
-            }
+                Phase::RandomReply { .. } => {
+                    let seed = {
+                        let mut seed =
+                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                        self.random.fill_bytes(&mut seed);
+                        seed
+                    };
+
+                    Some(crate::ProofAction {
+                        player: None,
+                        action: crate::PlayerAction::Play(StoreAction::<S::Action>::RandomReply(
+                            seed.to_vec(),
+                        )),
+                    })
+                }
+                Phase::RandomReveal {
+                    owner_hash: false, ..
+                } => {
+                    let seed = {
+                        let mut seed =
+                            <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                        self.random.fill_bytes(&mut seed);
+                        seed
+                    };
+
+                    Some(crate::ProofAction {
+                        player: None,
+                        action: crate::PlayerAction::Play(StoreAction::<S::Action>::RandomReveal(
+                            seed.to_vec(),
+                        )),
+                    })
+                }
+                _ => None,
+            },
             StoreState::Ready { state, .. } => {
                 (self.ready)(state);
 
@@ -724,7 +727,7 @@ impl<S: State + Serialize> Store<S> {
         };
 
         if let Some(action) = action {
-            let diff = self.proof.diff(vec![action], &mut self.sign)?;
+            let diff = self.diff(vec![action])?;
 
             (self.send)(&diff);
 
@@ -738,6 +741,15 @@ impl<S: State + Serialize> Store<S> {
     ///
     /// `diff` must have been constructed using [Store::diff] on a store with the same state.
     pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
+        let mut logger = self
+            .logger
+            .try_borrow_mut()
+            .map_err(|error| error.to_string())?;
+
+        logger.enable(true);
+
+        drop(logger);
+
         crate::error::check(self.proof.apply(diff))?;
 
         self.flush()
@@ -750,23 +762,16 @@ impl<S: State + Serialize> Store<S> {
         &mut self,
         actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
     ) -> Result<StoreDiff<S>, String> {
-        let log = match &mut self.proof.state.state {
-            StoreState::Ready { log, .. } => log,
-            StoreState::Pending { log, .. } => log,
-        }
-        .take();
+        let mut logger = self
+            .logger
+            .try_borrow_mut()
+            .map_err(|error| error.to_string())?;
 
-        let diff = self.proof.diff(actions, &mut self.sign);
+        logger.enable(false);
 
-        if let Some(log) = log {
-            match &mut self.proof.state.state {
-                StoreState::Ready { log, .. } => log,
-                StoreState::Pending { log, .. } => log,
-            }
-            .replace(log);
-        }
+        drop(logger);
 
-        diff
+        self.proof.diff(actions, &mut self.sign)
     }
 
     /// Unconditionally sets the state of the store using `proof`.
@@ -775,48 +780,26 @@ impl<S: State + Serialize> Store<S> {
     ///
     /// It is possible to reset to a state with a lower nonce using this method.
     pub fn reset(&mut self, proof: &[u8]) -> Result<(), String> {
-        // TODO XXX figure out why the logger doesn't exist on self.proof.state.state, and only in one of the player proofs.
-
-        let mut old_logger = match &self.proof.state.state {
-            StoreState::Pending { log, .. } | StoreState::Ready { log, .. } => log,
-        }
-        .clone();
-
-        for player_proof in &mut self.proof.proofs {
-            if let Some(proof) = player_proof {
-                match &mut proof.state.state {
-                    StoreState::Pending { log, .. } | StoreState::Ready { log, .. } => {
-                        if let Some(current_logger) = log {
-                            old_logger = Some(current_logger.clone());
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
         self.proof.deserialize(proof)?;
 
-        for player_proof in &mut self.proof.proofs {
-            if let Some(proof) = player_proof {
-                match &mut proof.state.state {
-                    StoreState::Pending { log, .. } | StoreState::Ready { log, .. } => {
-                        if let Some(mut new_log) = old_logger.clone() {
-                            new_log.nonce = new_log.state.borrow_mut().1;
-                            *log = Some(new_log)
-                        }
-                    }
+        if let StoreState::Ready { logger, .. } = &mut self.proof.root.state.state {
+            *logger = self.logger.clone();
+        }
+
+        if let StoreState::Ready { logger, .. } = &mut self.proof.root.latest.state {
+            *logger = self.logger.clone();
+        }
+
+        for proof in &mut self.proof.proofs {
+            if let Some(proof) = proof {
+                if let StoreState::Ready { logger, .. } = &mut proof.state.state {
+                    *logger = self.logger.clone();
                 }
             }
         }
 
-        match &mut self.proof.state.state {
-            StoreState::Pending { log, .. } | StoreState::Ready { log, .. } => {
-                if let Some(mut new_log) = old_logger {
-                    new_log.nonce = new_log.state.borrow_mut().1;
-                    *log = Some(new_log)
-                }
-            }
+        if let StoreState::Ready { logger, .. } = &mut self.proof.state.state {
+            *logger = self.logger.clone();
         }
 
         self.flush()?;
@@ -827,8 +810,6 @@ impl<S: State + Serialize> Store<S> {
     fn flush(&mut self) -> Result<(), String> {
         let action = match &self.proof.state.state {
             StoreState::Pending { phase, .. } => {
-                // XXX: do we need to lock and unlock log here?
-
                 match (&*phase.try_borrow().unwrap(), self.player) {
                     (Phase::RandomCommit, Some(0)) => {
                         let seed = {
@@ -933,7 +914,7 @@ impl<S: State + Serialize> Store<S> {
         };
 
         if let Some(action) = action {
-            let diff = self.proof.diff(vec![action], &mut self.sign)?;
+            let diff = self.diff(vec![action])?;
 
             (self.send)(&diff);
 
@@ -950,18 +931,24 @@ type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
 pub enum StoreState<S: State + Serialize> {
     Ready {
         state: S,
-
-        log: Option<Logger>,
+        nonce: usize,
+        logger: Rc<RefCell<Logger>>,
     },
     Pending {
-        phase: Rc<RefCell<Phase<S>>>,
         state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
-
-        log: Option<Logger>,
+        phase: Rc<RefCell<Phase<S>>>,
     },
 }
 
 impl<S: State + Serialize> StoreState<S> {
+    pub fn new(state: S) -> Self {
+        Self::Ready {
+            state,
+            nonce: Default::default(),
+            logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
+        }
+    }
+
     pub fn state(&self) -> Option<&S> {
         if let StoreState::Ready { state, .. } = self {
             Some(state)
@@ -976,16 +963,28 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
     type Nonce = S::Nonce;
     type Action = StoreAction<S::Action>;
 
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
+    fn deserialize(mut data: &[u8]) -> Result<Self, String> {
+        crate::forbid!(data.len() < size_of::<u32>());
+
         Ok(Self::Ready {
-            state: S::deserialize(data)?,
-            log: None,
+            state: S::deserialize(&data[..data.len() - size_of::<u32>()])?,
+            nonce: {
+                data = &data[data.len() - size_of::<u32>()..];
+                crate::utils::read_u32_usize(&mut data)?
+            },
+            logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
         })
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
         match self {
-            Self::Ready { state, .. } => <S as State>::serialize(&state),
+            Self::Ready { state, nonce, .. } => {
+                <S as State>::serialize(state).and_then(|mut state| {
+                    crate::utils::write_u32_usize(&mut state, *nonce)
+                        .ok()
+                        .and(Some(state))
+                })
+            }
             _ => None,
         }
     }
@@ -1005,7 +1004,12 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
 
         replace_with_or_abort(self, |state| {
             if let Self::Action::Action(action) = action {
-                if let Self::Ready { state, log } = state {
+                if let Self::Ready {
+                    state,
+                    nonce,
+                    logger,
+                } = state
+                {
                     let phase = Rc::new(RefCell::new(Phase::Idle {
                         random: None,
                         secret: None,
@@ -1014,16 +1018,16 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                     handled = true;
 
                     Self::Pending {
-                        phase: phase.clone(),
                         state: state.apply(
                             player,
                             action.clone(),
                             Context {
-                                phase,
-                                log: log.clone(),
+                                phase: phase.clone(),
+                                nonce,
+                                logger,
                             },
                         ),
-                        log,
+                        phase,
                     }
                 } else {
                     state
@@ -1154,22 +1158,18 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
         }
 
         replace_with_or_abort(self, |state| {
-            if let Self::Pending {
-                mut state,
-                phase,
-                log,
-            } = state
-            {
+            if let Self::Pending { mut state, phase } = state {
                 if let Poll::Ready((state, context)) = state
                     .as_mut()
                     .poll(&mut task::Context::from_waker(&phantom_waker()))
                 {
                     Self::Ready {
                         state,
-                        log: context.log,
+                        nonce: context.nonce,
+                        logger: context.logger,
                     }
                 } else {
-                    Self::Pending { state, phase, log }
+                    Self::Pending { state, phase }
                 }
             } else {
                 state
@@ -1183,9 +1183,14 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
 impl<S: State + Serialize> Clone for StoreState<S> {
     fn clone(&self) -> Self {
         match self {
-            Self::Ready { state, log } => Self::Ready {
+            Self::Ready {
+                state,
+                nonce,
+                logger,
+            } => Self::Ready {
                 state: state.clone(),
-                log: log.clone(),
+                nonce: *nonce,
+                logger: logger.clone(),
             },
             _ => panic!("StoreState::Pending {{ .. }}.clone()"),
         }
@@ -1384,7 +1389,8 @@ macro_rules! log {
 /// See [log].
 pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
-    log: Option<Logger>,
+    nonce: usize,
+    logger: Rc<RefCell<Logger>>,
 }
 
 impl<S: State> Context<S> {
@@ -1455,59 +1461,61 @@ impl<S: State> Context<S> {
     }
 
     #[doc(hidden)]
-    pub fn log(&mut self, message: &Log) -> Result<(), String> {
-        if let Some(log) = &mut self.log {
-            log.log(message)
-        } else {
-            Ok(())
-        }
+    pub fn log(&mut self, message: &Message) -> Result<(), String> {
+        self.nonce += 1;
+
+        self.logger
+            .try_borrow_mut()
+            .map_err(|error| error.to_string())?
+            .log(self.nonce, message);
+
+        Ok(())
     }
 
     #[doc(hidden)]
     pub fn with_phase(phase: Rc<RefCell<Phase<S>>>) -> Self {
-        Self { phase, log: None }
+        Self {
+            phase,
+            nonce: Default::default(),
+            logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
+        }
     }
 }
 
 #[doc(hidden)]
-#[derive(Clone)]
 pub struct Logger {
-    state: Rc<RefCell<LoggerState>>,
+    log: Box<dyn FnMut(&Message)>,
     nonce: usize,
+    enabled: bool,
 }
 
 impl Logger {
-    fn new(log: impl FnMut(&Log) + 'static) -> Self {
+    #[doc(hidden)]
+    pub fn new(log: impl FnMut(&Message) + 'static) -> Self {
         Self {
-            state: Rc::new(RefCell::new((Box::new(log), 0))),
-            nonce: 0,
+            log: Box::new(log),
+            nonce: Default::default(),
+            enabled: true,
         }
     }
 
-    fn log(&mut self, message: &Log) -> Result<(), String> {
-        self.nonce += 1;
+    fn enable(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
 
-        let (log, nonce) = &mut *self
-            .state
-            .try_borrow_mut()
-            .map_err(|error| error.to_string())?;
+    fn log(&mut self, nonce: usize, message: &Message) {
+        if self.enabled && nonce > self.nonce {
+            self.nonce = nonce;
 
-        if self.nonce > *nonce {
-            *nonce = self.nonce;
-
-            log(message);
+            (self.log)(message);
         }
-
-        Ok(())
     }
 }
 
-type LoggerState = (Box<dyn FnMut(&Log)>, usize);
-
 #[cfg(feature = "bindings")]
-type Log = wasm_bindgen::JsValue;
+type Message = wasm_bindgen::JsValue;
 #[cfg(not(feature = "bindings"))]
-type Log = dyn Debug;
+type Message = dyn Debug;
 
 #[doc(hidden)]
 #[derive(Debug)]

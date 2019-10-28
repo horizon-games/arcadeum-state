@@ -246,17 +246,14 @@ fn test_battleship() {
     let state = ProofState::<StoreState<Battleship>>::new(
         BattleshipID(id),
         players,
-        StoreState::Ready {
-            state: Battleship {
-                nonce: Default::default(),
-                score: Default::default(),
-                roots: [
-                    secret0.0.root()[..].try_into().unwrap(),
-                    secret1.0.root()[..].try_into().unwrap(),
-                ],
-            },
-            log: None,
-        },
+        StoreState::new(Battleship {
+            nonce: Default::default(),
+            score: Default::default(),
+            roots: [
+                secret0.0.root()[..].try_into().unwrap(),
+                secret1.0.root()[..].try_into().unwrap(),
+            ],
+        }),
     )
     .unwrap();
 

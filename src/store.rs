@@ -1617,7 +1617,7 @@ fn phantom_waker() -> Waker {
                 |_| panic!("Waker::clone"),
                 |_| panic!("Waker::wake"),
                 |_| panic!("Waker::wake_by_ref"),
-                |_| {},
+                |_| (),
             ),
         ))
     }

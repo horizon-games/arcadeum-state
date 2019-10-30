@@ -95,21 +95,25 @@ impl State for Coin {
     fn apply(
         mut self,
         player: Option<crate::Player>,
-        action: Self::Action,
+        action: &Self::Action,
         mut context: Context<Self>,
     ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>> {
-        Box::pin(async move {
-            let random: u32 = context.random().await.next_u32();
+        Box::pin({
+            let action = *action;
 
-            log!(context, random);
+            async move {
+                let random: u32 = context.random().await.next_u32();
 
-            if action == (random % 2 != 0) {
-                self.score[usize::from(player.unwrap())] += 1;
+                log!(context, random);
+
+                if action == (random % 2 != 0) {
+                    self.score[usize::from(player.unwrap())] += 1;
+                }
+
+                self.nonce += 1;
+
+                (self, context)
             }
-
-            self.nonce += 1;
-
-            (self, context)
         })
     }
 }

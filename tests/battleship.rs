@@ -110,43 +110,47 @@ impl State for Battleship {
     fn apply(
         mut self,
         player: Option<crate::Player>,
-        action: Self::Action,
+        action: &Self::Action,
         mut context: Context<Self>,
     ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>> {
-        Box::pin(async move {
-            let proof: Vec<u8> = context
-                .reveal_unique(
-                    1 - player.unwrap(),
-                    move |secret| secret.0.proof(usize::from(action)).unwrap().serialize(),
-                    {
-                        let roots = self.roots;
+        Box::pin({
+            let action = *action;
 
-                        move |data| {
-                            let proof = crypto::MerkleProof::<bool>::deserialize(data);
+            async move {
+                let proof: Vec<u8> = context
+                    .reveal_unique(
+                        1 - player.unwrap(),
+                        move |secret| secret.0.proof(usize::from(action)).unwrap().serialize(),
+                        {
+                            let roots = self.roots;
 
-                            if let Ok(proof) = proof {
-                                proof.index() == usize::from(action)
-                                    && proof.length() == 100
-                                    && *proof.root() == roots[1 - usize::from(player.unwrap())]
-                            } else {
-                                false
+                            move |data| {
+                                let proof = crypto::MerkleProof::<bool>::deserialize(data);
+
+                                if let Ok(proof) = proof {
+                                    proof.index() == usize::from(action)
+                                        && proof.length() == 100
+                                        && *proof.root() == roots[1 - usize::from(player.unwrap())]
+                                } else {
+                                    false
+                                }
                             }
-                        }
-                    },
-                )
-                .await;
+                        },
+                    )
+                    .await;
 
-            let proof = crypto::MerkleProof::deserialize(&proof).unwrap();
+                let proof = crypto::MerkleProof::deserialize(&proof).unwrap();
 
-            log!(context, *proof.element());
+                log!(context, *proof.element());
 
-            if *proof.element() {
-                self.score[usize::from(player.unwrap())] += 1;
+                if *proof.element() {
+                    self.score[usize::from(player.unwrap())] += 1;
+                }
+
+                self.nonce += 1;
+
+                (self, context)
             }
-
-            self.nonce += 1;
-
-            (self, context)
         })
     }
 }

@@ -1067,7 +1067,7 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
                     Self::Pending {
                         state: state.apply(
                             player,
-                            action.clone(),
+                            action,
                             Context {
                                 phase: phase.clone(),
                                 nonce,
@@ -1361,7 +1361,7 @@ pub trait State: Clone {
     fn apply(
         self,
         player: Option<crate::Player>,
-        action: Self::Action,
+        action: &Self::Action,
         context: Context<Self>,
     ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>>;
 }

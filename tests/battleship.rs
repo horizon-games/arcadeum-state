@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 use arcadeum::{
-    crypto, log,
+    crypto,
     store::{Context, Secret, State, StoreState},
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
@@ -141,7 +141,7 @@ impl State for Battleship {
 
                 let proof = crypto::MerkleProof::deserialize(&proof).unwrap();
 
-                log!(context, *proof.element());
+                context.log(*proof.element());
 
                 if *proof.element() {
                     self.score[usize::from(player.unwrap())] += 1;

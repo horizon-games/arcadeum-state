@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 use arcadeum::{
-    crypto, log,
+    crypto,
     store::{Context, State, StoreState},
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
@@ -104,7 +104,7 @@ impl State for Coin {
             async move {
                 let random: u32 = context.random().await.next_u32();
 
-                log!(context, random);
+                context.log(random);
 
                 if action == (random % 2 != 0) {
                     self.score[usize::from(player.unwrap())] += 1;

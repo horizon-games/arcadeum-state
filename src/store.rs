@@ -18,7 +18,6 @@
  */
 
 use replace_with::replace_with_or_abort;
-use serde::Serialize;
 
 #[cfg(feature = "std")]
 use std::{
@@ -132,7 +131,11 @@ macro_rules! bind {
                                     }
                                 }
                             },
-                            move |message| drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message)),
+                            move |message| {
+                                if let Ok(message) = wasm_bindgen::JsValue::from_serde(&*message) {
+                                    drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &message));
+                                }
+                            },
                             Box::new($crate::store::bindings::JsRng(random)),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
@@ -192,7 +195,11 @@ macro_rules! bind {
                                     }
                                 }
                             },
-                            move |message| drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, message)),
+                            move |message| {
+                                if let Ok(message) = wasm_bindgen::JsValue::from_serde(&*message) {
+                                    drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &message));
+                                }
+                            },
                             Box::new($crate::store::bindings::JsRng(random)),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
@@ -387,7 +394,7 @@ pub mod bindings {
 }
 
 /// Client [State] store
-pub struct Store<S: State + Serialize> {
+pub struct Store<S: State + serde::Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
     secrets: [Option<S::Secret>; 2],
@@ -399,7 +406,7 @@ pub struct Store<S: State + Serialize> {
     seed: Option<Vec<u8>>,
 }
 
-impl<S: State + Serialize> Store<S> {
+impl<S: State + serde::Serialize> Store<S> {
     /// Constructs a new store for a given player.
     ///
     /// `root` must have been constructed using [RootProof::serialize](crate::RootProof::serialize).
@@ -410,7 +417,7 @@ impl<S: State + Serialize> Store<S> {
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(&Message) + 'static,
+        log: impl FnMut(Box<dyn Message>) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         let log = Rc::new(RefCell::new(Logger::new(log)));
@@ -452,7 +459,7 @@ impl<S: State + Serialize> Store<S> {
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(&Message) + 'static,
+        log: impl FnMut(Box<dyn Message>) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -901,7 +908,7 @@ impl<S: State + Serialize> Store<S> {
 type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
 
 #[doc(hidden)]
-pub enum StoreState<S: State + Serialize> {
+pub enum StoreState<S: State + serde::Serialize> {
     Ready {
         state: S,
         nonce: usize,
@@ -913,7 +920,7 @@ pub enum StoreState<S: State + Serialize> {
     },
 }
 
-impl<S: State + Serialize> StoreState<S> {
+impl<S: State + serde::Serialize> StoreState<S> {
     pub fn new(state: S) -> Self {
         Self::Ready {
             state,
@@ -931,7 +938,7 @@ impl<S: State + Serialize> StoreState<S> {
     }
 }
 
-impl<S: State + Serialize> crate::State for StoreState<S> {
+impl<S: State + serde::Serialize> crate::State for StoreState<S> {
     type ID = S::ID;
     type Nonce = S::Nonce;
     type Action = StoreAction<S::Action>;
@@ -1151,7 +1158,7 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
     }
 }
 
-impl<S: State + Serialize> Clone for StoreState<S> {
+impl<S: State + serde::Serialize> Clone for StoreState<S> {
     fn clone(&self) -> Self {
         match self {
             Self::Ready {
@@ -1325,39 +1332,7 @@ impl Secret for () {
     }
 }
 
-/// Emits an event as a side effect of a state transition.
-///
-/// This can only be called from within [store::State::apply] since a [Context](store::Context) is required.
-///
-/// If the `bindings` feature is enabled, `$message` must implement [Serialize](serde::Serialize).
-/// Otherwise, `$message` must implement [Debug].
-#[cfg(feature = "bindings")]
-#[macro_export]
-macro_rules! log {
-    ($context:expr, $message:expr) => {
-        if let Ok(message) = wasm_bindgen::JsValue::from_serde(&$message) {
-            drop($context.log(&message));
-        }
-    };
-}
-
-/// Emits an event as a side effect of a state transition.
-///
-/// This can only be called from within [store::State::apply] since a [Context](store::Context) is required.
-///
-/// If the `bindings` feature is enabled, `$message` must implement [Serialize](serde::Serialize).
-/// Otherwise, `$message` must implement [Debug].
-#[cfg(not(feature = "bindings"))]
-#[macro_export]
-macro_rules! log {
-    ($context:expr, $message:expr) => {
-        drop($context.log(&$message));
-    };
-}
-
 /// [State::apply] utilities
-///
-/// See [log].
 pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
     nonce: usize,
@@ -1431,16 +1406,13 @@ impl<S: State> Context<S> {
         SharedXorShiftRngFuture(self.phase.clone())
     }
 
-    #[doc(hidden)]
-    pub fn log(&mut self, message: &Message) -> Result<(), String> {
-        self.nonce += 1;
+    /// Logs an event.
+    pub fn log(&mut self, message: impl Message + 'static) {
+        if let Ok(mut logger) = self.logger.try_borrow_mut() {
+            self.nonce += 1;
 
-        self.logger
-            .try_borrow_mut()
-            .map_err(|error| error.to_string())?
-            .log(self.nonce, message);
-
-        Ok(())
+            logger.log(self.nonce, message);
+        }
     }
 
     #[doc(hidden)]
@@ -1455,13 +1427,13 @@ impl<S: State> Context<S> {
 
 #[doc(hidden)]
 pub struct Logger {
-    log: Box<dyn FnMut(&Message)>,
+    log: Box<dyn FnMut(Box<dyn Message>)>,
     nonce: usize,
     enabled: bool,
 }
 
 impl Logger {
-    pub fn new(log: impl FnMut(&Message) + 'static) -> Self {
+    pub fn new(log: impl FnMut(Box<dyn Message>) + 'static) -> Self {
         Self {
             log: Box::new(log),
             nonce: Default::default(),
@@ -1473,19 +1445,25 @@ impl Logger {
         self.enabled = enabled;
     }
 
-    fn log(&mut self, nonce: usize, message: &Message) {
+    fn log(&mut self, nonce: usize, message: impl Message + 'static) {
         if self.enabled && nonce > self.nonce {
             self.nonce = nonce;
 
-            (self.log)(message);
+            (self.log)(Box::new(message));
         }
     }
 }
 
-#[cfg(feature = "bindings")]
-type Message = wasm_bindgen::JsValue;
-#[cfg(not(feature = "bindings"))]
-type Message = dyn Debug;
+/// [Context::log] message trait
+pub trait Message: erased_serde::Serialize + Debug {}
+
+impl<T: serde::Serialize + Debug> Message for T {}
+
+impl<'a> serde::Serialize for dyn Message + 'a {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        erased_serde::serialize(self, serializer)
+    }
+}
 
 #[doc(hidden)]
 #[derive(Debug)]

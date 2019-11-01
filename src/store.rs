@@ -255,8 +255,9 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action =
-                    action.into_serde().map_err(|err| format!("{:?}", err))?;
+                let action: <$type as $crate::store::State>::Action = action
+                    .into_serde()
+                    .map_err(|error| format!("{:?}", error))?;
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
@@ -271,7 +272,7 @@ macro_rules! bind {
 
                 self.store
                     .apply(&diff)
-                    .map_err(|err| format!("{:?}", err))?;
+                    .map_err(|error| format!("{:?}", error))?;
 
                 Ok(())
             }
@@ -287,7 +288,7 @@ macro_rules! bind {
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
                 self.store
                     .apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
-                    .map_err(|err| wasm_bindgen::JsValue::from(format!("{:?}", err)))
+                    .map_err(|error| wasm_bindgen::JsValue::from(format!("{:?}", error)))
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -576,8 +577,8 @@ impl<S: State + Serialize> Store<S> {
             *logger = log.clone();
         }
 
-        let secrets = [
-            if crate::utils::read_u8_bool(&mut data)? {
+        let secrets = {
+            let secret1 = if crate::utils::read_u8_bool(&mut data)? {
                 let size = crate::utils::read_u32_usize(&mut data)?;
 
                 crate::forbid!(data.len() < size);
@@ -587,8 +588,9 @@ impl<S: State + Serialize> Store<S> {
                 Some(secret)
             } else {
                 None
-            },
-            if crate::utils::read_u8_bool(&mut data)? {
+            };
+
+            let secret2 = if crate::utils::read_u8_bool(&mut data)? {
                 let size = crate::utils::read_u32_usize(&mut data)?;
 
                 crate::forbid!(data.len() < size);
@@ -598,8 +600,10 @@ impl<S: State + Serialize> Store<S> {
                 Some(secret)
             } else {
                 None
-            },
-        ];
+            };
+
+            [secret1, secret2]
+        };
 
         let seed = if crate::utils::read_u8_bool(&mut data)? {
             Some(data.to_vec())
@@ -995,7 +999,7 @@ impl<S: State + Serialize> StoreState<S> {
     }
 
     pub fn state(&self) -> Option<&S> {
-        if let StoreState::Ready { state, .. } = self {
+        if let Self::Ready { state, .. } = self {
             Some(state)
         } else {
             None
@@ -1023,13 +1027,11 @@ impl<S: State + Serialize> crate::State for StoreState<S> {
 
     fn serialize(&self) -> Option<Vec<u8>> {
         match self {
-            Self::Ready { state, nonce, .. } => {
-                <S as State>::serialize(state).and_then(|mut state| {
-                    crate::utils::write_u32_usize(&mut state, *nonce)
-                        .ok()
-                        .and(Some(state))
-                })
-            }
+            Self::Ready { state, nonce, .. } => State::serialize(state).and_then(|mut state| {
+                crate::utils::write_u32_usize(&mut state, *nonce)
+                    .ok()
+                    .and(Some(state))
+            }),
             _ => None,
         }
     }
@@ -1439,19 +1441,6 @@ pub struct Context<S: State> {
 }
 
 impl<S: State> Context<S> {
-    /// Constructs a random number generator via commit-reveal.
-    pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
-        let phase = self.phase.try_borrow().unwrap();
-
-        if let Phase::Idle { random: None, .. } = *phase {
-            drop(phase);
-
-            self.phase.replace(Phase::RandomCommit);
-        }
-
-        SharedXorShiftRngFuture(self.phase.clone())
-    }
-
     /// Requests a player's secret information.
     ///
     /// The random number generator is re-seeded after this call to prevent players from influencing the randomness of the state via trial and error.
@@ -1505,6 +1494,19 @@ impl<S: State> Context<S> {
         RevealFuture(self.phase.clone())
     }
 
+    /// Constructs a random number generator via commit-reveal.
+    pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
+        let phase = self.phase.try_borrow().unwrap();
+
+        if let Phase::Idle { random: None, .. } = *phase {
+            drop(phase);
+
+            self.phase.replace(Phase::RandomCommit);
+        }
+
+        SharedXorShiftRngFuture(self.phase.clone())
+    }
+
     #[doc(hidden)]
     pub fn log(&mut self, message: &Message) -> Result<(), String> {
         self.nonce += 1;
@@ -1535,7 +1537,6 @@ pub struct Logger {
 }
 
 impl Logger {
-    #[doc(hidden)]
     pub fn new(log: impl FnMut(&Message) + 'static) -> Self {
         Self {
             log: Box::new(log),

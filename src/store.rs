@@ -261,6 +261,21 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn simulate(
+                &self,
+                player: Option<$crate::Player>,
+                action: wasm_bindgen::JsValue,
+            ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+                let action: <$type as $crate::store::State>::Action =
+                    action.into_serde().map_err(|error| format!("{:?}", error))?;
+
+                Ok(wasm_bindgen::JsValue::from_serde(
+                    &self.store.state().state().simulate(player, &action)?,
+                )
+                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
                 let action: <$type as $crate::store::State>::Action = action
                     .into_serde()
@@ -936,6 +951,37 @@ impl<S: State + serde::Serialize> StoreState<S> {
             None
         }
     }
+
+    pub fn simulate(
+        &self,
+        player: Option<crate::Player>,
+        action: &S::Action,
+    ) -> Result<Log, String> {
+        if let Self::Ready { state, .. } = self {
+            let messages = Rc::new(RefCell::new(Vec::new()));
+
+            Ok({
+                let mut state = Self::Ready {
+                    state: state.clone(),
+                    nonce: Default::default(),
+                    logger: Rc::new(RefCell::new(Logger::new({
+                        let messages = messages.clone();
+
+                        move |message| messages.try_borrow_mut().unwrap().push(message)
+                    }))),
+                };
+
+                crate::State::apply(&mut state, player, &StoreAction::Action(action.clone()))?;
+
+                match state {
+                    Self::Ready { .. } => Log::Complete,
+                    Self::Pending { .. } => Log::Incomplete,
+                }
+            }(Rc::try_unwrap(messages).unwrap().into_inner()))
+        } else {
+            Err("self != StoreState::Ready { .. }".to_string())
+        }
+    }
 }
 
 impl<S: State + serde::Serialize> crate::State for StoreState<S> {
@@ -1173,6 +1219,19 @@ impl<S: State + serde::Serialize> Clone for StoreState<S> {
             _ => panic!("StoreState::Pending {{ .. }}.clone()"),
         }
     }
+}
+
+/// Simulation event log
+#[derive(serde::Serialize)]
+#[serde(tag = "status", content = "messages")]
+pub enum Log {
+    /// A log for a complete transition.
+    #[serde(rename = "complete")]
+    Complete(Vec<Box<dyn Message>>),
+
+    /// A log for an incomplete transition.
+    #[serde(rename = "incomplete")]
+    Incomplete(Vec<Box<dyn Message>>),
 }
 
 #[doc(hidden)]

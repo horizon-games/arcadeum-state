@@ -186,7 +186,6 @@ impl<S: State> Proof<S> {
         };
 
         forbid!(ranges[0].is_none() && ranges[1..].iter().any(Option::is_none));
-        forbid!(ranges.iter().all(Option::is_some));
         forbid!(!data.is_empty());
 
         let proofs = {

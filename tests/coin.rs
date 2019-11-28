@@ -26,6 +26,9 @@ use arcadeum::{
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
 
+#[cfg(feature = "std")]
+use arcadeum::utils::hex;
+
 use rand_core::{RngCore, SeedableRng};
 use serde::Serialize;
 
@@ -365,13 +368,4 @@ fn test_coin() {
     apply(0, arcadeum::store::StoreAction::Action(true));
 
     println!("{:?}", proof.serialize());
-}
-
-fn hex(data: &[u8]) -> String {
-    let mut hex = String::with_capacity("0x".len() + 2 * data.len());
-
-    hex += "0x";
-    hex.extend(data.iter().map(|byte| format!("{:02x}", byte)));
-
-    hex
 }

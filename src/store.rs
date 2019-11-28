@@ -732,14 +732,10 @@ impl<S: State + serde::Serialize> Store<S> {
     ///
     /// `diff` must have been constructed using [Store::diff] on a store with the same state.
     pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
-        let mut logger = self
-            .logger
+        self.logger
             .try_borrow_mut()
-            .map_err(|error| error.to_string())?;
-
-        logger.enable(true);
-
-        drop(logger);
+            .map_err(|error| error.to_string())?
+            .enabled = true;
 
         crate::error::check(self.proof.apply(diff))?;
 
@@ -753,14 +749,10 @@ impl<S: State + serde::Serialize> Store<S> {
         &mut self,
         actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
     ) -> Result<StoreDiff<S>, String> {
-        let mut logger = self
-            .logger
+        self.logger
             .try_borrow_mut()
-            .map_err(|error| error.to_string())?;
-
-        logger.enable(false);
-
-        drop(logger);
+            .map_err(|error| error.to_string())?
+            .enabled = false;
 
         self.proof.diff(actions, &mut self.sign)
     }
@@ -1498,10 +1490,6 @@ impl Logger {
             nonce: Default::default(),
             enabled: true,
         }
-    }
-
-    fn enable(&mut self, enabled: bool) {
-        self.enabled = enabled;
     }
 
     fn log(&mut self, nonce: usize, message: impl Message + 'static) {

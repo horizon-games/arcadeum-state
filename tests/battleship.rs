@@ -23,6 +23,7 @@
 use arcadeum::{
     crypto,
     store::{Context, Secret, State, StoreState},
+    utils::hex,
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
 
@@ -454,13 +455,4 @@ fn test_battleship() {
     }
 
     println!("{:?}", proof.serialize());
-}
-
-fn hex(data: &[u8]) -> String {
-    let mut hex = String::with_capacity("0x".len() + 2 * data.len());
-
-    hex += "0x";
-    hex.extend(data.iter().map(|byte| format!("{:02x}", byte)));
-
-    hex
 }

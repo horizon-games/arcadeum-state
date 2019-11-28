@@ -100,183 +100,8 @@ impl<S: State> Proof<S> {
     /// Updates the proof's state from a binary representation.
     ///
     /// `data` must have been constructed using [Proof::serialize] on a proof with the same root.
-    pub fn deserialize(&mut self, mut data: &[u8]) -> Result<(), String> {
-        forbid!(
-            data.len()
-                < size_of::<u32>()
-                    + size_of::<u32>()
-                    + 3
-                    + size_of::<u32>()
-                    + size_of::<u32>()
-                    + size_of::<crypto::Signature>()
-        );
-
-        let hash = tiny_keccak::keccak256(data);
-
-        let mut state = {
-            let size = utils::read_u32_usize(&mut data)?;
-
-            forbid!(data.len() < size);
-            let state = ProofState::<S>::deserialize(&data[..size])?;
-            data = &data[size..];
-
-            state
-        };
-
-        forbid!(state.id != self.root.state.id);
-        forbid!(state.players != self.root.state.players);
-
-        let actions = {
-            let length = utils::read_u32_usize(&mut data)?;
-
-            let mut actions = Vec::with_capacity(length);
-
-            for _ in 0..length {
-                let size = utils::read_u32_usize(&mut data)?;
-
-                forbid!(data.len() < size);
-                actions.push(ProofAction::deserialize(&data[..size])?);
-                data = &data[size..];
-            }
-
-            actions
-        };
-
-        let (ranges, signatures) = {
-            let mut ranges = Vec::with_capacity(3);
-            let mut signatures = Vec::with_capacity(ranges.capacity());
-
-            let mut minimal = false;
-
-            for _ in 0..ranges.capacity() {
-                if utils::read_u8_bool(&mut data)? {
-                    ranges.push(Some({
-                        let range =
-                            utils::read_u32_usize(&mut data)?..utils::read_u32_usize(&mut data)?;
-
-                        forbid!(range.end > actions.len());
-                        forbid!(range.start > range.end);
-
-                        if range.start == 0 {
-                            minimal = true;
-                        }
-
-                        range
-                    }));
-
-                    signatures.push(Some({
-                        let mut signature = [0; size_of::<crypto::Signature>()];
-
-                        forbid!(data.len() < size_of::<crypto::Signature>());
-                        signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
-                        data = &data[size_of::<crypto::Signature>()..];
-
-                        signature
-                    }));
-                } else {
-                    ranges.push(None);
-
-                    signatures.push(None);
-                }
-            }
-
-            forbid!(!minimal);
-
-            (ranges, signatures)
-        };
-
-        forbid!(ranges[0].is_none() && ranges[1..].iter().any(Option::is_none));
-        forbid!(!data.is_empty());
-
-        let proofs = {
-            let mut proofs = [None, None, None];
-
-            for i in 0..=actions.len() {
-                let serializable = ranges
-                    .iter()
-                    .filter_map(Option::as_ref)
-                    .any(|range| range.start == i);
-
-                let unserializable = ranges
-                    .iter()
-                    .filter_map(Option::as_ref)
-                    .any(|range| range.start < i && i <= range.end);
-
-                if serializable || unserializable {
-                    let data = state.serialize();
-
-                    forbid!(serializable && data.is_none());
-                    forbid!(unserializable && data.is_some());
-
-                    if serializable {
-                        for (j, range) in ranges.iter().enumerate() {
-                            if let Some(range) = range {
-                                if range.start == i {
-                                    proofs[j] = Some(PlayerProof {
-                                        state: state.clone(),
-                                        range: range.clone(),
-                                        signature: signatures[j].unwrap(),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if i < actions.len() {
-                    let action = &actions[i];
-
-                    let range = ranges[0].as_ref();
-
-                    match action.player {
-                        None => {
-                            forbid!(range.is_none());
-                            forbid!(range.unwrap().end <= i);
-                        }
-                        Some(player) => {
-                            if range.is_none() || range.unwrap().end <= i {
-                                forbid!(1 + usize::from(player) >= ranges.len());
-
-                                let range = ranges[1 + usize::from(player)].as_ref();
-
-                                forbid!(range.is_none());
-                                forbid!(range.unwrap().end <= i);
-                            }
-                        }
-                    }
-
-                    state.apply(action)?;
-                }
-            }
-
-            for (i, proof) in proofs.iter().enumerate() {
-                if let Some(proof) = proof {
-                    let mut message = proof.state.serialize().unwrap();
-
-                    message.extend(
-                        actions[proof.range.clone()]
-                            .iter()
-                            .flat_map(ProofAction::serialize),
-                    );
-
-                    let author = crypto::recover(&message, &proof.signature)?;
-
-                    match i {
-                        0 => forbid!(author != self.root.author),
-                        i => forbid!(state.player(&author).map(usize::from) != Some(i - 1)),
-                    }
-                }
-            }
-
-            proofs
-        };
-
-        self.actions = actions;
-        self.proofs = proofs;
-        self.hash = hash;
-        self.state = state;
-
-        Ok(())
+    pub fn deserialize(&mut self, data: &[u8]) -> Result<(), String> {
+        self.deserialize_and_init(data, |_| ())
     }
 
     /// Generates a binary representation that can be used to reconstruct the proof.
@@ -551,6 +376,189 @@ impl<S: State> Proof<S> {
         Ok(Diff::new(self.hash, actions, signature, sign)?)
     }
 
+    fn deserialize_and_init(
+        &mut self,
+        mut data: &[u8],
+        init: impl FnOnce(&mut S),
+    ) -> Result<(), String> {
+        forbid!(
+            data.len()
+                < size_of::<u32>()
+                    + size_of::<u32>()
+                    + 3
+                    + size_of::<u32>()
+                    + size_of::<u32>()
+                    + size_of::<crypto::Signature>()
+        );
+
+        let hash = tiny_keccak::keccak256(data);
+
+        let mut state = {
+            let size = utils::read_u32_usize(&mut data)?;
+
+            forbid!(data.len() < size);
+            let state = ProofState::<S>::deserialize_and_init(&data[..size], init)?;
+            data = &data[size..];
+
+            state
+        };
+
+        forbid!(state.id != self.root.state.id);
+        forbid!(state.players != self.root.state.players);
+
+        let actions = {
+            let length = utils::read_u32_usize(&mut data)?;
+
+            let mut actions = Vec::with_capacity(length);
+
+            for _ in 0..length {
+                let size = utils::read_u32_usize(&mut data)?;
+
+                forbid!(data.len() < size);
+                actions.push(ProofAction::deserialize(&data[..size])?);
+                data = &data[size..];
+            }
+
+            actions
+        };
+
+        let (ranges, signatures) = {
+            let mut ranges = Vec::with_capacity(3);
+            let mut signatures = Vec::with_capacity(ranges.capacity());
+
+            let mut minimal = false;
+
+            for _ in 0..ranges.capacity() {
+                if utils::read_u8_bool(&mut data)? {
+                    ranges.push(Some({
+                        let range =
+                            utils::read_u32_usize(&mut data)?..utils::read_u32_usize(&mut data)?;
+
+                        forbid!(range.end > actions.len());
+                        forbid!(range.start > range.end);
+
+                        if range.start == 0 {
+                            minimal = true;
+                        }
+
+                        range
+                    }));
+
+                    signatures.push(Some({
+                        let mut signature = [0; size_of::<crypto::Signature>()];
+
+                        forbid!(data.len() < size_of::<crypto::Signature>());
+                        signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
+                        data = &data[size_of::<crypto::Signature>()..];
+
+                        signature
+                    }));
+                } else {
+                    ranges.push(None);
+
+                    signatures.push(None);
+                }
+            }
+
+            forbid!(!minimal);
+
+            (ranges, signatures)
+        };
+
+        forbid!(ranges[0].is_none() && ranges[1..].iter().any(Option::is_none));
+        forbid!(!data.is_empty());
+
+        let proofs = {
+            let mut proofs = [None, None, None];
+
+            for i in 0..=actions.len() {
+                let serializable = ranges
+                    .iter()
+                    .filter_map(Option::as_ref)
+                    .any(|range| range.start == i);
+
+                let unserializable = ranges
+                    .iter()
+                    .filter_map(Option::as_ref)
+                    .any(|range| range.start < i && i <= range.end);
+
+                if serializable || unserializable {
+                    let data = state.serialize();
+
+                    forbid!(serializable && data.is_none());
+                    forbid!(unserializable && data.is_some());
+
+                    if serializable {
+                        for (j, range) in ranges.iter().enumerate() {
+                            if let Some(range) = range {
+                                if range.start == i {
+                                    proofs[j] = Some(PlayerProof {
+                                        state: state.clone(),
+                                        range: range.clone(),
+                                        signature: signatures[j].unwrap(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if i < actions.len() {
+                    let action = &actions[i];
+
+                    let range = ranges[0].as_ref();
+
+                    match action.player {
+                        None => {
+                            forbid!(range.is_none());
+                            forbid!(range.unwrap().end <= i);
+                        }
+                        Some(player) => {
+                            if range.is_none() || range.unwrap().end <= i {
+                                forbid!(1 + usize::from(player) >= ranges.len());
+
+                                let range = ranges[1 + usize::from(player)].as_ref();
+
+                                forbid!(range.is_none());
+                                forbid!(range.unwrap().end <= i);
+                            }
+                        }
+                    }
+
+                    state.apply(action)?;
+                }
+            }
+
+            for (i, proof) in proofs.iter().enumerate() {
+                if let Some(proof) = proof {
+                    let mut message = proof.state.serialize().unwrap();
+
+                    message.extend(
+                        actions[proof.range.clone()]
+                            .iter()
+                            .flat_map(ProofAction::serialize),
+                    );
+
+                    let author = crypto::recover(&message, &proof.signature)?;
+
+                    match i {
+                        0 => forbid!(author != self.root.author),
+                        i => forbid!(state.player(&author).map(usize::from) != Some(i - 1)),
+                    }
+                }
+            }
+
+            proofs
+        };
+
+        self.actions = actions;
+        self.proofs = proofs;
+        self.hash = hash;
+        self.state = state;
+
+        Ok(())
+    }
+
     fn compute_hash(&self) -> crypto::Hash {
         tiny_keccak::keccak256(&self.serialize())
     }
@@ -642,7 +650,44 @@ impl<S: State> RootProof<S> {
     /// Constructs a root proof from its binary representation.
     ///
     /// `data` must have been constructed using [RootProof::serialize].
-    pub fn deserialize(mut data: &[u8]) -> Result<Self, String> {
+    pub fn deserialize(data: &[u8]) -> Result<Self, String> {
+        Self::deserialize_and_init(data, |_| ())
+    }
+
+    /// Generates a binary representation that can be used to reconstruct the root proof.
+    ///
+    /// See [RootProof::deserialize].
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut data = Vec::new();
+
+        let state = self.state.serialize().unwrap();
+        utils::write_u32_usize(&mut data, state.len()).unwrap();
+        data.extend(state);
+
+        utils::write_u32_usize(&mut data, self.actions.len()).unwrap();
+
+        for action in &self.actions {
+            let action = action.serialize();
+            utils::write_u32_usize(&mut data, action.len()).unwrap();
+            data.extend(action);
+        }
+
+        data.extend(self.signature.iter());
+
+        data
+    }
+
+    /// Gets the digest of the root proof.
+    pub fn hash(&self) -> &crypto::Hash {
+        &self.hash
+    }
+
+    /// Gets the state of the root proof.
+    pub fn state(&self) -> &ProofState<S> {
+        &self.latest
+    }
+
+    fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {
         forbid!(data.len() < size_of::<u32>() + size_of::<u32>() + size_of::<crypto::Signature>());
 
         let hash = tiny_keccak::keccak256(data);
@@ -650,7 +695,7 @@ impl<S: State> RootProof<S> {
         let size = utils::read_u32_usize(&mut data)?;
 
         forbid!(data.len() < size);
-        let state = ProofState::<S>::deserialize(&data[..size])?;
+        let state = ProofState::<S>::deserialize_and_init(&data[..size], init)?;
         data = &data[size..];
 
         let length = utils::read_u32_usize(&mut data)?;
@@ -687,39 +732,6 @@ impl<S: State> RootProof<S> {
             author: crypto::recover(&message, &signature)?,
             latest,
         })
-    }
-
-    /// Generates a binary representation that can be used to reconstruct the root proof.
-    ///
-    /// See [RootProof::deserialize].
-    pub fn serialize(&self) -> Vec<u8> {
-        let mut data = Vec::new();
-
-        let state = self.state.serialize().unwrap();
-        utils::write_u32_usize(&mut data, state.len()).unwrap();
-        data.extend(state);
-
-        utils::write_u32_usize(&mut data, self.actions.len()).unwrap();
-
-        for action in &self.actions {
-            let action = action.serialize();
-            utils::write_u32_usize(&mut data, action.len()).unwrap();
-            data.extend(action);
-        }
-
-        data.extend(self.signature.iter());
-
-        data
-    }
-
-    /// Gets the digest of the root proof.
-    pub fn hash(&self) -> &crypto::Hash {
-        &self.hash
-    }
-
-    /// Gets the state of the root proof.
-    pub fn state(&self) -> &ProofState<S> {
-        &self.latest
     }
 
     fn compute_state(&self) -> ProofState<S> {
@@ -944,7 +956,7 @@ impl<S: State> ProofState<S> {
         &self.state
     }
 
-    fn deserialize(mut data: &[u8]) -> Result<Self, String> {
+    fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {
         let id = S::ID::deserialize(&mut data)?;
         let nonce = S::Nonce::deserialize(&mut data)?;
 
@@ -995,7 +1007,13 @@ impl<S: State> ProofState<S> {
             nonce,
             players,
             signatures,
-            state: S::deserialize(data)?,
+            state: {
+                let mut state = S::deserialize(data)?;
+
+                init(&mut state);
+
+                state
+            },
         })
     }
 

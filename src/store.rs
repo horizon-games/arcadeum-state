@@ -924,6 +924,7 @@ pub enum StoreState<S: State + serde::Serialize> {
     Pending {
         state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
         phase: Rc<RefCell<Phase<S>>>,
+        logger: Rc<RefCell<Logger>>,
     },
 }
 
@@ -1045,10 +1046,11 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
                             Context {
                                 phase: phase.clone(),
                                 nonce,
-                                logger,
+                                logger: logger.clone(),
                             },
                         ),
                         phase,
+                        logger,
                     }
                 } else {
                     state
@@ -1179,7 +1181,12 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
         }
 
         replace_with_or_abort(self, |state| {
-            if let Self::Pending { mut state, phase } = state {
+            if let Self::Pending {
+                mut state,
+                phase,
+                logger,
+            } = state
+            {
                 if let Poll::Ready((state, context)) = state
                     .as_mut()
                     .poll(&mut task::Context::from_waker(&phantom_waker()))
@@ -1187,10 +1194,14 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
                     Self::Ready {
                         state,
                         nonce: context.nonce,
-                        logger: context.logger,
+                        logger,
                     }
                 } else {
-                    Self::Pending { state, phase }
+                    Self::Pending {
+                        state,
+                        phase,
+                        logger,
+                    }
                 }
             } else {
                 state

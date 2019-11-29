@@ -416,7 +416,6 @@ pub struct Store<S: State + serde::Serialize> {
     ready: Box<dyn FnMut(&S)>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
-    logger: Rc<RefCell<Logger>>,
     random: Box<dyn rand::RngCore>,
     seed: Option<Vec<u8>>,
 }
@@ -435,28 +434,16 @@ impl<S: State + serde::Serialize> Store<S> {
         log: impl FnMut(&dyn Message) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
-        let log = Rc::new(RefCell::new(Logger::new(log)));
-
         let mut store = Self {
             player,
-            proof: crate::Proof::new({
-                let mut root = crate::RootProof::deserialize(root)?;
-
-                if let StoreState::Ready { logger, .. } = &mut root.state.state {
-                    *logger = log.clone();
-                }
-
-                if let StoreState::Ready { logger, .. } = &mut root.latest.state {
-                    *logger = log.clone();
-                }
-
-                root
-            }),
+            proof: crate::Proof::new(crate::RootProof::<StoreState<S>>::deserialize_and_init(
+                root,
+                |state| state.set_logger(Rc::new(RefCell::new(Logger::new(log)))),
+            )?),
             secrets,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
-            logger: log,
             random,
             seed: None,
         };
@@ -484,10 +471,19 @@ impl<S: State + serde::Serialize> Store<S> {
             byte => Some(byte - 1),
         };
 
+        let mut log = Logger::new(log);
+        log.enabled = false;
+        let log = Rc::new(RefCell::new(log));
+
         let size = crate::utils::read_u32_usize(&mut data)?;
 
         crate::forbid!(data.len() < size);
-        let root = crate::RootProof::deserialize(&data[..size])?;
+
+        let root =
+            crate::RootProof::<StoreState<S>>::deserialize_and_init(&data[..size], |state| {
+                state.set_logger(log.clone())
+            })?;
+
         data = &data[size..];
 
         if let Some(player) = player {
@@ -498,30 +494,8 @@ impl<S: State + serde::Serialize> Store<S> {
 
         crate::forbid!(data.len() < size);
         let mut proof = crate::Proof::new(root);
-        proof.deserialize(&data[..size])?;
+        proof.deserialize_and_init(&data[..size], |state| state.set_logger(log))?;
         data = &data[size..];
-
-        let log = Rc::new(RefCell::new(Logger::new(log)));
-
-        if let StoreState::Ready { logger, .. } = &mut proof.root.state.state {
-            *logger = log.clone();
-        }
-
-        if let StoreState::Ready { logger, .. } = &mut proof.root.latest.state {
-            *logger = log.clone();
-        }
-
-        for proof in &mut proof.proofs {
-            if let Some(proof) = proof {
-                if let StoreState::Ready { logger, .. } = &mut proof.state.state {
-                    *logger = log.clone();
-                }
-            }
-        }
-
-        if let StoreState::Ready { logger, .. } = &mut proof.state.state {
-            *logger = log.clone();
-        }
 
         let secrets = {
             let secret1 = if crate::utils::read_u8_bool(&mut data)? {
@@ -566,7 +540,6 @@ impl<S: State + serde::Serialize> Store<S> {
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
-            logger: log,
             random,
             seed,
         };
@@ -732,7 +705,10 @@ impl<S: State + serde::Serialize> Store<S> {
     ///
     /// `diff` must have been constructed using [Store::diff] on a store with the same state.
     pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
-        self.logger
+        self.proof
+            .state
+            .state
+            .logger()
             .try_borrow_mut()
             .map_err(|error| error.to_string())?
             .enabled = true;
@@ -749,7 +725,10 @@ impl<S: State + serde::Serialize> Store<S> {
         &mut self,
         actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
     ) -> Result<StoreDiff<S>, String> {
-        self.logger
+        self.proof
+            .state
+            .state
+            .logger()
             .try_borrow_mut()
             .map_err(|error| error.to_string())?
             .enabled = false;
@@ -763,27 +742,10 @@ impl<S: State + serde::Serialize> Store<S> {
     ///
     /// It is possible to reset to a state with a lower nonce using this method.
     pub fn reset(&mut self, proof: &[u8]) -> Result<(), String> {
-        self.proof.deserialize(proof)?;
+        let logger = self.proof.state.state.logger().clone();
 
-        if let StoreState::Ready { logger, .. } = &mut self.proof.root.state.state {
-            *logger = self.logger.clone();
-        }
-
-        if let StoreState::Ready { logger, .. } = &mut self.proof.root.latest.state {
-            *logger = self.logger.clone();
-        }
-
-        for proof in &mut self.proof.proofs {
-            if let Some(proof) = proof {
-                if let StoreState::Ready { logger, .. } = &mut proof.state.state {
-                    *logger = self.logger.clone();
-                }
-            }
-        }
-
-        if let StoreState::Ready { logger, .. } = &mut self.proof.state.state {
-            *logger = self.logger.clone();
-        }
+        self.proof
+            .deserialize_and_init(proof, |state| state.set_logger(logger))?;
 
         self.flush()?;
 
@@ -978,6 +940,25 @@ impl<S: State + serde::Serialize> StoreState<S> {
             }(Rc::try_unwrap(messages).unwrap().into_inner()))
         } else {
             Err("self != StoreState::Ready { .. }".to_string())
+        }
+    }
+
+    fn logger(&self) -> &Rc<RefCell<Logger>> {
+        match self {
+            Self::Ready { logger, .. } | Self::Pending { logger, .. } => logger,
+        }
+    }
+
+    fn set_logger(&mut self, logger: Rc<RefCell<Logger>>) {
+        match self {
+            Self::Ready {
+                logger: state_logger,
+                ..
+            }
+            | Self::Pending {
+                logger: state_logger,
+                ..
+            } => *state_logger = logger,
         }
     }
 }

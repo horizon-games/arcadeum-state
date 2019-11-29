@@ -209,13 +209,8 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
-            pub fn serialize(&self) -> Vec<u8> {
-                self.store.serialize()
-            }
-
-            #[wasm_bindgen::prelude::wasm_bindgen(js_name = serializeProof)]
-            pub fn serialize_proof(&self) -> Vec<u8> {
-                self.store.serialize_proof()
+            pub fn serialize(&self, player: Option<$crate::Player>) -> Vec<u8> {
+                self.store.serialize(player)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
@@ -266,8 +261,9 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action =
-                    action.into_serde().map_err(|error| format!("{:?}", error))?;
+                let action: <$type as $crate::store::State>::Action = action
+                    .into_serde()
+                    .map_err(|error| format!("{:?}", error))?;
 
                 Ok(wasm_bindgen::JsValue::from_serde(
                     &self.store.state().state().simulate(player, &action)?,
@@ -311,11 +307,6 @@ macro_rules! bind {
                 self.store
                     .apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
                     .map_err(|error| wasm_bindgen::JsValue::from(format!("{:?}", error)))
-            }
-
-            #[wasm_bindgen::prelude::wasm_bindgen]
-            pub fn reset(&mut self, proof: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
-                self.store.reset(proof).map_err(wasm_bindgen::JsValue::from)
             }
         }
 
@@ -412,7 +403,6 @@ pub mod bindings {
 pub struct Store<S: State + serde::Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
-    secrets: [Option<S::Secret>; 2],
     ready: Box<dyn FnMut(&S)>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
@@ -438,9 +428,20 @@ impl<S: State + serde::Serialize> Store<S> {
             player,
             proof: crate::Proof::new(crate::RootProof::<StoreState<S>>::deserialize_and_init(
                 root,
-                |state| state.set_logger(Rc::new(RefCell::new(Logger::new(log)))),
+                |state| {
+                    if let StoreState::Ready {
+                        secrets: state_secrets,
+                        ..
+                    } = state
+                    {
+                        *state_secrets = secrets;
+                    } else {
+                        unreachable!();
+                    }
+
+                    state.set_logger(Rc::new(RefCell::new(Logger::new(log))));
+                },
             )?),
-            secrets,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -475,13 +476,51 @@ impl<S: State + serde::Serialize> Store<S> {
         log.enabled = false;
         let log = Rc::new(RefCell::new(log));
 
+        let secrets = {
+            let secret1 = if crate::utils::read_u8_bool(&mut data)? {
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let secret = S::Secret::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some(secret)
+            } else {
+                None
+            };
+
+            let secret2 = if crate::utils::read_u8_bool(&mut data)? {
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let secret = S::Secret::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some(secret)
+            } else {
+                None
+            };
+
+            [secret1, secret2]
+        };
+
         let size = crate::utils::read_u32_usize(&mut data)?;
 
         crate::forbid!(data.len() < size);
 
         let root =
             crate::RootProof::<StoreState<S>>::deserialize_and_init(&data[..size], |state| {
-                state.set_logger(log.clone())
+                if let StoreState::Ready {
+                    secrets: state_secrets,
+                    ..
+                } = state
+                {
+                    *state_secrets = secrets;
+                } else {
+                    unreachable!();
+                }
+
+                state.set_logger(log.clone());
             })?;
 
         data = &data[size..];
@@ -489,13 +528,6 @@ impl<S: State + serde::Serialize> Store<S> {
         if let Some(player) = player {
             crate::forbid!(usize::from(player) >= root.state.players.len());
         }
-
-        let size = crate::utils::read_u32_usize(&mut data)?;
-
-        crate::forbid!(data.len() < size);
-        let mut proof = crate::Proof::new(root);
-        proof.deserialize_and_init(&data[..size], |state| state.set_logger(log))?;
-        data = &data[size..];
 
         let secrets = {
             let secret1 = if crate::utils::read_u8_bool(&mut data)? {
@@ -525,6 +557,27 @@ impl<S: State + serde::Serialize> Store<S> {
             [secret1, secret2]
         };
 
+        let size = crate::utils::read_u32_usize(&mut data)?;
+
+        crate::forbid!(data.len() < size);
+        let mut proof = crate::Proof::new(root);
+
+        proof.deserialize_and_init(&data[..size], |state| {
+            if let StoreState::Ready {
+                secrets: state_secrets,
+                ..
+            } = state
+            {
+                *state_secrets = secrets;
+            } else {
+                unreachable!();
+            }
+
+            state.set_logger(log);
+        })?;
+
+        data = &data[size..];
+
         let seed = if crate::utils::read_u8_bool(&mut data)? {
             Some(data.to_vec())
         } else {
@@ -536,7 +589,6 @@ impl<S: State + serde::Serialize> Store<S> {
         let mut store = Self {
             player,
             proof,
-            secrets,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -549,16 +601,19 @@ impl<S: State + serde::Serialize> Store<S> {
         Ok(store)
     }
 
-    /// Generates a binary representation that can be used to reconstruct the store.
+    /// Generates a binary representation that can be used to reconstruct the store for a given
+    /// player.
     ///
     /// See [Store::deserialize].
-    pub fn serialize(&self) -> Vec<u8> {
+    pub fn serialize(&self, player: Option<crate::Player>) -> Vec<u8> {
         let root = self.proof.root.serialize();
         let proof = self.proof.serialize();
 
         let mut data = Vec::with_capacity(
-            1 + size_of::<u32>()
+            1 + 1
+                + size_of::<u32>()
                 + root.len()
+                + 1
                 + size_of::<u32>()
                 + proof.len()
                 + 1
@@ -568,47 +623,88 @@ impl<S: State + serde::Serialize> Store<S> {
         crate::utils::write_u8(
             &mut data,
             match self.player {
-                None => 0,
+                None => match player {
+                    None => 0,
+                    Some(player) => 1 + player,
+                },
                 Some(player) => 1 + player,
             },
         );
 
+        if let StoreState::Ready { secrets, .. } = &self.proof.root.state.state {
+            for (i, secret) in secrets.iter().enumerate() {
+                if player.is_none() || player == Some(i.try_into().unwrap()) {
+                    match secret {
+                        Some(secret) => {
+                            crate::utils::write_u8_bool(&mut data, true);
+
+                            let secret = secret.serialize();
+                            crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
+                            data.extend(secret);
+                        }
+                        None => crate::utils::write_u8_bool(&mut data, false),
+                    }
+                } else {
+                    crate::utils::write_u8_bool(&mut data, false);
+                }
+            }
+        } else {
+            unreachable!();
+        }
+
         crate::utils::write_u32_usize(&mut data, root.len()).unwrap();
         data.extend(root);
+
+        if let StoreState::Ready { secrets, .. } = &self
+            .proof
+            .proofs
+            .iter()
+            .find(|proof| match proof {
+                Some(proof) => proof.range.start == 0,
+                None => false,
+            })
+            .as_ref()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .state
+            .state
+        {
+            for (i, secret) in secrets.iter().enumerate() {
+                if player.is_none() || player == Some(i.try_into().unwrap()) {
+                    match secret {
+                        Some(secret) => {
+                            crate::utils::write_u8_bool(&mut data, true);
+
+                            let secret = secret.serialize();
+                            crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
+                            data.extend(secret);
+                        }
+                        None => crate::utils::write_u8_bool(&mut data, false),
+                    }
+                } else {
+                    crate::utils::write_u8_bool(&mut data, false);
+                }
+            }
+        } else {
+            unreachable!();
+        }
 
         crate::utils::write_u32_usize(&mut data, proof.len()).unwrap();
         data.extend(proof);
 
-        for secret in &self.secrets {
-            match secret {
-                Some(secret) => {
-                    crate::utils::write_u8_bool(&mut data, true);
-
-                    let secret = secret.serialize();
-                    crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
-                    data.extend(secret);
-                }
-                None => {
-                    crate::utils::write_u8_bool(&mut data, false);
-                }
+        if player.is_none() || player == Some(0) {
+            if let Some(seed) = &self.seed {
+                crate::utils::write_u8_bool(&mut data, true);
+                data.extend(seed);
+            } else {
+                crate::utils::write_u8_bool(&mut data, false);
             }
-        }
-
-        if let Some(seed) = &self.seed {
-            crate::utils::write_u8_bool(&mut data, true);
-            data.extend(seed);
         } else {
             crate::utils::write_u8_bool(&mut data, false);
         }
 
         data
-    }
-
-    /// Generates a binary representation of the proof that can be used to reset the store.
-    ///
-    /// See [Store::reset].
-    pub fn serialize_proof(&self) -> Vec<u8> {
-        self.proof.serialize()
     }
 
     /// Gets the player associated with the store.
@@ -736,25 +832,9 @@ impl<S: State + serde::Serialize> Store<S> {
         self.proof.diff(actions, &mut self.sign)
     }
 
-    /// Unconditionally sets the state of the store using `proof`.
-    ///
-    /// `proof` must have been constructed using [Proof::serialize](crate::Proof::serialize) on a proof with the same root.
-    ///
-    /// It is possible to reset to a state with a lower nonce using this method.
-    pub fn reset(&mut self, proof: &[u8]) -> Result<(), String> {
-        let logger = self.proof.state.state.logger().clone();
-
-        self.proof
-            .deserialize_and_init(proof, |state| state.set_logger(logger))?;
-
-        self.flush()?;
-
-        Ok(())
-    }
-
     fn flush(&mut self) -> Result<(), String> {
         let action = match &self.proof.state.state {
-            StoreState::Pending { phase, .. } => {
+            StoreState::Pending { phase, secrets, .. } => {
                 match (&*phase.try_borrow().unwrap(), self.player) {
                     (Phase::RandomCommit, Some(0)) => {
                         let seed = {
@@ -834,8 +914,10 @@ impl<S: State + serde::Serialize> Store<S> {
                         _,
                     ) => {
                         if self.player.is_none() {
-                            if let Some(secret) = &self.secrets[usize::from(*player)] {
-                                let secret = reveal(secret);
+                            if let Some(secret) = &secrets[usize::from(*player)] {
+                                let secret = reveal(
+                                    &*secret.try_borrow().map_err(|error| error.to_string())?,
+                                );
 
                                 crate::forbid!(!verify(&secret));
 
@@ -880,11 +962,13 @@ type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
 pub enum StoreState<S: State + serde::Serialize> {
     Ready {
         state: S,
+        secrets: [Option<S::Secret>; 2],
         nonce: usize,
         logger: Rc<RefCell<Logger>>,
     },
     Pending {
         state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
+        secrets: [Option<Rc<RefCell<S::Secret>>>; 2],
         phase: Rc<RefCell<Phase<S>>>,
         logger: Rc<RefCell<Logger>>,
     },
@@ -894,6 +978,7 @@ impl<S: State + serde::Serialize> StoreState<S> {
     pub fn new(state: S) -> Self {
         Self::Ready {
             state,
+            secrets: Default::default(),
             nonce: Default::default(),
             logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
         }
@@ -912,12 +997,13 @@ impl<S: State + serde::Serialize> StoreState<S> {
         player: Option<crate::Player>,
         action: &S::Action,
     ) -> Result<Log, String> {
-        if let Self::Ready { state, .. } = self {
+        if let Self::Ready { state, secrets, .. } = self {
             let messages = Rc::new(RefCell::new(Vec::new()));
 
             Ok({
                 let mut state = Self::Ready {
                     state: state.clone(),
+                    secrets: secrets.clone(),
                     nonce: Default::default(),
                     logger: Rc::new(RefCell::new(Logger::new({
                         let messages = messages.clone();
@@ -973,6 +1059,7 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
 
         Ok(Self::Ready {
             state: S::deserialize(&data[..data.len() - size_of::<u32>()])?,
+            secrets: Default::default(),
             nonce: {
                 data = &data[data.len() - size_of::<u32>()..];
                 crate::utils::read_u32_usize(&mut data)?
@@ -1009,16 +1096,22 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
             if let Self::Action::Action(action) = action {
                 if let Self::Ready {
                     state,
+                    secrets: [secret1, secret2],
                     nonce,
                     logger,
                 } = state
                 {
+                    handled = true;
+
                     let phase = Rc::new(RefCell::new(Phase::Idle {
                         random: None,
                         secret: None,
                     }));
 
-                    handled = true;
+                    let secrets = [
+                        secret1.map(|secret| Rc::new(RefCell::new(secret))),
+                        secret2.map(|secret| Rc::new(RefCell::new(secret))),
+                    ];
 
                     Self::Pending {
                         state: state.apply(
@@ -1026,10 +1119,12 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
                             action,
                             Context {
                                 phase: phase.clone(),
+                                secrets: secrets.clone(),
                                 nonce,
                                 logger: logger.clone(),
                             },
                         ),
+                        secrets,
                         phase,
                         logger,
                     }
@@ -1164,6 +1259,7 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
         replace_with_or_abort(self, |state| {
             if let Self::Pending {
                 mut state,
+                secrets: [secret1, secret2],
                 phase,
                 logger,
             } = state
@@ -1172,14 +1268,21 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
                     .as_mut()
                     .poll(&mut task::Context::from_waker(&phantom_waker()))
                 {
+                    drop(context.secrets);
+
                     Self::Ready {
                         state,
+                        secrets: [
+                            secret1.map(|secret| Rc::try_unwrap(secret).ok().unwrap().into_inner()),
+                            secret2.map(|secret| Rc::try_unwrap(secret).ok().unwrap().into_inner()),
+                        ],
                         nonce: context.nonce,
                         logger,
                     }
                 } else {
                     Self::Pending {
                         state,
+                        secrets: [secret1, secret2],
                         phase,
                         logger,
                     }
@@ -1198,10 +1301,12 @@ impl<S: State + serde::Serialize> Clone for StoreState<S> {
         match self {
             Self::Ready {
                 state,
+                secrets,
                 nonce,
                 logger,
             } => Self::Ready {
                 state: state.clone(),
+                secrets: secrets.clone(),
                 nonce: *nonce,
                 logger: logger.clone(),
             },
@@ -1393,6 +1498,7 @@ impl Secret for () {
 /// [State::apply] utilities
 pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
+    secrets: [Option<Rc<RefCell<S::Secret>>>; 2],
     nonce: usize,
     logger: Rc<RefCell<Logger>>,
 }
@@ -1490,9 +1596,17 @@ impl<S: State> Context<S> {
     }
 
     #[doc(hidden)]
+    pub fn mutate_secret(&mut self, player: crate::Player, mutate: impl FnOnce(&mut S::Secret)) {
+        if let Some(secret) = &self.secrets[usize::from(player)] {
+            mutate(&mut secret.try_borrow_mut().unwrap());
+        }
+    }
+
+    #[doc(hidden)]
     pub fn with_phase(phase: Rc<RefCell<Phase<S>>>) -> Self {
         Self {
             phase,
+            secrets: Default::default(),
             nonce: Default::default(),
             logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
         }

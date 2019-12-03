@@ -22,7 +22,7 @@
 
 use arcadeum::{
     crypto,
-    store::{Context, Secret, State, StoreState},
+    store::{Context, Secret, State, Store, StoreState},
     utils::hex,
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
@@ -432,6 +432,78 @@ fn test_battleship() {
             proof.deserialize(&data).unwrap();
             proof.serialize()
         });
+
+        assert_eq!(
+            hex(&store0.serialize(None)),
+            hex(&Store::<Battleship>::deserialize(
+                &store0.serialize(None),
+                |_| (),
+                |_| unreachable!(),
+                |_| (),
+                |_| (),
+                Box::new(rand::rngs::StdRng::from_seed([0; 32]))
+            )
+            .unwrap()
+            .serialize(None))
+        );
+
+        assert_eq!(
+            hex(&store1.serialize(None)),
+            hex(&Store::<Battleship>::deserialize(
+                &store1.serialize(None),
+                |_| (),
+                |_| unreachable!(),
+                |_| (),
+                |_| (),
+                Box::new(rand::rngs::StdRng::from_seed([1; 32]))
+            )
+            .unwrap()
+            .serialize(None))
+        );
+
+        assert_eq!(
+            hex(&store2.serialize(None)),
+            hex(&Store::<Battleship>::deserialize(
+                &store2.serialize(None),
+                |_| (),
+                |_| unreachable!(),
+                |_| (),
+                |_| (),
+                Box::new(rand::rngs::StdRng::from_seed([2; 32]))
+            )
+            .unwrap()
+            .serialize(None))
+        );
+
+        assert_eq!(
+            hex(&store1.serialize(None)),
+            hex(&store1.serialize(Some(0)))
+        );
+
+        assert_eq!(
+            hex(&store2.serialize(None)),
+            hex(&store2.serialize(Some(1)))
+        );
+
+        assert_eq!(
+            hex(&store0.serialize(Some(0))),
+            hex(&store1.serialize(Some(0)))
+        );
+
+        assert_eq!(
+            hex(&store0.serialize(Some(1))),
+            hex(&store2.serialize(Some(1)))
+        );
+
+        assert_ne!(
+            hex(&store0.serialize(None)[1..]),
+            hex(&store1.serialize(None)[1..])
+        );
+
+        assert_ne!(
+            hex(&store0.serialize(None)[1..]),
+            hex(&store2.serialize(None)[1..])
+        );
     };
 
     for _ in 0..20 {

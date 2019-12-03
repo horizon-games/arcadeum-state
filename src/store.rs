@@ -1371,6 +1371,16 @@ impl<T: crate::crypto::MerkleLeaf> Secret for crate::crypto::MerkleTree<T> {
     }
 }
 
+impl<T: crate::crypto::MerkleLeaf> Secret for crate::crypto::MerkleProof<T> {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        Self::deserialize(data)
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        self.serialize()
+    }
+}
+
 impl Secret for () {
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         crate::forbid!(!data.is_empty());
@@ -1396,22 +1406,30 @@ impl<S: State> Context<S> {
     /// The random number generator is re-seeded after this call to prevent players from influencing the randomness of the state via trial and error.
     ///
     /// See [Context::reveal_unique] for a faster non-re-seeding version of this method.
-    pub fn reveal(
+    pub async fn reveal<T: Secret>(
         &mut self,
         player: crate::Player,
-        reveal: impl Fn(&S::Secret) -> Vec<u8> + 'static,
-        verify: impl Fn(&[u8]) -> bool + 'static,
-    ) -> impl Future<Output = Vec<u8>> {
+        reveal: impl Fn(&S::Secret) -> T + 'static,
+        verify: impl Fn(&T) -> bool + 'static,
+    ) -> T {
         self.phase.replace(Phase::Reveal {
             random: None,
             request: RevealRequest {
                 player,
-                reveal: Box::new(reveal),
-                verify: Box::new(verify),
+                reveal: Box::new(move |secret| reveal(secret).serialize()),
+                verify: Box::new(move |data| {
+                    if let Ok(secret) = T::deserialize(data) {
+                        verify(&secret)
+                    } else {
+                        false
+                    }
+                }),
             },
         });
 
-        RevealFuture(self.phase.clone())
+        let data: Vec<u8> = RevealFuture(self.phase.clone()).await;
+
+        T::deserialize(&data).unwrap()
     }
 
     /// Requests a player's secret information.
@@ -1420,12 +1438,12 @@ impl<S: State> Context<S> {
     /// Without this guarantee, players can influence the randomness of the state via trial and error.
     ///
     /// See [Context::reveal] for a slower re-seeding version of this method.
-    pub fn reveal_unique(
+    pub async fn reveal_unique<T: Secret>(
         &mut self,
         player: crate::Player,
-        reveal: impl Fn(&S::Secret) -> Vec<u8> + 'static,
-        verify: impl Fn(&[u8]) -> bool + 'static,
-    ) -> impl Future<Output = Vec<u8>> {
+        reveal: impl Fn(&S::Secret) -> T + 'static,
+        verify: impl Fn(&T) -> bool + 'static,
+    ) -> T {
         let random = if let Phase::Idle { random, .. } = &*self.phase.try_borrow().unwrap() {
             random.clone()
         } else {
@@ -1436,12 +1454,20 @@ impl<S: State> Context<S> {
             random,
             request: RevealRequest {
                 player,
-                reveal: Box::new(reveal),
-                verify: Box::new(verify),
+                reveal: Box::new(move |secret| reveal(secret).serialize()),
+                verify: Box::new(move |data| {
+                    if let Ok(secret) = T::deserialize(data) {
+                        verify(&secret)
+                    } else {
+                        false
+                    }
+                }),
             },
         });
 
-        RevealFuture(self.phase.clone())
+        let data: Vec<u8> = RevealFuture(self.phase.clone()).await;
+
+        T::deserialize(&data).unwrap()
     }
 
     /// Constructs a random number generator via commit-reveal.

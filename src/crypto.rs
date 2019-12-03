@@ -468,7 +468,7 @@ impl<T: MerkleLeaf> MerkleTree<T> {
 }
 
 /// Merkle proof
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct MerkleProof<T: MerkleLeaf> {
     element: T,
     salt: Option<Vec<u8>>,

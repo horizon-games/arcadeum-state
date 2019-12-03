@@ -118,29 +118,21 @@ impl State for Battleship {
             let action = *action;
 
             async move {
-                let proof: Vec<u8> = context
+                let proof = context
                     .reveal_unique(
                         1 - player.unwrap(),
-                        move |secret| secret.0.proof(usize::from(action)).unwrap().serialize(),
+                        move |secret| secret.0.proof(usize::from(action)).unwrap(),
                         {
                             let roots = self.roots;
 
-                            move |data| {
-                                let proof = crypto::MerkleProof::<bool>::deserialize(data);
-
-                                if let Ok(proof) = proof {
-                                    proof.index() == usize::from(action)
-                                        && proof.length() == 100
-                                        && *proof.root() == roots[1 - usize::from(player.unwrap())]
-                                } else {
-                                    false
-                                }
+                            move |proof: &crypto::MerkleProof<bool>| {
+                                proof.index() == usize::from(action)
+                                    && proof.length() == 100
+                                    && *proof.root() == roots[1 - usize::from(player.unwrap())]
                             }
                         },
                     )
                     .await;
-
-                let proof = crypto::MerkleProof::deserialize(&proof).unwrap();
 
                 context.log(*proof.element());
 

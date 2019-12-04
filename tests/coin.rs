@@ -107,7 +107,7 @@ impl State for Coin {
             async move {
                 let random: u32 = context.random().await.next_u32();
 
-                context.log(random);
+                context.log(&random);
 
                 if action == (random % 2 != 0) {
                     self.score[usize::from(player.unwrap())] += 1;

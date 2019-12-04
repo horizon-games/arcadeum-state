@@ -432,7 +432,7 @@ impl<S: State + serde::Serialize> Store<S> {
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(Box<dyn Message>) + 'static,
+        log: impl FnMut(&dyn Message) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         let log = Rc::new(RefCell::new(Logger::new(log)));
@@ -474,7 +474,7 @@ impl<S: State + serde::Serialize> Store<S> {
         ready: impl FnMut(&S) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(Box<dyn Message>) + 'static,
+        log: impl FnMut(&dyn Message) + 'static,
         random: Box<dyn rand::RngCore>,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -959,7 +959,12 @@ impl<S: State + serde::Serialize> StoreState<S> {
                     logger: Rc::new(RefCell::new(Logger::new({
                         let messages = messages.clone();
 
-                        move |message| messages.try_borrow_mut().unwrap().push(message)
+                        move |message| {
+                            messages
+                                .try_borrow_mut()
+                                .unwrap()
+                                .push(objekt::clone_box(message))
+                        }
                     }))),
                 };
 
@@ -1484,7 +1489,7 @@ impl<S: State> Context<S> {
     }
 
     /// Logs an event.
-    pub fn log(&mut self, message: impl Message + 'static) {
+    pub fn log(&mut self, message: &impl Message) {
         if let Ok(mut logger) = self.logger.try_borrow_mut() {
             self.nonce += 1;
 
@@ -1504,13 +1509,13 @@ impl<S: State> Context<S> {
 
 #[doc(hidden)]
 pub struct Logger {
-    log: Box<dyn FnMut(Box<dyn Message>)>,
+    log: Box<dyn FnMut(&dyn Message)>,
     nonce: usize,
     enabled: bool,
 }
 
 impl Logger {
-    pub fn new(log: impl FnMut(Box<dyn Message>) + 'static) -> Self {
+    pub fn new(log: impl FnMut(&dyn Message) + 'static) -> Self {
         Self {
             log: Box::new(log),
             nonce: Default::default(),
@@ -1518,19 +1523,19 @@ impl Logger {
         }
     }
 
-    fn log(&mut self, nonce: usize, message: impl Message + 'static) {
+    fn log(&mut self, nonce: usize, message: &impl Message) {
         if self.enabled && nonce > self.nonce {
             self.nonce = nonce;
 
-            (self.log)(Box::new(message));
+            (self.log)(message);
         }
     }
 }
 
 /// [Context::log] message trait
-pub trait Message: erased_serde::Serialize + Debug {}
+pub trait Message: erased_serde::Serialize + objekt::Clone + Debug + 'static {}
 
-impl<T: serde::Serialize + Debug> Message for T {}
+impl<T: serde::Serialize + Clone + Debug + 'static> Message for T {}
 
 impl<'a> serde::Serialize for dyn Message + 'a {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {

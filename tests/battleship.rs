@@ -134,7 +134,7 @@ impl State for Battleship {
                     )
                     .await;
 
-                context.log(*proof.element());
+                context.log(proof.element());
 
                 if *proof.element() {
                     self.score[usize::from(player.unwrap())] += 1;

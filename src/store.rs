@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-use replace_with::replace_with_or_abort;
-
 #[cfg(feature = "std")]
 use std::{
     cell::RefCell,
@@ -1092,7 +1090,7 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
             }
         }
 
-        replace_with_or_abort(self, |state| {
+        replace_with::replace_with_or_abort(self, |state| {
             if let Self::Action::Action(action) = action {
                 if let Self::Ready {
                     state,
@@ -1256,7 +1254,7 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
             }
         }
 
-        replace_with_or_abort(self, |state| {
+        replace_with::replace_with_or_abort(self, |state| {
             if let Self::Pending {
                 mut state,
                 secrets: [secret1, secret2],

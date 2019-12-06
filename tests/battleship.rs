@@ -22,7 +22,7 @@
 
 use arcadeum::{
     crypto,
-    store::{Context, Secret, State, Store, StoreState},
+    store::{Context, State, Store, StoreState},
     utils::hex,
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
 };
@@ -31,12 +31,9 @@ use rand_core::{RngCore, SeedableRng};
 use serde::Serialize;
 
 #[cfg(feature = "std")]
-use {
-    serde::Deserialize,
-    std::{
-        cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, mem::size_of,
-        pin::Pin, rc::Rc,
-    },
+use std::{
+    cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, mem::size_of, pin::Pin,
+    rc::Rc,
 };
 
 #[cfg(not(feature = "std"))]
@@ -72,7 +69,7 @@ impl State for Battleship {
     type ID = BattleshipID;
     type Nonce = u8;
     type Action = u8;
-    type Secret = BattleshipSecret;
+    type Secret = crypto::MerkleTree<bool>;
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         if data.len() != 1 + 2 + 2 * size_of::<crypto::Hash>() {
@@ -121,7 +118,7 @@ impl State for Battleship {
                 let proof = context
                     .reveal_unique(
                         1 - player.unwrap(),
-                        move |secret| secret.0.proof(usize::from(action)).unwrap(),
+                        move |secret| secret.proof(usize::from(action)).unwrap(),
                         {
                             let roots = self.roots;
 
@@ -171,20 +168,6 @@ impl ID for BattleshipID {
     }
 }
 
-#[cfg_attr(feature = "std", derive(Deserialize))]
-#[derive(Clone)]
-struct BattleshipSecret(crypto::MerkleTree<bool>);
-
-impl Secret for BattleshipSecret {
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
-        Ok(Self(crypto::MerkleTree::deserialize(data)?))
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        self.0.serialize()
-    }
-}
-
 #[test]
 fn test_battleship() {
     let mut random = libsecp256k1_rand::thread_rng();
@@ -215,30 +198,26 @@ fn test_battleship() {
         .unwrap();
 
     let secrets = [
-        BattleshipSecret(
-            crypto::MerkleTree::with_salt(
-                {
-                    let mut elements = [0; 100];
-                    random.fill_bytes(&mut elements);
-                    elements.iter().map(|element| element % 2 != 0).collect()
-                },
-                16,
-                &mut random,
-            )
-            .unwrap(),
-        ),
-        BattleshipSecret(
-            crypto::MerkleTree::with_salt(
-                {
-                    let mut elements = [0; 100];
-                    random.fill_bytes(&mut elements);
-                    elements.iter().map(|element| element % 2 != 0).collect()
-                },
-                16,
-                &mut random,
-            )
-            .unwrap(),
-        ),
+        crypto::MerkleTree::with_salt(
+            {
+                let mut elements = [0; 100];
+                random.fill_bytes(&mut elements);
+                elements.iter().map(|element| element % 2 != 0).collect()
+            },
+            16,
+            &mut random,
+        )
+        .unwrap(),
+        crypto::MerkleTree::with_salt(
+            {
+                let mut elements = [0; 100];
+                random.fill_bytes(&mut elements);
+                elements.iter().map(|element| element % 2 != 0).collect()
+            },
+            16,
+            &mut random,
+        )
+        .unwrap(),
     ];
 
     let state = ProofState::<StoreState<Battleship>>::new(
@@ -248,8 +227,8 @@ fn test_battleship() {
             nonce: Default::default(),
             score: Default::default(),
             roots: [
-                secrets[0].0.root()[..].try_into().unwrap(),
-                secrets[1].0.root()[..].try_into().unwrap(),
+                secrets[0].root()[..].try_into().unwrap(),
+                secrets[1].root()[..].try_into().unwrap(),
             ],
         }),
     )

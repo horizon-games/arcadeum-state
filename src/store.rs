@@ -1461,35 +1461,13 @@ pub trait Secret: Clone {
     fn serialize(&self) -> Vec<u8>;
 }
 
-impl<T: crate::crypto::MerkleLeaf> Secret for crate::crypto::MerkleTree<T> {
+impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone> Secret for T {
     fn deserialize(data: &[u8]) -> Result<Self, String> {
-        Self::deserialize(data)
+        serde_cbor::from_slice(data).map_err(|error| error.to_string())
     }
 
     fn serialize(&self) -> Vec<u8> {
-        self.serialize()
-    }
-}
-
-impl<T: crate::crypto::MerkleLeaf> Secret for crate::crypto::MerkleProof<T> {
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
-        Self::deserialize(data)
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        self.serialize()
-    }
-}
-
-impl Secret for () {
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
-        crate::forbid!(!data.is_empty());
-
-        Ok(())
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        Vec::new()
+        serde_cbor::to_vec(self).unwrap()
     }
 }
 

@@ -18,10 +18,7 @@
  */
 
 #[cfg(feature = "std")]
-use {
-    serde::Deserialize,
-    std::{convert::TryInto, mem::size_of},
-};
+use std::{convert::TryInto, mem::size_of};
 
 #[cfg(not(feature = "std"))]
 use {
@@ -274,8 +271,7 @@ pub fn eip55(address: &Address) -> String {
 ///     );
 /// }
 /// ```
-#[cfg_attr(feature = "std", derive(Deserialize))]
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct MerkleTree<T: MerkleLeaf> {
     elements: Vec<T>,
     salts: Option<Vec<Vec<u8>>>,
@@ -468,7 +464,7 @@ impl<T: MerkleLeaf> MerkleTree<T> {
 }
 
 /// Merkle proof
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct MerkleProof<T: MerkleLeaf> {
     element: T,
     salt: Option<Vec<u8>>,
@@ -617,47 +613,13 @@ pub trait MerkleLeaf: Clone {
     fn serialize(&self) -> Vec<u8>;
 }
 
-impl MerkleLeaf for Vec<u8> {
+impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone> MerkleLeaf for T {
     fn deserialize(data: &[u8]) -> Result<Self, String> {
-        Ok(data.to_vec())
+        serde_cbor::from_slice(data).map_err(|error| error.to_string())
     }
 
     fn serialize(&self) -> Vec<u8> {
-        self.clone()
-    }
-}
-
-macro_rules! impl_MerkleLeaf {
-    ($($type:ty),*) => {
-        $(
-            impl MerkleLeaf for $type {
-                fn deserialize(data: &[u8]) -> Result<Self, String> {
-                    crate::forbid!(data.len() != size_of::<Self>());
-
-                    Ok(Self::from_le_bytes(crate::error::check(data.try_into())?))
-                }
-
-                fn serialize(&self) -> Vec<u8> {
-                    self.to_le_bytes().to_vec()
-                }
-            }
-        )*
-    };
-}
-
-impl_MerkleLeaf![i8, i16, i32, i64];
-impl_MerkleLeaf![u8, u16, u32, u64];
-
-impl MerkleLeaf for bool {
-    fn deserialize(data: &[u8]) -> Result<Self, String> {
-        crate::forbid!(data.len() != size_of::<Self>());
-        crate::forbid!(data[0] != 0 && data[0] != 1);
-
-        Ok(data[0] != 0)
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        vec![(*self).into()]
+        serde_cbor::to_vec(self).unwrap()
     }
 }
 

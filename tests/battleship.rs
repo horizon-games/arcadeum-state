@@ -24,7 +24,7 @@ use arcadeum::{
     crypto,
     store::{Context, State, Store, StoreState},
     utils::hex,
-    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
+    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof,
 };
 
 use rand_core::{RngCore, SeedableRng};
@@ -66,7 +66,7 @@ struct Battleship {
 }
 
 impl State for Battleship {
-    type ID = BattleshipID;
+    type ID = [u8; 16];
     type Nonce = u8;
     type Action = u8;
     type Secret = crypto::MerkleTree<bool>;
@@ -145,29 +145,6 @@ impl State for Battleship {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-struct BattleshipID([u8; 16]);
-
-impl ID for BattleshipID {
-    fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
-        if data.len() < size_of::<BattleshipID>() {
-            return Err("data.len() < size_of::<BattleshipID>()".to_string());
-        }
-
-        let id = data[..size_of::<BattleshipID>()]
-            .try_into()
-            .map_err(|error| format!("{}", error))?;
-
-        *data = &data[size_of::<BattleshipID>()..];
-
-        Ok(Self(id))
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        self.0.to_vec()
-    }
-}
-
 #[test]
 fn test_battleship() {
     let mut random = libsecp256k1_rand::thread_rng();
@@ -186,7 +163,7 @@ fn test_battleship() {
 
     let mut random = rand::rngs::StdRng::from_seed([0; 32]);
 
-    let mut id = [0; size_of::<BattleshipID>()];
+    let mut id = <Battleship as State>::ID::default();
     random.fill_bytes(&mut id);
 
     let players = keys
@@ -221,7 +198,7 @@ fn test_battleship() {
     ];
 
     let state = ProofState::<StoreState<Battleship>>::new(
-        BattleshipID(id),
+        id,
         players,
         StoreState::new(Battleship {
             nonce: Default::default(),

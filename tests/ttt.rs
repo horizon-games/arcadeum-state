@@ -29,10 +29,7 @@ use {
 };
 
 #[cfg(feature = "std")]
-use {
-    arcadeum::utils::hex,
-    std::{convert::TryInto, mem::size_of},
-};
+use {arcadeum::utils::hex, std::convert::TryInto};
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -40,7 +37,7 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*, vec},
-    core::{convert::TryInto, mem::size_of},
+    core::convert::TryInto,
 };
 
 #[cfg(not(feature = "std"))]
@@ -60,7 +57,7 @@ struct TTT {
 }
 
 impl State for TTT {
-    type ID = ID;
+    type ID = [u8; 16];
     type Nonce = u8;
     type Action = Action;
 
@@ -142,26 +139,6 @@ impl State for TTT {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-struct ID([u8; 16]);
-
-impl arcadeum::ID for ID {
-    fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
-        if data.len() < size_of::<ID>() {
-            return Err("data.len() < size_of::<ID>()".to_string());
-        }
-
-        let id = data[..size_of::<ID>()].try_into().unwrap();
-        *data = &data[size_of::<ID>()..];
-
-        Ok(Self(id))
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        self.0.to_vec()
-    }
-}
-
 #[derive(Clone, Debug)]
 struct Action(usize, usize);
 
@@ -203,9 +180,8 @@ fn test_ttt() {
         secp256k1::SecretKey::random(&mut random),
     ];
 
-    let mut id = [0; size_of::<ID>()];
+    let mut id = <TTT as State>::ID::default();
     random.fill_bytes(&mut id);
-    let id = ID(id);
 
     let players = secrets
         .iter()

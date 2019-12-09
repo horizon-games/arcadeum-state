@@ -1295,6 +1295,23 @@ pub trait ID: Clone + Eq {
     fn serialize(&self) -> Vec<u8>;
 }
 
+impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone + Eq> ID for T {
+    fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
+        let mut deserializer = serde_cbor::Deserializer::from_slice(data);
+
+        let id = serde::Deserialize::deserialize(&mut deserializer)
+            .map_err(|error| error.to_string())?;
+
+        *data = &data[deserializer.byte_offset()..];
+
+        Ok(id)
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        serde_cbor::to_vec(self).unwrap()
+    }
+}
+
 /// Domain-specific nonce trait
 pub trait Nonce: Clone + Default {
     /// Consumes a nonce from binary data.

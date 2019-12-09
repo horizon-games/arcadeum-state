@@ -23,7 +23,7 @@
 use arcadeum::{
     crypto,
     store::{Context, State, StoreState},
-    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, ID,
+    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof,
 };
 
 #[cfg(feature = "std")]
@@ -34,8 +34,7 @@ use serde::Serialize;
 
 #[cfg(feature = "std")]
 use std::{
-    cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, mem::size_of, pin::Pin,
-    rc::Rc,
+    cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, pin::Pin, rc::Rc,
 };
 
 #[cfg(not(feature = "std"))]
@@ -44,7 +43,7 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 use {
     alloc::{collections::VecDeque, format, prelude::v1::*, rc::Rc, vec},
-    core::{cell::RefCell, convert::TryInto, future::Future, mem::size_of, pin::Pin},
+    core::{cell::RefCell, convert::TryInto, future::Future, pin::Pin},
 };
 
 #[cfg(not(feature = "std"))]
@@ -67,7 +66,7 @@ struct Coin {
 }
 
 impl State for Coin {
-    type ID = CoinID;
+    type ID = [u8; 16];
     type Nonce = u8;
     type Action = bool;
     type Secret = ();
@@ -121,29 +120,6 @@ impl State for Coin {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-struct CoinID([u8; 16]);
-
-impl ID for CoinID {
-    fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
-        if data.len() < size_of::<CoinID>() {
-            return Err("data.len() < size_of::<CoinID>()".to_string());
-        }
-
-        let id = data[..size_of::<CoinID>()]
-            .try_into()
-            .map_err(|error| format!("{}", error))?;
-
-        *data = &data[size_of::<CoinID>()..];
-
-        Ok(Self(id))
-    }
-
-    fn serialize(&self) -> Vec<u8> {
-        self.0.to_vec()
-    }
-}
-
 #[test]
 fn test_coin() {
     let mut random = libsecp256k1_rand::thread_rng();
@@ -162,7 +138,7 @@ fn test_coin() {
 
     let mut random = rand::rngs::StdRng::from_seed([0; 32]);
 
-    let mut id = [0; size_of::<CoinID>()];
+    let mut id = <Coin as State>::ID::default();
     random.fill_bytes(&mut id);
 
     let players = keys
@@ -173,12 +149,9 @@ fn test_coin() {
         .try_into()
         .unwrap();
 
-    let state = ProofState::<StoreState<Coin>>::new(
-        CoinID(id),
-        players,
-        StoreState::new(Default::default()),
-    )
-    .unwrap();
+    let state =
+        ProofState::<StoreState<Coin>>::new(id, players, StoreState::new(Default::default()))
+            .unwrap();
 
     let root = RootProof::new(state, Vec::new(), &mut |message| {
         crypto::sign(message, &owner)

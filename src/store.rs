@@ -1594,12 +1594,16 @@ impl<S: State> Context<S> {
     }
 
     #[doc(hidden)]
-    pub fn with_phase(phase: Rc<RefCell<Phase<S>>>) -> Self {
+    pub fn new(
+        phase: Rc<RefCell<Phase<S>>>,
+        secrets: [Option<Rc<RefCell<S::Secret>>>; 2],
+        log: impl FnMut(&dyn Message) + 'static,
+    ) -> Self {
         Self {
             phase,
-            secrets: Default::default(),
+            secrets,
             nonce: Default::default(),
-            logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
+            logger: Rc::new(RefCell::new(Logger::new(log))),
         }
     }
 }

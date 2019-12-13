@@ -1669,9 +1669,9 @@ pub enum Phase<S: State> {
 
 #[doc(hidden)]
 pub struct RevealRequest<S: State> {
-    player: crate::Player,
-    reveal: Box<dyn Fn(&S::Secret) -> Vec<u8>>,
-    verify: Box<dyn Fn(&[u8]) -> bool>,
+    pub player: crate::Player,
+    pub reveal: Box<dyn Fn(&S::Secret) -> Vec<u8>>,
+    pub verify: Box<dyn Fn(&[u8]) -> bool>,
 }
 
 impl<S: State> Debug for RevealRequest<S> {

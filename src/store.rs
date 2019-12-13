@@ -24,6 +24,7 @@ use std::{
     fmt::{Debug, Error, Formatter},
     future::Future,
     mem::size_of,
+    ops::Deref,
     pin::Pin,
     ptr,
     rc::Rc,
@@ -45,6 +46,7 @@ use {
         convert::TryInto,
         future::Future,
         mem::size_of,
+        ops::Deref,
         pin::Pin,
         ptr, task,
         task::{Poll, RawWaker, RawWakerVTable, Waker},
@@ -985,6 +987,21 @@ impl<S: State + serde::Serialize> StoreState<S> {
             Some(state)
         } else {
             None
+        }
+    }
+
+    pub fn secret<'a>(
+        &'a self,
+        player: crate::Player,
+    ) -> Option<Box<dyn Deref<Target = S::Secret> + 'a>> {
+        match self {
+            Self::Ready { secrets, .. } => secrets[usize::from(player)]
+                .as_ref()
+                .map(|secret| Box::new(secret) as Box<dyn Deref<Target = S::Secret>>),
+
+            Self::Pending { secrets, .. } => secrets[usize::from(player)].as_ref().map(|secret| {
+                Box::new(secret.try_borrow().unwrap()) as Box<dyn Deref<Target = S::Secret>>
+            }),
         }
     }
 

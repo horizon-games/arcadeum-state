@@ -284,9 +284,7 @@ macro_rules! bind {
                         .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?,
                 )?;
 
-                self.store
-                    .apply(&diff)
-                    .map_err(|error| error.to_string())?;
+                self.store.apply(&diff)?;
 
                 Ok(())
             }
@@ -300,7 +298,7 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
-                Ok(self.store.apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)?)
+                Ok(self.store.apply(&$crate::Diff::deserialize(diff)?)?)
             }
         }
 
@@ -805,9 +803,7 @@ impl<S: State + serde::Serialize> Store<S> {
             .map_err(|error| error.to_string())?
             .enabled = true;
 
-        self.proof
-            .apply(diff)
-            .map_err(|error| format!("{:?}", error))?;
+        self.proof.apply(diff)?;
 
         self.flush()
     }

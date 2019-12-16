@@ -32,6 +32,14 @@ pub enum Error {
     Hard(String),
 }
 
+impl From<Error> for String {
+    fn from(error: Error) -> Self {
+        match error {
+            Error::Soft(string) | Error::Hard(string) => string,
+        }
+    }
+}
+
 impl From<String> for Error {
     fn from(string: String) -> Self {
         Self::Soft(string)

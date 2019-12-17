@@ -29,7 +29,7 @@ use arcadeum::{
 #[cfg(feature = "std")]
 use arcadeum::utils::hex;
 
-use rand_core::{RngCore, SeedableRng};
+use rand::{RngCore, SeedableRng};
 use serde::Serialize;
 
 #[cfg(feature = "std")]
@@ -122,7 +122,7 @@ impl State for Coin {
 
 #[test]
 fn test_coin() {
-    let mut random = libsecp256k1_rand::thread_rng();
+    let mut random = rand::thread_rng();
 
     let owner = secp256k1::SecretKey::random(&mut random);
 
@@ -154,7 +154,7 @@ fn test_coin() {
             .unwrap();
 
     let root = RootProof::new(state, Vec::new(), &mut |message| {
-        crypto::sign(message, &owner)
+        Ok(crypto::sign(message, &owner))
     })
     .unwrap();
 
@@ -193,7 +193,7 @@ fn test_coin() {
             &root.serialize(),
             [Some(()), Some(())],
             |state| println!("0: ready: {:?}", state),
-            move |message| crypto::sign(message, &owner),
+            move |message| Ok(crypto::sign(message, &owner)),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
             |event| println!("0: {:?}", event),
             rand::rngs::StdRng::from_seed([0; 32]),
@@ -210,7 +210,7 @@ fn test_coin() {
             &root.serialize(),
             [Some(()), None],
             |state| println!("1: ready: {:?}", state),
-            move |message| crypto::sign(message, &subkey),
+            move |message| Ok(crypto::sign(message, &subkey)),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
             |event| println!("1: {:?}", event),
             rand::rngs::StdRng::from_seed([1; 32]),
@@ -227,7 +227,7 @@ fn test_coin() {
             &root.serialize(),
             [None, Some(())],
             |state| println!("2: ready: {:?}", state),
-            move |message| crypto::sign(message, &subkey),
+            move |message| Ok(crypto::sign(message, &subkey)),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
             |event| println!("2: {:?}", event),
             rand::rngs::StdRng::from_seed([2; 32]),
@@ -242,12 +242,12 @@ fn test_coin() {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: crypto::sign(Coin::certificate(&address).as_bytes(), key).unwrap(),
+                signature: crypto::sign(Coin::certificate(&address).as_bytes(), key),
             },
         };
 
         let diff = proof
-            .diff(vec![action], &mut |message| crypto::sign(message, key))
+            .diff(vec![action], &mut |message| Ok(crypto::sign(message, key)))
             .unwrap();
 
         proof.apply(&diff).unwrap();
@@ -274,7 +274,7 @@ fn test_coin() {
 
         let diff = proof
             .diff(vec![action], &mut |message| {
-                crypto::sign(message, &subkeys[usize::from(player)])
+                Ok(crypto::sign(message, &subkeys[usize::from(player)]))
             })
             .unwrap();
 

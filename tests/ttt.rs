@@ -20,16 +20,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
-use {
-    arcadeum::{
-        crypto::{address, sign},
-        Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
-    },
-    libsecp256k1_rand::Rng,
+use arcadeum::{
+    crypto::{address, sign},
+    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
 };
 
 #[cfg(feature = "std")]
-use {arcadeum::utils::hex, std::convert::TryInto};
+use arcadeum::utils::hex;
+
+use rand::RngCore;
+
+#[cfg(feature = "std")]
+use std::convert::TryInto;
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -166,7 +168,7 @@ impl arcadeum::Action for Action {
 
 #[test]
 fn test_ttt() {
-    let mut random = libsecp256k1_rand::thread_rng();
+    let mut random = rand::thread_rng();
 
     let owner = secp256k1::SecretKey::random(&mut random);
 
@@ -193,7 +195,7 @@ fn test_ttt() {
 
     let state = ProofState::<Box<TTT>>::new(id, players, Default::default()).unwrap();
 
-    let root = RootProof::new(state, Vec::new(), &mut |message| sign(message, &owner)).unwrap();
+    let root = RootProof::new(state, Vec::new(), &mut |message| Ok(sign(message, &owner))).unwrap();
 
     println!("root = {}\n", hex(&root.serialize()));
 
@@ -223,12 +225,12 @@ fn test_ttt() {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: sign(TTT::certificate(&address).as_bytes(), secret).unwrap(),
+                signature: sign(TTT::certificate(&address).as_bytes(), secret),
             },
         };
 
         let diff = proof
-            .diff(vec![action], &mut |message| sign(message, secret))
+            .diff(vec![action], &mut |message| Ok(sign(message, secret)))
             .unwrap();
 
         proof.apply(&diff).unwrap();
@@ -252,7 +254,7 @@ fn test_ttt() {
 
         let diff = proof
             .diff(vec![action], &mut |message| {
-                sign(message, &subkeys[usize::from(player)])
+                Ok(sign(message, &subkeys[usize::from(player)]))
             })
             .unwrap();
 

@@ -27,7 +27,7 @@ use arcadeum::{
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof,
 };
 
-use rand_core::{RngCore, SeedableRng};
+use rand::{RngCore, SeedableRng};
 use serde::Serialize;
 
 #[cfg(feature = "std")]
@@ -147,7 +147,7 @@ impl State for Battleship {
 
 #[test]
 fn test_battleship() {
-    let mut random = libsecp256k1_rand::thread_rng();
+    let mut random = rand::thread_rng();
 
     let owner = secp256k1::SecretKey::random(&mut random);
 
@@ -212,7 +212,7 @@ fn test_battleship() {
     .unwrap();
 
     let root = RootProof::new(state, Vec::new(), &mut |message| {
-        crypto::sign(message, &owner)
+        Ok(crypto::sign(message, &owner))
     })
     .unwrap();
 
@@ -251,7 +251,7 @@ fn test_battleship() {
             &root.serialize(),
             [Some(secrets[0].clone()), Some(secrets[1].clone())],
             |state| println!("0: ready: {:?}", state),
-            move |message| crypto::sign(message, &owner),
+            move |message| Ok(crypto::sign(message, &owner)),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
             |event| println!("0: {:?}", event),
             rand::rngs::StdRng::from_seed([0; 32]),
@@ -268,7 +268,7 @@ fn test_battleship() {
             &root.serialize(),
             [Some(secrets[0].clone()), None],
             |state| println!("1: ready: {:?}", state),
-            move |message| crypto::sign(message, &subkey),
+            move |message| Ok(crypto::sign(message, &subkey)),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
             |event| println!("1: {:?}", event),
             rand::rngs::StdRng::from_seed([1; 32]),
@@ -285,7 +285,7 @@ fn test_battleship() {
             &root.serialize(),
             [None, Some(secrets[1].clone())],
             |state| println!("2: ready: {:?}", state),
-            move |message| crypto::sign(message, &subkey),
+            move |message| Ok(crypto::sign(message, &subkey)),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
             |event| println!("2: {:?}", event),
             rand::rngs::StdRng::from_seed([2; 32]),
@@ -300,12 +300,12 @@ fn test_battleship() {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: crypto::sign(Battleship::certificate(&address).as_bytes(), key).unwrap(),
+                signature: crypto::sign(Battleship::certificate(&address).as_bytes(), key),
             },
         };
 
         let diff = proof
-            .diff(vec![action], &mut |message| crypto::sign(message, key))
+            .diff(vec![action], &mut |message| Ok(crypto::sign(message, key)))
             .unwrap();
 
         proof.apply(&diff).unwrap();
@@ -332,7 +332,7 @@ fn test_battleship() {
 
         let diff = proof
             .diff(vec![action], &mut |message| {
-                crypto::sign(message, &subkeys[usize::from(player)])
+                Ok(crypto::sign(message, &subkeys[usize::from(player)]))
             })
             .unwrap();
 

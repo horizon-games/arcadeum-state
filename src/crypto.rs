@@ -40,16 +40,16 @@ pub type Hash = [u8; 32];
 /// # Examples
 ///
 /// ```
-/// let secret = secp256k1::SecretKey::random(&mut libsecp256k1_rand::thread_rng());
+/// let secret = secp256k1::SecretKey::random(&mut rand::thread_rng());
 /// let message = b"quod erat demonstrandum";
-/// let signature = arcadeum::crypto::sign(message, &secret).unwrap();
+/// let signature = arcadeum::crypto::sign(message, &secret);
 ///
 /// assert_eq!(
 ///     arcadeum::crypto::recover(message, &signature).unwrap(),
 ///     arcadeum::crypto::address(&secp256k1::PublicKey::from_secret_key(&secret))
 /// );
 /// ```
-pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Result<Signature, String> {
+pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Signature {
     let message = [
         format!("\x19Ethereum Signed Message:\n{}", message.len()).as_bytes(),
         message,
@@ -58,15 +58,13 @@ pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Result<Signature, 
 
     let message = secp256k1::Message::parse(&tiny_keccak::keccak256(&message));
 
-    let (mut signature, recovery) =
-        secp256k1::sign(&message, secret).map_err(|error| format!("{:?}", error))?;
-
+    let (mut signature, recovery) = secp256k1::sign(&message, secret);
     signature.normalize_s();
 
     let mut data = [0; size_of::<Signature>()];
     data[..size_of::<Signature>() - 1].copy_from_slice(&signature.serialize());
     data[size_of::<Signature>() - 1] = 27 + recovery.serialize();
-    Ok(data)
+    data
 }
 
 /// Recovers the address of the key that signed a message.

@@ -11,7 +11,7 @@ bindings = ["std", "wasm-bindgen", "js-sys", "rand_core"]
 std = ["rand/std", "serde/std", "serde_cbor/std", "replace_with/std"]
 
 [dependencies]
-libsecp256k1 = "0.2.2"
+libsecp256k1 = "0.3.3"
 tiny-keccak = "1.4.2"
 rand = { version = "0.7.0", default-features = false }
 rand_xorshift = "0.2.0"
@@ -24,7 +24,3 @@ web-sys = { version = "0.3.25", optional = true, features = ["console"] }
 erased-serde = "0.3.9"
 objekt = "0.1.2"
 serde_cbor = { version = "0.10.2", default-features = false, features = ["alloc"] }
-
-[dev-dependencies]
-libsecp256k1-rand = { package = "rand", version = "0.4.6" }
-rand_core = "0.5.0"

@@ -253,7 +253,7 @@ fn test_battleship() {
             |state| println!("0: ready: {:?}", state),
             move |message| crypto::sign(message, &owner),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |message| println!("0: {:?}", message),
+            |event| println!("0: {:?}", event),
             Box::new(rand::rngs::StdRng::from_seed([0; 32])),
         )
         .unwrap()
@@ -270,7 +270,7 @@ fn test_battleship() {
             |state| println!("1: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |message| println!("1: {:?}", message),
+            |event| println!("1: {:?}", event),
             Box::new(rand::rngs::StdRng::from_seed([1; 32])),
         )
         .unwrap()
@@ -287,7 +287,7 @@ fn test_battleship() {
             |state| println!("2: ready: {:?}", state),
             move |message| crypto::sign(message, &subkey),
             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |message| println!("2: {:?}", message),
+            |event| println!("2: {:?}", event),
             Box::new(rand::rngs::StdRng::from_seed([2; 32])),
         )
         .unwrap()

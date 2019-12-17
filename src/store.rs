@@ -136,7 +136,7 @@ macro_rules! bind {
                                     drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
                                 }
                             },
-                            Box::new($crate::store::bindings::JsRng(random)),
+                            $crate::store::bindings::JsRng(random),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
                     },
@@ -200,7 +200,7 @@ macro_rules! bind {
                                     drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
                                 }
                             },
-                            Box::new($crate::store::bindings::JsRng(random)),
+                            $crate::store::bindings::JsRng(random),
                         )
                         .map_err(wasm_bindgen::JsValue::from)?
                     },
@@ -416,7 +416,7 @@ impl<S: State + serde::Serialize> Store<S> {
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
         log: impl FnMut(&dyn Event) + 'static,
-        random: Box<dyn rand::RngCore>,
+        random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
         let mut store = Self {
             player,
@@ -439,7 +439,7 @@ impl<S: State + serde::Serialize> Store<S> {
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
-            random,
+            random: Box::new(random),
             seed: None,
         };
 
@@ -457,7 +457,7 @@ impl<S: State + serde::Serialize> Store<S> {
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
         log: impl FnMut(&dyn Event) + 'static,
-        random: Box<dyn rand::RngCore>,
+        random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
 
@@ -586,7 +586,7 @@ impl<S: State + serde::Serialize> Store<S> {
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
-            random,
+            random: Box::new(random),
             seed,
         };
 

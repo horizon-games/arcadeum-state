@@ -106,9 +106,13 @@ pub fn unhex(mut hex: &str) -> Result<Vec<u8>, String> {
 pub(crate) fn read_u32_usize(data: &mut &[u8]) -> Result<usize, String> {
     crate::forbid!(data.len() < size_of::<u32>());
 
-    let value = crate::error::check(
-        u32::from_le_bytes(crate::error::check(data[..size_of::<u32>()].try_into())?).try_into(),
-    )?;
+    let value = u32::from_le_bytes(
+        data[..size_of::<u32>()]
+            .try_into()
+            .map_err(|error| format!("{}", error))?,
+    )
+    .try_into()
+    .map_err(|error| format!("{}", error))?;
 
     *data = &data[size_of::<u32>()..];
 
@@ -116,7 +120,7 @@ pub(crate) fn read_u32_usize(data: &mut &[u8]) -> Result<usize, String> {
 }
 
 pub(crate) fn write_u32_usize(data: &mut Vec<u8>, value: usize) -> Result<(), String> {
-    let value: u32 = crate::error::check(value.try_into())?;
+    let value: u32 = value.try_into().map_err(|error| format!("{}", error))?;
 
     data.extend(&value.to_le_bytes());
 

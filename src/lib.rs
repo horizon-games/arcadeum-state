@@ -1324,11 +1324,7 @@ macro_rules! impl_Nonce {
                 fn deserialize(data: &mut &[u8]) -> Result<Self, String> {
                     forbid!(data.len() < size_of::<Self>());
 
-                    let nonce = Self::from_le_bytes(
-                        error::check(data[..size_of::<Self>()]
-                            .try_into()
-                            )?,
-                    );
+                    let nonce = Self::from_le_bytes(data[..size_of::<Self>()].try_into().map_err(|error| format!("{}", error))?);
 
                     *data = &data[size_of::<Self>()..];
 

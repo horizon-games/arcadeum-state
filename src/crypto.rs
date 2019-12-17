@@ -58,7 +58,9 @@ pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Result<Signature, 
 
     let message = secp256k1::Message::parse(&tiny_keccak::keccak256(&message));
 
-    let (mut signature, recovery) = crate::error::check(secp256k1::sign(&message, secret))?;
+    let (mut signature, recovery) =
+        secp256k1::sign(&message, secret).map_err(|error| format!("{:?}", error))?;
+
     signature.normalize_s();
 
     let mut data = [0; size_of::<Signature>()];
@@ -97,21 +99,20 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
 
     let message = secp256k1::Message::parse(&tiny_keccak::keccak256(&message));
 
-    let recovery = crate::error::check(secp256k1::RecoveryId::parse(
-        match signature[size_of::<Signature>() - 1] {
-            0 | 27 => 0,
-            1 | 28 => 1,
-            2 | 29 => 2,
-            3 | 30 => 3,
-            recovery => return Err(format!("recovery == {}", recovery)),
-        },
-    ))?;
+    let recovery = secp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
+        0 | 27 => 0,
+        1 | 28 => 1,
+        2 | 29 => 2,
+        3 | 30 => 3,
+        recovery => return Err(format!("recovery == {}", recovery)),
+    })
+    .map_err(|error| format!("{:?}", error))?;
 
-    let signature = crate::error::check(secp256k1::Signature::parse_slice(
-        &signature[..size_of::<Signature>() - 1],
-    ))?;
+    let signature = secp256k1::Signature::parse_slice(&signature[..size_of::<Signature>() - 1])
+        .map_err(|error| format!("{:?}", error))?;
 
-    let public = crate::error::check(secp256k1::recover(&message, &signature, &recovery))?;
+    let public = secp256k1::recover(&message, &signature, &recovery)
+        .map_err(|error| format!("{:?}", error))?;
 
     Ok(address(&public))
 }

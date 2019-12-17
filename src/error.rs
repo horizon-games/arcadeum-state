@@ -70,7 +70,3 @@ macro_rules! slash {
         }
     };
 }
-
-pub(crate) fn check<T>(result: Result<T, impl Debug>) -> Result<T, String> {
-    result.map_err(|error| format!("{:?}", error))
-}

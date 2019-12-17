@@ -259,9 +259,8 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action = action
-                    .into_serde()
-                    .map_err(|error| format!("{:?}", error))?;
+                let action: <$type as $crate::store::State>::Action =
+                    action.into_serde().map_err(|error| error.to_string())?;
 
                 Ok(wasm_bindgen::JsValue::from_serde(
                     &self.store.state().state().simulate(player, &action)?,
@@ -271,9 +270,8 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action = action
-                    .into_serde()
-                    .map_err(|error| format!("{:?}", error))?;
+                let action: <$type as $crate::store::State>::Action =
+                    action.into_serde().map_err(|error| error.to_string())?;
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
@@ -288,7 +286,7 @@ macro_rules! bind {
 
                 self.store
                     .apply(&diff)
-                    .map_err(|error| format!("{:?}", error))?;
+                    .map_err(|error| error.to_string())?;
 
                 Ok(())
             }
@@ -302,9 +300,7 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
-                self.store
-                    .apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)
-                    .map_err(|error| wasm_bindgen::JsValue::from(format!("{:?}", error)))
+                Ok(self.store.apply(&$crate::Diff::deserialize(diff).map_err(wasm_bindgen::JsValue::from)?)?)
             }
         }
 
@@ -809,7 +805,9 @@ impl<S: State + serde::Serialize> Store<S> {
             .map_err(|error| error.to_string())?
             .enabled = true;
 
-        crate::error::check(self.proof.apply(diff))?;
+        self.proof
+            .apply(diff)
+            .map_err(|error| format!("{:?}", error))?;
 
         self.flush()
     }

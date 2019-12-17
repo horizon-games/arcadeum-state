@@ -53,6 +53,12 @@ use {
     },
 };
 
+#[cfg(feature = "tester")]
+mod tester;
+
+#[cfg(feature = "tester")]
+pub use tester::Tester;
+
 /// Generates WebAssembly bindings for a [store::State].
 #[macro_export]
 macro_rules! bind {

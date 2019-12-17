@@ -22,19 +22,15 @@
 
 use arcadeum::{
     crypto,
-    store::{Context, State, Store, StoreState},
-    utils::hex,
-    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof,
+    store::{Context, State, Tester},
+    Player,
 };
 
 use rand::{RngCore, SeedableRng};
 use serde::Serialize;
 
 #[cfg(feature = "std")]
-use std::{
-    cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, mem::size_of, pin::Pin,
-    rc::Rc,
-};
+use std::{convert::TryInto, future::Future, mem::size_of, pin::Pin};
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -147,32 +143,7 @@ impl State for Battleship {
 
 #[test]
 fn test_battleship() {
-    let mut random = rand::thread_rng();
-
-    let owner = secp256k1::SecretKey::random(&mut random);
-
-    let keys = [
-        secp256k1::SecretKey::random(&mut random),
-        secp256k1::SecretKey::random(&mut random),
-    ];
-
-    let subkeys = [
-        secp256k1::SecretKey::random(&mut random),
-        secp256k1::SecretKey::random(&mut random),
-    ];
-
     let mut random = rand::rngs::StdRng::from_seed([0; 32]);
-
-    let mut id = <Battleship as State>::ID::default();
-    random.fill_bytes(&mut id);
-
-    let players = keys
-        .iter()
-        .map(|key| crypto::address(&secp256k1::PublicKey::from_secret_key(key)))
-        .collect::<Vec<_>>()
-        .as_slice()
-        .try_into()
-        .unwrap();
 
     let secrets = [
         crypto::MerkleTree::with_salt(
@@ -197,282 +168,24 @@ fn test_battleship() {
         .unwrap(),
     ];
 
-    let state = ProofState::<StoreState<Battleship>>::new(
-        id,
-        players,
-        StoreState::new(Battleship {
-            nonce: Default::default(),
-            score: Default::default(),
-            roots: [
-                secrets[0].root()[..].try_into().unwrap(),
-                secrets[1].root()[..].try_into().unwrap(),
-            ],
-        }),
-    )
-    .unwrap();
-
-    let root = RootProof::new(state, Vec::new(), &mut |message| {
-        Ok(crypto::sign(message, &owner))
-    })
-    .unwrap();
-
-    println!("{}", hex(&root.serialize()));
-
-    assert_eq!(
-        root.serialize(),
-        RootProof::<StoreState<Battleship>>::deserialize(&root.serialize())
-            .unwrap()
-            .serialize()
-    );
-
-    let mut proof = Proof::new(root.clone());
-
-    println!("{}", hex(&proof.serialize()));
-
-    let data = proof.serialize();
-
-    assert_eq!(data, {
-        let mut proof = Proof::new(root.clone());
-        proof.deserialize(&data).unwrap();
-        proof.serialize()
-    });
-
-    let queues = [
-        Rc::new(RefCell::new(VecDeque::new())),
-        Rc::new(RefCell::new(VecDeque::new())),
-        Rc::new(RefCell::new(VecDeque::new())),
-    ];
-
-    let mut store0 = {
-        let queue = queues[0].clone();
-
-        arcadeum::store::Store::<Battleship>::new(
-            None,
-            &root.serialize(),
-            [Some(secrets[0].clone()), Some(secrets[1].clone())],
-            |state| println!("0: ready: {:?}", state),
-            move |message| Ok(crypto::sign(message, &owner)),
-            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |event| println!("0: {:?}", event),
-            rand::rngs::StdRng::from_seed([0; 32]),
-        )
-        .unwrap()
+    let state = Battleship {
+        nonce: Default::default(),
+        score: Default::default(),
+        roots: [
+            secrets[0].root()[..].try_into().unwrap(),
+            secrets[1].root()[..].try_into().unwrap(),
+        ],
     };
 
-    let mut store1 = {
-        let subkey = subkeys[0].clone();
-        let queue = queues[1].clone();
-
-        arcadeum::store::Store::<Battleship>::new(
-            Some(0),
-            &root.serialize(),
-            [Some(secrets[0].clone()), None],
-            |state| println!("1: ready: {:?}", state),
-            move |message| Ok(crypto::sign(message, &subkey)),
-            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |event| println!("1: {:?}", event),
-            rand::rngs::StdRng::from_seed([1; 32]),
-        )
-        .unwrap()
-    };
-
-    let mut store2 = {
-        let subkey = subkeys[1].clone();
-        let queue = queues[2].clone();
-
-        arcadeum::store::Store::<Battleship>::new(
-            Some(1),
-            &root.serialize(),
-            [None, Some(secrets[1].clone())],
-            |state| println!("2: ready: {:?}", state),
-            move |message| Ok(crypto::sign(message, &subkey)),
-            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |event| println!("2: {:?}", event),
-            rand::rngs::StdRng::from_seed([2; 32]),
-        )
-        .unwrap()
-    };
-
-    for (i, key) in keys.iter().enumerate() {
-        let address = crypto::address(&secp256k1::PublicKey::from_secret_key(&subkeys[i]));
-
-        let action = ProofAction {
-            player: Some(i.try_into().unwrap()),
-            action: PlayerAction::Certify {
-                address,
-                signature: crypto::sign(Battleship::certificate(&address).as_bytes(), key),
-            },
-        };
-
-        let diff = proof
-            .diff(vec![action], &mut |message| Ok(crypto::sign(message, key)))
-            .unwrap();
-
-        proof.apply(&diff).unwrap();
-        store0.apply(&diff).unwrap();
-        store1.apply(&diff).unwrap();
-        store2.apply(&diff).unwrap();
-
-        println!("{}", hex(&proof.serialize()));
-
-        let data = proof.serialize();
-
-        assert_eq!(data, {
-            let mut proof = Proof::new(root.clone());
-            proof.deserialize(&data).unwrap();
-            proof.serialize()
-        });
-    }
-
-    let mut apply = |player, action| {
-        let action = ProofAction {
-            player: Some(player),
-            action: PlayerAction::Play(action),
-        };
-
-        let diff = proof
-            .diff(vec![action], &mut |message| {
-                Ok(crypto::sign(message, &subkeys[usize::from(player)]))
-            })
-            .unwrap();
-
-        proof.apply(&diff).unwrap();
-        store0.apply(&diff).unwrap();
-        store1.apply(&diff).unwrap();
-        store2.apply(&diff).unwrap();
-
-        loop {
-            while let Some(diff) = queues[1].try_borrow_mut().unwrap().pop_front() {
-                store0.apply(&diff).unwrap();
-                store2.apply(&diff).unwrap();
-                proof.apply(&diff).unwrap();
-
-                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
-                    store1.apply(&diff).unwrap();
-                    store2.apply(&diff).unwrap();
-                    proof.apply(&diff).unwrap();
-                }
-            }
-
-            while let Some(diff) = queues[2].try_borrow_mut().unwrap().pop_front() {
-                store0.apply(&diff).unwrap();
-                store1.apply(&diff).unwrap();
-                proof.apply(&diff).unwrap();
-
-                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
-                    store1.apply(&diff).unwrap();
-                    store2.apply(&diff).unwrap();
-                    proof.apply(&diff).unwrap();
-                }
-            }
-
-            while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
-                store1.apply(&diff).unwrap();
-                store2.apply(&diff).unwrap();
-                proof.apply(&diff).unwrap();
-            }
-
-            if queues[1].try_borrow().unwrap().is_empty()
-                && queues[2].try_borrow().unwrap().is_empty()
-            {
-                break;
-            }
-        }
-
-        println!("{}", hex(&proof.serialize()));
-
-        let data = proof.serialize();
-
-        assert_eq!(data, {
-            let mut proof = Proof::new(root.clone());
-            proof.deserialize(&data).unwrap();
-            proof.serialize()
-        });
-
-        assert_eq!(
-            hex(&store0.serialize(None)),
-            hex(&Store::<Battleship>::deserialize(
-                &store0.serialize(None),
-                |_| (),
-                |_| unreachable!(),
-                |_| (),
-                |_| (),
-                rand::rngs::StdRng::from_seed([0; 32]),
-            )
-            .unwrap()
-            .serialize(None))
-        );
-
-        assert_eq!(
-            hex(&store1.serialize(None)),
-            hex(&Store::<Battleship>::deserialize(
-                &store1.serialize(None),
-                |_| (),
-                |_| unreachable!(),
-                |_| (),
-                |_| (),
-                rand::rngs::StdRng::from_seed([1; 32]),
-            )
-            .unwrap()
-            .serialize(None))
-        );
-
-        assert_eq!(
-            hex(&store2.serialize(None)),
-            hex(&Store::<Battleship>::deserialize(
-                &store2.serialize(None),
-                |_| (),
-                |_| unreachable!(),
-                |_| (),
-                |_| (),
-                rand::rngs::StdRng::from_seed([2; 32]),
-            )
-            .unwrap()
-            .serialize(None))
-        );
-
-        assert_eq!(
-            hex(&store1.serialize(None)),
-            hex(&store1.serialize(Some(0)))
-        );
-
-        assert_eq!(
-            hex(&store2.serialize(None)),
-            hex(&store2.serialize(Some(1)))
-        );
-
-        assert_eq!(
-            hex(&store0.serialize(Some(0))),
-            hex(&store1.serialize(Some(0)))
-        );
-
-        assert_eq!(
-            hex(&store0.serialize(Some(1))),
-            hex(&store2.serialize(Some(1)))
-        );
-
-        assert_ne!(
-            hex(&store0.serialize(None)[1..]),
-            hex(&store1.serialize(None)[1..])
-        );
-
-        assert_ne!(
-            hex(&store0.serialize(None)[1..]),
-            hex(&store2.serialize(None)[1..])
-        );
-    };
+    let mut tester = Tester::new(state, secrets, Vec::new()).unwrap();
 
     for _ in 0..20 {
-        apply(
-            0,
-            arcadeum::store::StoreAction::Action((random.next_u32() % 100).try_into().unwrap()),
-        );
+        tester
+            .apply(0, &(random.next_u32() % 100).try_into().unwrap())
+            .unwrap();
 
-        apply(
-            1,
-            arcadeum::store::StoreAction::Action((random.next_u32() % 100).try_into().unwrap()),
-        );
+        tester
+            .apply(1, &(random.next_u32() % 100).try_into().unwrap())
+            .unwrap();
     }
-
-    println!("{:?}", proof.serialize());
 }

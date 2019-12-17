@@ -37,8 +37,7 @@ $ rustup default nightly
 ## Build and test
 
 ```bash
-$ cd state
-$ cargo test -- --nocapture
+$ cargo test --features tester -- --nocapture
 ```
 
 ## Licence

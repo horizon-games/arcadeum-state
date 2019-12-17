@@ -21,21 +21,15 @@
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 use arcadeum::{
-    crypto,
-    store::{Context, State, StoreState},
-    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof,
+    store::{Context, State, Tester},
+    Player,
 };
 
-#[cfg(feature = "std")]
-use arcadeum::utils::hex;
-
-use rand::{RngCore, SeedableRng};
+use rand::RngCore;
 use serde::Serialize;
 
 #[cfg(feature = "std")]
-use std::{
-    cell::RefCell, collections::VecDeque, convert::TryInto, future::Future, pin::Pin, rc::Rc,
-};
+use std::{future::Future, pin::Pin};
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -122,223 +116,13 @@ impl State for Coin {
 
 #[test]
 fn test_coin() {
-    let mut random = rand::thread_rng();
+    let mut tester = Tester::new(Coin::default(), Default::default(), Vec::new()).unwrap();
 
-    let owner = secp256k1::SecretKey::random(&mut random);
-
-    let keys = [
-        secp256k1::SecretKey::random(&mut random),
-        secp256k1::SecretKey::random(&mut random),
-    ];
-
-    let subkeys = [
-        secp256k1::SecretKey::random(&mut random),
-        secp256k1::SecretKey::random(&mut random),
-    ];
-
-    let mut random = rand::rngs::StdRng::from_seed([0; 32]);
-
-    let mut id = <Coin as State>::ID::default();
-    random.fill_bytes(&mut id);
-
-    let players = keys
-        .iter()
-        .map(|key| crypto::address(&secp256k1::PublicKey::from_secret_key(key)))
-        .collect::<Vec<_>>()
-        .as_slice()
-        .try_into()
-        .unwrap();
-
-    let state =
-        ProofState::<StoreState<Coin>>::new(id, players, StoreState::new(Default::default()))
-            .unwrap();
-
-    let root = RootProof::new(state, Vec::new(), &mut |message| {
-        Ok(crypto::sign(message, &owner))
-    })
-    .unwrap();
-
-    println!("{}", hex(&root.serialize()));
-
-    assert_eq!(
-        root.serialize(),
-        RootProof::<StoreState<Coin>>::deserialize(&root.serialize())
-            .unwrap()
-            .serialize()
-    );
-
-    let mut proof = Proof::new(root.clone());
-
-    println!("{}", hex(&proof.serialize()));
-
-    let data = proof.serialize();
-
-    assert_eq!(data, {
-        let mut proof = Proof::new(root.clone());
-        proof.deserialize(&data).unwrap();
-        proof.serialize()
-    });
-
-    let queues = [
-        Rc::new(RefCell::new(VecDeque::new())),
-        Rc::new(RefCell::new(VecDeque::new())),
-        Rc::new(RefCell::new(VecDeque::new())),
-    ];
-
-    let mut store0 = {
-        let queue = queues[0].clone();
-
-        arcadeum::store::Store::<Coin>::new(
-            None,
-            &root.serialize(),
-            [Some(()), Some(())],
-            |state| println!("0: ready: {:?}", state),
-            move |message| Ok(crypto::sign(message, &owner)),
-            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |event| println!("0: {:?}", event),
-            rand::rngs::StdRng::from_seed([0; 32]),
-        )
-        .unwrap()
-    };
-
-    let mut store1 = {
-        let subkey = subkeys[0].clone();
-        let queue = queues[1].clone();
-
-        arcadeum::store::Store::<Coin>::new(
-            Some(0),
-            &root.serialize(),
-            [Some(()), None],
-            |state| println!("1: ready: {:?}", state),
-            move |message| Ok(crypto::sign(message, &subkey)),
-            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |event| println!("1: {:?}", event),
-            rand::rngs::StdRng::from_seed([1; 32]),
-        )
-        .unwrap()
-    };
-
-    let mut store2 = {
-        let subkey = subkeys[1].clone();
-        let queue = queues[2].clone();
-
-        arcadeum::store::Store::<Coin>::new(
-            Some(1),
-            &root.serialize(),
-            [None, Some(())],
-            |state| println!("2: ready: {:?}", state),
-            move |message| Ok(crypto::sign(message, &subkey)),
-            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.clone()),
-            |event| println!("2: {:?}", event),
-            rand::rngs::StdRng::from_seed([2; 32]),
-        )
-        .unwrap()
-    };
-
-    for (i, key) in keys.iter().enumerate() {
-        let address = crypto::address(&secp256k1::PublicKey::from_secret_key(&subkeys[i]));
-
-        let action = ProofAction {
-            player: Some(i.try_into().unwrap()),
-            action: PlayerAction::Certify {
-                address,
-                signature: crypto::sign(Coin::certificate(&address).as_bytes(), key),
-            },
-        };
-
-        let diff = proof
-            .diff(vec![action], &mut |message| Ok(crypto::sign(message, key)))
-            .unwrap();
-
-        proof.apply(&diff).unwrap();
-        store0.apply(&diff).unwrap();
-        store1.apply(&diff).unwrap();
-        store2.apply(&diff).unwrap();
-
-        println!("{}", hex(&proof.serialize()));
-
-        let data = proof.serialize();
-
-        assert_eq!(data, {
-            let mut proof = Proof::new(root.clone());
-            proof.deserialize(&data).unwrap();
-            proof.serialize()
-        });
-    }
-
-    let mut apply = |player, action| {
-        let action = ProofAction {
-            player: Some(player),
-            action: PlayerAction::Play(action),
-        };
-
-        let diff = proof
-            .diff(vec![action], &mut |message| {
-                Ok(crypto::sign(message, &subkeys[usize::from(player)]))
-            })
-            .unwrap();
-
-        proof.apply(&diff).unwrap();
-        store0.apply(&diff).unwrap();
-        store1.apply(&diff).unwrap();
-        store2.apply(&diff).unwrap();
-
-        loop {
-            while let Some(diff) = queues[1].try_borrow_mut().unwrap().pop_front() {
-                store0.apply(&diff).unwrap();
-                store2.apply(&diff).unwrap();
-                proof.apply(&diff).unwrap();
-
-                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
-                    store1.apply(&diff).unwrap();
-                    store2.apply(&diff).unwrap();
-                    proof.apply(&diff).unwrap();
-                }
-            }
-
-            while let Some(diff) = queues[2].try_borrow_mut().unwrap().pop_front() {
-                store0.apply(&diff).unwrap();
-                store1.apply(&diff).unwrap();
-                proof.apply(&diff).unwrap();
-
-                while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
-                    store1.apply(&diff).unwrap();
-                    store2.apply(&diff).unwrap();
-                    proof.apply(&diff).unwrap();
-                }
-            }
-
-            while let Some(diff) = queues[0].try_borrow_mut().unwrap().pop_front() {
-                store1.apply(&diff).unwrap();
-                store2.apply(&diff).unwrap();
-                proof.apply(&diff).unwrap();
-            }
-
-            if queues[1].try_borrow().unwrap().is_empty()
-                && queues[2].try_borrow().unwrap().is_empty()
-            {
-                break;
-            }
-        }
-
-        println!("{}", hex(&proof.serialize()));
-
-        let data = proof.serialize();
-
-        assert_eq!(data, {
-            let mut proof = Proof::new(root.clone());
-            proof.deserialize(&data).unwrap();
-            proof.serialize()
-        });
-    };
-
-    apply(0, arcadeum::store::StoreAction::Action(true));
-    apply(1, arcadeum::store::StoreAction::Action(true));
-    apply(0, arcadeum::store::StoreAction::Action(true));
-    apply(1, arcadeum::store::StoreAction::Action(true));
-    apply(0, arcadeum::store::StoreAction::Action(true));
-    apply(1, arcadeum::store::StoreAction::Action(true));
-    apply(0, arcadeum::store::StoreAction::Action(true));
-
-    println!("{:?}", proof.serialize());
+    tester.apply(0, &true).unwrap();
+    tester.apply(1, &true).unwrap();
+    tester.apply(0, &true).unwrap();
+    tester.apply(1, &true).unwrap();
+    tester.apply(0, &true).unwrap();
+    tester.apply(1, &true).unwrap();
+    tester.apply(0, &true).unwrap();
 }

@@ -6,6 +6,7 @@ edition = "2018"
 
 [features]
 default = ["std"]
+tester = []
 debug = ["bindings", "web-sys"]
 bindings = ["std", "wasm-bindgen", "js-sys", "rand_core"]
 std = ["rand/std", "serde/std", "serde_cbor/std", "replace_with/std"]

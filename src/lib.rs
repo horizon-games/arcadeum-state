@@ -1099,7 +1099,7 @@ impl<S: State> ProofState<S> {
 }
 
 /// Attributable state transition
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProofAction<A: Action> {
     /// The player performing the action, or [None] if performed by the root author.
     pub player: Option<Player>,
@@ -1165,29 +1165,6 @@ impl<A: Action> ProofAction<A> {
         }
 
         data
-    }
-}
-
-impl<A: Action + Debug> Debug for ProofAction<A> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        if f.alternate() {
-            writeln!(
-                f,
-                "\
-ProofAction {{
-    player: {:#?},
-    action: {:#?},
-}}\
-                ",
-                self.player, self.action,
-            )
-        } else {
-            write!(
-                f,
-                "ProofAction {{ player: {:?}, action: {:?} }}",
-                self.player, self.action,
-            )
-        }
     }
 }
 

@@ -778,6 +778,8 @@ impl<S: State + serde::Serialize> Store<S> {
                 _ => None,
             },
             StoreState::Ready { state, .. } => {
+                self.seed = None;
+
                 (self.ready)(state);
 
                 None
@@ -936,6 +938,8 @@ impl<S: State + serde::Serialize> Store<S> {
                 }
             }
             StoreState::Ready { state, .. } => {
+                self.seed = None;
+
                 (self.ready)(state);
 
                 None

@@ -1587,9 +1587,26 @@ impl<S: State> Context<S> {
     }
 
     #[doc(hidden)]
-    pub fn mutate_secret(&mut self, player: crate::Player, mutate: impl FnOnce(&mut S::Secret)) {
-        if let Some(secret) = &self.secrets[usize::from(player)] {
-            mutate(&mut secret.try_borrow_mut().unwrap());
+    pub fn mutate_secret(
+        &mut self,
+        player: crate::Player,
+        mutate: impl FnOnce(&mut S::Secret, &mut dyn FnMut(&dyn Event)),
+    ) {
+        let Self {
+            secrets,
+            nonce,
+            logger,
+            ..
+        } = self;
+
+        if let Some(secret) = &secrets[usize::from(player)] {
+            mutate(&mut secret.try_borrow_mut().unwrap(), &mut |event| {
+                if let Ok(mut logger) = logger.try_borrow_mut() {
+                    *nonce += 1;
+
+                    logger.log(*nonce, event);
+                }
+            });
         }
     }
 
@@ -1624,7 +1641,7 @@ impl Logger {
         }
     }
 
-    fn log(&mut self, nonce: usize, event: &impl Event) {
+    fn log(&mut self, nonce: usize, event: &dyn Event) {
         if self.enabled && nonce > self.nonce {
             self.nonce = nonce;
 

@@ -594,7 +594,6 @@ impl<S: State> Clone for Proof<S> {
 }
 
 /// Authenticated initial state
-#[derive(Clone)]
 pub struct RootProof<S: State> {
     state: ProofState<S>,
     actions: Vec<ProofAction<S::Action>>,
@@ -602,6 +601,19 @@ pub struct RootProof<S: State> {
     hash: crypto::Hash,
     author: crypto::Address,
     latest: ProofState<S>,
+}
+
+impl<S: State> Clone for RootProof<S> {
+    fn clone(&self) -> Self {
+        Self {
+            state: self.state.clone(),
+            actions: self.actions.clone(),
+            signature: self.signature,
+            hash: self.hash,
+            author: self.author,
+            latest: self.compute_state(),
+        }
+    }
 }
 
 impl<S: State> RootProof<S> {

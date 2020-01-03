@@ -1559,7 +1559,7 @@ impl<S: State> Context<S> {
     pub fn mutate_secret(
         &mut self,
         player: crate::Player,
-        mutate: impl FnOnce(&mut S::Secret, &mut dyn FnMut(&dyn Event)),
+        mutate: impl Fn(&mut S::Secret, &mut dyn FnMut(&dyn Event)),
     ) {
         let Self {
             secrets,

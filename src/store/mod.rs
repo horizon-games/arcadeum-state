@@ -230,6 +230,20 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
+            pub fn addresses(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+                wasm_bindgen::JsValue::from_serde(
+                    &self
+                        .store
+                        .state()
+                        .players()
+                        .iter()
+                        .map($crate::crypto::eip55)
+                        .collect::<Vec<_>>(),
+                )
+                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
                 wasm_bindgen::JsValue::from_serde(self.store.state().state().state().ok_or(
                     wasm_bindgen::JsValue::from("self.store.state().state().state().is_none()"),

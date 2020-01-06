@@ -963,6 +963,11 @@ impl<S: State> ProofState<S> {
         None
     }
 
+    /// Gets the addresses of the players.
+    pub fn players(&self) -> &[crypto::Address] {
+        &self.players
+    }
+
     /// Gets the domain-specific state.
     pub fn state(&self) -> &S {
         &self.state

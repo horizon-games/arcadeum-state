@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 use arcadeum::{
-    crypto::{sign, Addressable},
+    crypto::{sign, Addressable, SecretKey},
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
 };
 
@@ -31,7 +31,7 @@ use arcadeum::utils::hex;
 use rand::RngCore;
 
 #[cfg(feature = "std")]
-use std::convert::TryInto;
+use std::{convert::TryInto, mem::size_of};
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -39,7 +39,7 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*, vec},
-    core::convert::TryInto,
+    core::{convert::TryInto, mem::size_of},
 };
 
 #[cfg(not(feature = "std"))]
@@ -170,26 +170,78 @@ impl arcadeum::Action for Action {
     }
 }
 
+#[cfg(not(feature = "no-crypto"))]
+fn generate_keys_and_subkeys<R: rand::Rng>(
+    randoms: &mut [R; 3],
+) -> ([SecretKey; 3], [SecretKey; 2]) {
+    (
+        [
+            SecretKey::random(&mut randoms[0]),
+            SecretKey::random(&mut randoms[1]),
+            SecretKey::random(&mut randoms[2]),
+        ],
+        [
+            SecretKey::random(&mut randoms[1]),
+            SecretKey::random(&mut randoms[2]),
+        ],
+    )
+}
+
+#[cfg(feature = "no-crypto")]
+fn generate_keys_and_subkeys<R: rand::Rng>(
+    randoms: &mut [R; 3],
+) -> ([SecretKey; 3], [SecretKey; 2]) {
+    (
+        [
+            {
+                let mut key = SecretKey::default();
+                randoms[0].try_fill_bytes(&mut key).unwrap();
+                key
+            },
+            {
+                let mut key = SecretKey::default();
+                randoms[1].try_fill_bytes(&mut key).unwrap();
+                key
+            },
+            {
+                let mut key = SecretKey::default();
+                randoms[2].try_fill_bytes(&mut key).unwrap();
+                key
+            },
+        ],
+        [
+            {
+                let mut subkey = SecretKey::default();
+                randoms[1].try_fill_bytes(&mut subkey).unwrap();
+                subkey
+            },
+            {
+                let mut subkey = SecretKey::default();
+                randoms[2].try_fill_bytes(&mut subkey).unwrap();
+                subkey
+            },
+        ],
+    )
+}
+
 #[test]
 fn test_ttt() {
-    let mut random = rand::thread_rng();
+    let mut randoms = {
+        const SIZE: usize = size_of::<<rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed>();
 
-    let owner = secp256k1::SecretKey::random(&mut random);
+        [
+            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([0; SIZE]),
+            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([1; SIZE]),
+            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([2; SIZE]),
+        ]
+    };
 
-    let secrets = [
-        secp256k1::SecretKey::random(&mut random),
-        secp256k1::SecretKey::random(&mut random),
-    ];
-
-    let subkeys = [
-        secp256k1::SecretKey::random(&mut random),
-        secp256k1::SecretKey::random(&mut random),
-    ];
+    let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms);
 
     let mut id = <TTT as State>::ID::default();
-    random.fill_bytes(&mut id);
+    randoms[0].fill_bytes(&mut id);
 
-    let players = secrets
+    let players = keys[1..]
         .iter()
         .map(Addressable::address)
         .collect::<Vec<_>>()
@@ -199,7 +251,10 @@ fn test_ttt() {
 
     let state = ProofState::<Box<TTT>>::new(id, players, Default::default()).unwrap();
 
-    let root = RootProof::new(state, Vec::new(), &mut |message| Ok(sign(message, &owner))).unwrap();
+    let root = RootProof::new(state, Vec::new(), &mut |message| {
+        Ok(sign(message, &keys[0]))
+    })
+    .unwrap();
 
     println!("root = {}\n", hex(&root.serialize()));
 
@@ -222,19 +277,19 @@ fn test_ttt() {
         proof.serialize()
     });
 
-    for (i, secret) in secrets.iter().enumerate() {
+    for (i, key) in keys[1..].iter().enumerate() {
         let address = subkeys[i].address();
 
         let action = ProofAction {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: sign(TTT::certificate(&address).as_bytes(), secret),
+                signature: sign(TTT::certificate(&address).as_bytes(), key),
             },
         };
 
         let diff = proof
-            .diff(vec![action], &mut |message| Ok(sign(message, secret)))
+            .diff(vec![action], &mut |message| Ok(sign(message, key)))
             .unwrap();
 
         proof.apply(&diff).unwrap();

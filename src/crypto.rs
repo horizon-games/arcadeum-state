@@ -26,6 +26,12 @@ use {
     core::{convert::TryInto, mem::size_of},
 };
 
+#[cfg(not(feature = "no-crypto"))]
+pub use secp256k1::SecretKey;
+
+#[cfg(feature = "no-crypto")]
+pub type SecretKey = Address;
+
 /// Public key address
 pub type Address = [u8; 20];
 
@@ -35,6 +41,7 @@ pub type Signature = [u8; 65];
 /// Message digest
 pub type Hash = [u8; 32];
 
+#[cfg(not(feature = "no-crypto"))]
 /// Signs a message with a secp256k1 ECDSA secret key.
 ///
 /// # Examples
@@ -51,7 +58,7 @@ pub type Hash = [u8; 32];
 ///     secret.address()
 /// );
 /// ```
-pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Signature {
+pub fn sign(message: &[u8], secret: &SecretKey) -> Signature {
     let message = [
         format!("\x19Ethereum Signed Message:\n{}", message.len()).as_bytes(),
         message,
@@ -69,6 +76,36 @@ pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Signature {
     data
 }
 
+#[cfg(feature = "no-crypto")]
+/// Signs a message with a secp256k1 ECDSA secret key.
+///
+/// # Examples
+///
+/// ```
+/// use arcadeum::crypto::Addressable;
+/// use rand::RngCore;
+///
+/// let secret = {
+///     let mut key = arcadeum::crypto::SecretKey::default();
+///     rand::thread_rng().try_fill_bytes(&mut key).unwrap();
+///     key
+/// };
+///
+/// let message = b"quod erat demonstrandum";
+/// let signature = arcadeum::crypto::sign(message, &secret);
+///
+/// assert_eq!(
+///     arcadeum::crypto::recover(message, &signature).unwrap(),
+///     secret.address()
+/// );
+/// ```
+pub fn sign(_message: &[u8], secret: &SecretKey) -> Signature {
+    let mut signature = [0; size_of::<Signature>()];
+    signature[..size_of::<SecretKey>()].copy_from_slice(secret);
+    signature
+}
+
+#[cfg(not(feature = "no-crypto"))]
 /// Recovers the address of the key that signed a message.
 ///
 /// # Examples
@@ -115,6 +152,38 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
         .map_err(|error| format!("{:?}", error))?;
 
     Ok(address(&public))
+}
+
+#[cfg(feature = "no-crypto")]
+/// Recovers the address of the key that signed a message.
+///
+/// # Examples
+///
+/// ```
+/// let message = b"quod erat demonstrandum";
+///
+/// let signature = b"\
+///     \xdf\x55\x60\xB8\x13\x8C\xfa\x93\x86\x4B\xBD\xDe\x4D\xe4\xfF\xBD\
+///     \x6C\x54\x69\xBF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+///     \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+///     \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+///     \x00";
+///
+/// assert_eq!(
+///     arcadeum::crypto::recover(message, signature).as_ref(),
+///     Ok(b"\xdf\x55\x60\xB8\x13\x8C\xfa\x93\x86\x4B\xBD\xDe\x4D\xe4\xfF\xBD\x6C\x54\x69\xBF"),
+/// );
+/// ```
+pub fn recover(_message: &[u8], signature: &[u8]) -> Result<Address, String> {
+    crate::forbid!(signature.len() != size_of::<Signature>());
+
+    crate::forbid!(
+        signature[size_of::<Address>()..] != [0; size_of::<Signature>() - size_of::<Address>()][..]
+    );
+
+    signature[..size_of::<Address>()]
+        .try_into()
+        .map_err(|error| format!("{}", error))
 }
 
 /// Addressable trait

@@ -6,6 +6,7 @@ edition = "2018"
 
 [features]
 default = ["std"]
+no-crypto = []
 tester = []
 debug = ["bindings", "web-sys"]
 bindings = ["std", "wasm-bindgen", "js-sys", "rand_core"]

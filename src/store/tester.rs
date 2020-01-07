@@ -69,16 +69,7 @@ where
             ]
         };
 
-        let keys = [
-            secp256k1::SecretKey::random(&mut randoms[0]),
-            secp256k1::SecretKey::random(&mut randoms[1]),
-            secp256k1::SecretKey::random(&mut randoms[2]),
-        ];
-
-        let subkeys = [
-            secp256k1::SecretKey::random(&mut randoms[1]),
-            secp256k1::SecretKey::random(&mut randoms[2]),
-        ];
+        let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms);
 
         let certificates = [
             {
@@ -340,6 +331,60 @@ where
 
         Ok(())
     }
+}
+
+#[cfg(not(feature = "no-crypto"))]
+fn generate_keys_and_subkeys<R: rand::Rng>(
+    randoms: &mut [R; 3],
+) -> ([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]) {
+    (
+        [
+            crate::crypto::SecretKey::random(&mut randoms[0]),
+            crate::crypto::SecretKey::random(&mut randoms[1]),
+            crate::crypto::SecretKey::random(&mut randoms[2]),
+        ],
+        [
+            crate::crypto::SecretKey::random(&mut randoms[1]),
+            crate::crypto::SecretKey::random(&mut randoms[2]),
+        ],
+    )
+}
+
+#[cfg(feature = "no-crypto")]
+fn generate_keys_and_subkeys<R: rand::Rng>(
+    randoms: &mut [R; 3],
+) -> ([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]) {
+    (
+        [
+            {
+                let mut key = crate::crypto::SecretKey::default();
+                randoms[0].try_fill_bytes(&mut key).unwrap();
+                key
+            },
+            {
+                let mut key = crate::crypto::SecretKey::default();
+                randoms[1].try_fill_bytes(&mut key).unwrap();
+                key
+            },
+            {
+                let mut key = crate::crypto::SecretKey::default();
+                randoms[2].try_fill_bytes(&mut key).unwrap();
+                key
+            },
+        ],
+        [
+            {
+                let mut subkey = crate::crypto::SecretKey::default();
+                randoms[1].try_fill_bytes(&mut subkey).unwrap();
+                subkey
+            },
+            {
+                let mut subkey = crate::crypto::SecretKey::default();
+                randoms[2].try_fill_bytes(&mut subkey).unwrap();
+                subkey
+            },
+        ],
+    )
 }
 
 fn deserialize_store<S: crate::store::State + serde::Serialize>(

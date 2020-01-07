@@ -21,10 +21,7 @@
 use std::fmt::Debug;
 
 #[cfg(not(feature = "std"))]
-use {
-    alloc::{format, prelude::v1::*},
-    core::fmt::Debug,
-};
+use {alloc::prelude::v1::*, core::fmt::Debug};
 
 #[derive(Debug)]
 pub enum Error {

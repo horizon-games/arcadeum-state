@@ -17,7 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#[cfg(feature = "std")]
 use std::{cell::RefCell, collections::VecDeque, mem::size_of, ops::Deref, rc::Rc};
+
+#[cfg(not(feature = "std"))]
+use {
+    alloc::{collections::VecDeque, format, prelude::v1::*, rc::Rc, vec},
+    core::{cell::RefCell, mem::size_of, ops::Deref},
+};
+
+#[cfg(not(feature = "std"))]
+macro_rules! println {
+    () => {
+        ()
+    };
+    ($($arg:tt)*) => {
+        ()
+    };
+}
 
 /// Store tester
 pub struct Tester<S>

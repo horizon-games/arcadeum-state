@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 use arcadeum::{
-    crypto::{address, sign},
+    crypto::{sign, Addressable},
     Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
 };
 
@@ -191,7 +191,7 @@ fn test_ttt() {
 
     let players = secrets
         .iter()
-        .map(|secret| address(&secp256k1::PublicKey::from_secret_key(secret)))
+        .map(Addressable::address)
         .collect::<Vec<_>>()
         .as_slice()
         .try_into()
@@ -223,7 +223,7 @@ fn test_ttt() {
     });
 
     for (i, secret) in secrets.iter().enumerate() {
-        let address = address(&secp256k1::PublicKey::from_secret_key(&subkeys[i]));
+        let address = subkeys[i].address();
 
         let action = ProofAction {
             player: Some(i.try_into().unwrap()),

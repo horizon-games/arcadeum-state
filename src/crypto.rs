@@ -40,13 +40,15 @@ pub type Hash = [u8; 32];
 /// # Examples
 ///
 /// ```
+/// use arcadeum::crypto::Addressable;
+///
 /// let secret = secp256k1::SecretKey::random(&mut rand::thread_rng());
 /// let message = b"quod erat demonstrandum";
 /// let signature = arcadeum::crypto::sign(message, &secret);
 ///
 /// assert_eq!(
 ///     arcadeum::crypto::recover(message, &signature).unwrap(),
-///     arcadeum::crypto::address(&secp256k1::PublicKey::from_secret_key(&secret))
+///     secret.address()
 /// );
 /// ```
 pub fn sign(message: &[u8], secret: &secp256k1::SecretKey) -> Signature {
@@ -113,6 +115,39 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
         .map_err(|error| format!("{:?}", error))?;
 
     Ok(address(&public))
+}
+
+/// Addressable trait
+pub trait Addressable {
+    /// Gets the address.
+    fn address(&self) -> Address;
+
+    /// Gets the EIP 55 representation of the address.
+    fn eip55(&self) -> String {
+        eip55(&self.address())
+    }
+}
+
+impl Addressable for secp256k1::SecretKey {
+    fn address(&self) -> Address {
+        secp256k1::PublicKey::from_secret_key(self).address()
+    }
+}
+
+impl Addressable for secp256k1::PublicKey {
+    fn address(&self) -> Address {
+        address(self)
+    }
+}
+
+impl Addressable for Address {
+    fn address(&self) -> Address {
+        *self
+    }
+
+    fn eip55(&self) -> String {
+        eip55(self)
+    }
 }
 
 /// Computes the address of a secp256k1 ECDSA public key.

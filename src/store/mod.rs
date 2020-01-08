@@ -237,7 +237,7 @@ macro_rules! bind {
                         .state()
                         .players()
                         .iter()
-                        .map($crate::crypto::eip55)
+                        .map($crate::crypto::Addressable::eip55)
                         .collect::<Vec<_>>(),
                 )
                 .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
@@ -1415,7 +1415,7 @@ pub trait State: Clone {
     fn certificate(address: &crate::crypto::Address) -> String {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
-            crate::crypto::eip55(address)
+            crate::crypto::Addressable::eip55(address)
         )
     }
 

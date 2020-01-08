@@ -82,8 +82,7 @@ where
 
         let certificates = [
             {
-                let address =
-                    crate::crypto::address(&secp256k1::PublicKey::from_secret_key(&subkeys[0]));
+                let address = crate::crypto::Addressable::address(&subkeys[0]);
 
                 crate::ProofAction {
                     player: Some(0),
@@ -97,8 +96,7 @@ where
                 }
             },
             {
-                let address =
-                    crate::crypto::address(&secp256k1::PublicKey::from_secret_key(&subkeys[1]));
+                let address = crate::crypto::Addressable::address(&subkeys[1]);
 
                 crate::ProofAction {
                     player: Some(1),
@@ -117,8 +115,8 @@ where
             crate::ProofState::new(
                 Default::default(),
                 [
-                    crate::crypto::address(&secp256k1::PublicKey::from_secret_key(&keys[1])),
-                    crate::crypto::address(&secp256k1::PublicKey::from_secret_key(&keys[2])),
+                    crate::crypto::Addressable::address(&keys[1]),
+                    crate::crypto::Addressable::address(&keys[2]),
                 ],
                 crate::store::StoreState::new(state),
             )?,

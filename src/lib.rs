@@ -891,7 +891,7 @@ Diff {{
                 self.actions,
                 utils::hex(&self.proof_signature),
                 utils::hex(&self.signature),
-                crypto::eip55(&self.author),
+                crypto::Addressable::eip55(&self.author),
             )
         } else {
             writeln!(
@@ -909,7 +909,7 @@ Diff {{
                 self.actions,
                 utils::hex(&self.proof_signature),
                 utils::hex(&self.signature),
-                crypto::eip55(&self.author),
+                crypto::Addressable::eip55(&self.author),
             )
         }
     }
@@ -1208,7 +1208,7 @@ PlayerAction::Certify {{
     signature: {},
 }}\
                     ",
-                    crypto::eip55(address),
+                    crypto::Addressable::eip55(address),
                     utils::hex(signature),
                 ),
             }
@@ -1218,7 +1218,7 @@ PlayerAction::Certify {{
                 Self::Certify { address, signature } => write!(
                     f,
                     "PlayerAction::Certify {{ address: {}, signature: {} }}",
-                    crypto::eip55(address),
+                    crypto::Addressable::eip55(address),
                     utils::hex(signature),
                 ),
             }
@@ -1244,7 +1244,7 @@ pub trait State: Clone {
     fn certificate(address: &crypto::Address) -> String {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
-            crypto::eip55(address)
+            crypto::Addressable::eip55(address)
         )
     }
 

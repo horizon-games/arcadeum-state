@@ -1050,6 +1050,15 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
         })
     }
 
+    fn is_serializable(&self) -> bool {
+        match self {
+            Self::Ready { state, nonce, .. } => {
+                TryInto::<u32>::try_into(*nonce).is_ok() && state.is_serializable()
+            }
+            _ => false,
+        }
+    }
+
     fn serialize(&self) -> Option<Vec<u8>> {
         match self {
             Self::Ready { state, nonce, .. } => State::serialize(state).and_then(|mut state| {
@@ -1415,9 +1424,17 @@ pub trait State: Clone {
     /// `data` must have been constructed using [State::serialize].
     fn deserialize(data: &[u8]) -> Result<Self, String>;
 
+    /// Checks if the state has a binary representation.
+    ///
+    /// This should be implemented whenever possible for improved performance.
+    /// The return value must agree with [State::serialize].
+    fn is_serializable(&self) -> bool {
+        self.serialize().is_some()
+    }
+
     /// Generates a binary representation that can be used to reconstruct the state.
     ///
-    /// See [State::deserialize].
+    /// See [State::deserialize] and [State::is_serializable].
     fn serialize(&self) -> Option<Vec<u8>>;
 
     /// Verifies if an action by a given player is valid for the state.

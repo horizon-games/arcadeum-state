@@ -76,6 +76,10 @@ impl State for Coin {
         })
     }
 
+    fn is_serializable(&self) -> bool {
+        true
+    }
+
     fn serialize(&self) -> Option<Vec<u8>> {
         Some(vec![self.nonce, self.score[0], self.score[1]])
     }

@@ -93,6 +93,10 @@ impl State for TTT {
         Ok(Self { nonce, board })
     }
 
+    fn is_serializable(&self) -> bool {
+        true
+    }
+
     fn serialize(&self) -> Option<Vec<u8>> {
         let byte = |player| match player {
             None => 0,

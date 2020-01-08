@@ -82,6 +82,10 @@ impl State for Battleship {
         })
     }
 
+    fn is_serializable(&self) -> bool {
+        true
+    }
+
     fn serialize(&self) -> Option<Vec<u8>> {
         let mut data = vec![self.nonce, self.score[0], self.score[1]];
         data.extend(self.roots.concat());

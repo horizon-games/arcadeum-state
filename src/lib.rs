@@ -188,7 +188,7 @@ impl<S: State> Proof<S> {
 
             latest.apply(action).map_err(error::Error::Hard)?;
 
-            if latest.serialize().is_some() {
+            if latest.is_serializable() {
                 state = latest.clone();
                 start = self.actions.len() + i + 1;
             }
@@ -336,7 +336,7 @@ impl<S: State> Proof<S> {
 
             latest.apply(action)?;
 
-            if latest.serialize().is_some() {
+            if latest.is_serializable() {
                 state = latest.clone();
                 start = self.actions.len() + i + 1;
             }
@@ -483,10 +483,10 @@ impl<S: State> Proof<S> {
                     .any(|range| range.start < i && i <= range.end);
 
                 if serializable || unserializable {
-                    let data = state.serialize();
+                    let is_serializable = state.is_serializable();
 
-                    forbid!(serializable && data.is_none());
-                    forbid!(unserializable && data.is_some());
+                    forbid!(serializable && !is_serializable);
+                    forbid!(unserializable && is_serializable);
 
                     if serializable {
                         for (j, range) in ranges.iter().enumerate() {
@@ -632,7 +632,7 @@ impl<S: State> RootProof<S> {
         for (i, action) in actions.iter().enumerate() {
             latest.apply(action)?;
 
-            if latest.serialize().is_some() {
+            if latest.is_serializable() {
                 state = latest.clone();
                 start = i + 1;
             }
@@ -724,7 +724,7 @@ impl<S: State> RootProof<S> {
 
             latest.apply(&action)?;
 
-            forbid!(latest.serialize().is_some());
+            forbid!(latest.is_serializable());
 
             actions.push(action);
         }
@@ -930,7 +930,7 @@ impl<S: State> ProofState<S> {
     ///
     /// `state` must be serializable.
     pub fn new(id: S::ID, players: [crypto::Address; 2], state: S) -> Result<Self, String> {
-        forbid!(state.serialize().is_none());
+        forbid!(!state.is_serializable());
 
         Ok(Self {
             id,
@@ -1032,6 +1032,10 @@ impl<S: State> ProofState<S> {
                 state
             },
         })
+    }
+
+    fn is_serializable(&self) -> bool {
+        TryInto::<u32>::try_into(self.signatures.len()).is_ok() && self.state.is_serializable()
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
@@ -1249,9 +1253,17 @@ pub trait State: Clone {
     /// `data` must have been constructed using [State::serialize].
     fn deserialize(data: &[u8]) -> Result<Self, String>;
 
+    /// Checks if the state has a binary representation.
+    ///
+    /// This should be implemented whenever possible for improved performance.
+    /// The return value must agree with [State::serialize].
+    fn is_serializable(&self) -> bool {
+        self.serialize().is_some()
+    }
+
     /// Generates a binary representation that can be used to reconstruct the state.
     ///
-    /// See [State::deserialize].
+    /// See [State::deserialize] and [State::is_serializable].
     fn serialize(&self) -> Option<Vec<u8>>;
 
     /// Applies an action by a given player to the state.
@@ -1265,6 +1277,10 @@ impl<S: State> State for Box<S> {
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         S::deserialize(data).map(Self::new)
+    }
+
+    fn is_serializable(&self) -> bool {
+        self.deref().is_serializable()
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {

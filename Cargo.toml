@@ -10,7 +10,7 @@ no-crypto = []
 tester = []
 debug = ["bindings", "web-sys"]
 bindings = ["std", "wasm-bindgen", "js-sys", "rand_core"]
-std = ["rand/std", "serde/std", "serde_cbor/std", "erased-serde/std", "replace_with/std"]
+std = ["rand/std", "serde/std", "serde_cbor/std", "cached", "erased-serde/std", "replace_with/std"]
 
 [dependencies]
 libsecp256k1 = "0.3.3"
@@ -26,3 +26,4 @@ web-sys = { version = "0.3.25", optional = true, features = ["console"] }
 erased-serde = { git = "https://github.com/attente/erased-serde.git", branch = "no-std", default-features = false }
 objekt = "0.1.2"
 serde_cbor = { version = "0.10.2", default-features = false, features = ["alloc"] }
+cached = { version = "0.11.0", optional = true }

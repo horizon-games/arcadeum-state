@@ -26,6 +26,12 @@ use {
     core::{convert::TryInto, mem::size_of},
 };
 
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+use {
+    cached::cached,
+    std::hash::{Hash as StdHash, Hasher},
+};
+
 #[cfg(not(feature = "no-crypto"))]
 pub use secp256k1::SecretKey;
 
@@ -105,7 +111,97 @@ pub fn sign(_message: &[u8], secret: &SecretKey) -> Signature {
     signature
 }
 
-#[cfg(not(feature = "no-crypto"))]
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+/// Recovers the address of the key that signed a message.
+///
+/// # Examples
+///
+/// ```
+/// let message = b"quod erat demonstrandum";
+///
+/// let signature = b"\
+///     \x02\x83\xdb\x3b\xa1\x91\xf3\x2f\xbd\x9a\xdb\x53\xe1\x62\x00\x79\
+///     \x94\x45\x4b\xf0\x65\x52\xb0\xa0\xdd\x48\x90\xc3\xb5\x96\xdc\x4b\
+///     \x44\xd6\x97\x15\x99\xbf\x24\xaf\xbe\x33\x79\x83\xae\x3d\x31\xc1\
+///     \xf7\xfd\xa2\xf6\x49\xd8\x8b\x0d\x5c\xd2\xfd\xec\x18\xfa\xb7\xc8\
+///     \x1b";
+///
+/// assert_eq!(
+///     arcadeum::crypto::recover(message, signature).as_ref(),
+///     Ok(b"\xdf\x55\x60\xB8\x13\x8C\xfa\x93\x86\x4B\xBD\xDe\x4D\xe4\xfF\xBD\x6C\x54\x69\xBF"),
+/// );
+/// ```
+pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
+    crate::forbid!(signature.len() != size_of::<Signature>());
+
+    let message = [
+        format!("\x19Ethereum Signed Message:\n{}", message.len()).as_bytes(),
+        message,
+    ]
+    .concat();
+
+    let digest = tiny_keccak::keccak256(&message);
+
+    let signature = {
+        let mut data = [0; size_of::<Signature>()];
+        data.copy_from_slice(signature);
+        data
+    };
+
+    _cached_recover(digest, _Signature(signature))
+}
+
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+cached! {
+    RECOVER_CACHE: cached::SizedCache<(Hash, _Signature), Result<Address, String>> = cached::SizedCache::with_size(256);
+
+    fn _cached_recover(digest: Hash, signature: _Signature) -> Result<Address, String> = {
+        let message = secp256k1::Message::parse(&digest);
+
+        let recovery =
+            secp256k1::RecoveryId::parse(match signature.0[size_of::<Signature>() - 1] {
+                0 | 27 => 0,
+                1 | 28 => 1,
+                2 | 29 => 2,
+                3 | 30 => 3,
+                recovery => return Err(format!("recovery == {}", recovery)),
+            })
+            .map_err(|error| format!("{:?}", error))?;
+
+        let signature =
+            secp256k1::Signature::parse_slice(&signature.0[..size_of::<Signature>() - 1])
+                .map_err(|error| format!("{:?}", error))?;
+
+        let public = secp256k1::recover(&message, &signature, &recovery)
+            .map_err(|error| format!("{:?}", error))?;
+
+        Ok(address(&public))
+    }
+}
+
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+#[doc(hidden)]
+#[derive(Clone)]
+pub struct _Signature(Signature);
+
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+impl StdHash for _Signature {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write(&self.0);
+    }
+}
+
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+impl Eq for _Signature {}
+
+#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
+impl PartialEq for _Signature {
+    fn eq(&self, other: &Self) -> bool {
+        other.0[..] == self.0[..]
+    }
+}
+
+#[cfg(all(not(feature = "no-crypto"), not(feature = "std")))]
 /// Recovers the address of the key that signed a message.
 ///
 /// # Examples

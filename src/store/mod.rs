@@ -251,6 +251,22 @@ macro_rules! bind {
                 .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn secret(
+                &self,
+                player: $crate::Player,
+            ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+                wasm_bindgen::JsValue::from_serde(
+                    &**self
+                        .store
+                        .state()
+                        .state()
+                        .secret(player)
+                        .ok_or("self.store.state().state().secret(player).is_none()")?,
+                )
+                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen(getter, js_name = pendingPlayer)]
             pub fn pending_player(&self) -> Result<Option<$crate::Player>, wasm_bindgen::JsValue> {
                 if let $crate::store::StoreState::Pending { phase, .. } = self.store.state().state() {

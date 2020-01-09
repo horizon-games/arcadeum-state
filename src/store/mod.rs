@@ -1481,6 +1481,39 @@ pub struct Context<S: State> {
 }
 
 impl<S: State> Context<S> {
+    /// Mutates a player's secret information.
+    pub fn mutate_secret(
+        &mut self,
+        player: crate::Player,
+        mutate: impl Fn(&mut S::Secret, &mut dyn FnMut(&dyn Event)),
+    ) {
+        self.nonce += 1;
+
+        let mut logger = self.logger.try_borrow_mut();
+
+        let log = if let Ok(logger) = &mut logger {
+            if logger.enabled && self.nonce > logger.nonce {
+                logger.nonce = self.nonce;
+
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if let Some(secret) = &self.secrets[usize::from(player)] {
+            let mut secret = secret.try_borrow_mut().unwrap();
+
+            if log {
+                mutate(&mut secret, &mut logger.unwrap().log);
+            } else {
+                mutate(&mut secret, &mut |_| ());
+            }
+        }
+    }
+
     /// Requests a player's secret information.
     ///
     /// The random number generator is re-seeded after this call to prevent players from influencing the randomness of the state via trial and error.
@@ -1569,39 +1602,6 @@ impl<S: State> Context<S> {
             self.nonce += 1;
 
             logger.log(self.nonce, event);
-        }
-    }
-
-    #[doc(hidden)]
-    pub fn mutate_secret(
-        &mut self,
-        player: crate::Player,
-        mutate: impl Fn(&mut S::Secret, &mut dyn FnMut(&dyn Event)),
-    ) {
-        self.nonce += 1;
-
-        let mut logger = self.logger.try_borrow_mut();
-
-        let log = if let Ok(logger) = &mut logger {
-            if self.nonce > logger.nonce {
-                logger.nonce = self.nonce;
-
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        };
-
-        if let Some(secret) = &self.secrets[usize::from(player)] {
-            let mut secret = secret.try_borrow_mut().unwrap();
-
-            if log {
-                mutate(&mut secret, &mut logger.unwrap().log);
-            } else {
-                mutate(&mut secret, &mut |_| ());
-            }
         }
     }
 

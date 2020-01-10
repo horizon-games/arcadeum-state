@@ -984,9 +984,14 @@ impl<S: State + serde::Serialize> StoreState<S> {
                 .as_ref()
                 .map(|secret| Box::new(secret) as Box<dyn Deref<Target = S::Secret>>),
 
-            Self::Pending { secrets, .. } => secrets[usize::from(player)].as_ref().map(|secret| {
-                Box::new(secret.try_borrow().unwrap()) as Box<dyn Deref<Target = S::Secret>>
-            }),
+            Self::Pending { secrets, .. } => {
+                secrets[usize::from(player)].as_ref().and_then(|secret| {
+                    secret
+                        .try_borrow()
+                        .map(|secret| Box::new(secret) as Box<dyn Deref<Target = S::Secret>>)
+                        .ok()
+                })
+            }
         }
     }
 

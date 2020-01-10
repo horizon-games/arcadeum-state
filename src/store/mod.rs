@@ -99,9 +99,35 @@ macro_rules! bind {
                                 ],
                                 _ => return Err("player.is_some() && player.unwrap() >= 2".into()),
                             },
-                            move |state| {
+                            move |state, secrets| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
-                                    drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                    match secrets {
+                                        [Some(secret1), Some(secret2)] => {
+                                            drop(
+                                                ready.call3(
+                                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                                    &state,
+                                                    &wasm_bindgen::JsValue::from_serde(secret1)
+                                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                                    &wasm_bindgen::JsValue::from_serde(secret2)
+                                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                                ),
+                                            );
+                                        }
+                                        [Some(secret), None] | [None, Some(secret)] => {
+                                            drop(
+                                                ready.call2(
+                                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                                    &state,
+                                                    &wasm_bindgen::JsValue::from_serde(secret)
+                                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                                ),
+                                            );
+                                        }
+                                        [None, None] => {
+                                            drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                        }
+                                    }
                                 }
                             },
                             move |message| {
@@ -163,9 +189,35 @@ macro_rules! bind {
                     store: {
                         $crate::store::Store::deserialize(
                             data,
-                            move |state| {
+                            move |state, secrets| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
-                                    drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                    match secrets {
+                                        [Some(secret1), Some(secret2)] => {
+                                            drop(
+                                                ready.call3(
+                                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                                    &state,
+                                                    &wasm_bindgen::JsValue::from_serde(secret1)
+                                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                                    &wasm_bindgen::JsValue::from_serde(secret2)
+                                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                                ),
+                                            );
+                                        }
+                                        [Some(secret), None] | [None, Some(secret)] => {
+                                            drop(
+                                                ready.call2(
+                                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                                    &state,
+                                                    &wasm_bindgen::JsValue::from_serde(secret)
+                                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                                ),
+                                            );
+                                        }
+                                        [None, None] => {
+                                            drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                        }
+                                    }
                                 }
                             },
                             move |message| {
@@ -382,7 +434,7 @@ pub mod bindings;
 pub struct Store<S: State + serde::Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
-    ready: Box<dyn FnMut(&S)>,
+    ready: Box<dyn FnMut(&S, [Option<&S::Secret>; 2])>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
     random: Box<dyn rand::RngCore>,
@@ -397,7 +449,7 @@ impl<S: State + serde::Serialize> Store<S> {
         player: Option<crate::Player>,
         root: &[u8],
         secrets: [Option<S::Secret>; 2],
-        ready: impl FnMut(&S) + 'static,
+        ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
         log: impl FnMut(&dyn Event) + 'static,
@@ -438,7 +490,7 @@ impl<S: State + serde::Serialize> Store<S> {
     /// `data` must have been constructed using [Store::serialize].
     pub fn deserialize(
         mut data: &[u8],
-        ready: impl FnMut(&S) + 'static,
+        ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
         log: impl FnMut(&dyn Event) + 'static,
@@ -758,10 +810,10 @@ impl<S: State + serde::Serialize> Store<S> {
                 }
                 _ => None,
             },
-            StoreState::Ready { state, .. } => {
+            StoreState::Ready { state, secrets, .. } => {
                 self.seed = None;
 
-                (self.ready)(state);
+                (self.ready)(state, [secrets[0].as_ref(), secrets[1].as_ref()]);
 
                 None
             }
@@ -918,10 +970,10 @@ impl<S: State + serde::Serialize> Store<S> {
                     _ => None,
                 }
             }
-            StoreState::Ready { state, .. } => {
+            StoreState::Ready { state, secrets, .. } => {
                 self.seed = None;
 
-                (self.ready)(state);
+                (self.ready)(state, [secrets[0].as_ref(), secrets[1].as_ref()]);
 
                 None
             }

@@ -132,7 +132,7 @@ where
                     None,
                     &root,
                     [Some(secret1.clone()), Some(secret2.clone())],
-                    |_| println!("[0: ready]"),
+                    |_, _| println!("[0: ready]"),
                     move |message| Ok(crate::crypto::sign(message, &keys[0])),
                     {
                         let queue = queues[0].clone();
@@ -146,7 +146,7 @@ where
                     Some(0),
                     &root,
                     [Some(secret1), None],
-                    |_| println!("[1: ready]"),
+                    |_, _| println!("[1: ready]"),
                     move |message| Ok(crate::crypto::sign(message, &subkey1)),
                     {
                         let queue = queues[1].clone();
@@ -160,7 +160,7 @@ where
                     Some(1),
                     &root,
                     [None, Some(secret2)],
-                    |_| println!("[2: ready]"),
+                    |_, _| println!("[2: ready]"),
                     move |message| Ok(crate::crypto::sign(message, &subkey2)),
                     {
                         let queue = queues[2].clone();
@@ -392,7 +392,7 @@ fn deserialize_store<S: crate::store::State + serde::Serialize>(
 ) -> Result<crate::store::Store<S>, String> {
     crate::store::Store::deserialize(
         data,
-        |_| (),
+        |_, _| (),
         |_| unreachable!(),
         |_| (),
         |_| (),

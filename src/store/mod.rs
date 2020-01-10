@@ -76,6 +76,7 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 root: &[u8],
                 secret: wasm_bindgen::JsValue,
+                p2p: bool,
                 ready: js_sys::Function,
                 sign: js_sys::Function,
                 send: js_sys::Function,
@@ -99,6 +100,7 @@ macro_rules! bind {
                                 ],
                                 _ => return Err("player.is_some() && player.unwrap() >= 2".into()),
                             },
+                            p2p,
                             move |state, secrets| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
                                     match secrets {
@@ -179,6 +181,7 @@ macro_rules! bind {
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn deserialize(
                 data: &[u8],
+                p2p: bool,
                 ready: js_sys::Function,
                 sign: js_sys::Function,
                 send: js_sys::Function,
@@ -189,6 +192,7 @@ macro_rules! bind {
                     store: {
                         $crate::store::Store::deserialize(
                             data,
+                            p2p,
                             move |state, secrets| {
                                 if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
                                     match secrets {
@@ -434,6 +438,7 @@ pub mod bindings;
 pub struct Store<S: State + serde::Serialize> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
+    p2p: bool,
     ready: Box<dyn FnMut(&S, [Option<&S::Secret>; 2])>,
     sign: Box<dyn FnMut(&[u8]) -> Result<crate::crypto::Signature, String>>,
     send: Box<dyn FnMut(&StoreDiff<S>)>,
@@ -449,6 +454,7 @@ impl<S: State + serde::Serialize> Store<S> {
         player: Option<crate::Player>,
         root: &[u8],
         secrets: [Option<S::Secret>; 2],
+        p2p: bool,
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
@@ -473,6 +479,7 @@ impl<S: State + serde::Serialize> Store<S> {
                     state.set_logger(Rc::new(RefCell::new(Logger::new(log))));
                 },
             )?),
+            p2p,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -490,6 +497,7 @@ impl<S: State + serde::Serialize> Store<S> {
     /// `data` must have been constructed using [Store::serialize].
     pub fn deserialize(
         mut data: &[u8],
+        p2p: bool,
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
@@ -620,6 +628,7 @@ impl<S: State + serde::Serialize> Store<S> {
         let mut store = Self {
             player,
             proof,
+            p2p,
             ready: Box::new(ready),
             sign: Box::new(sign),
             send: Box::new(send),
@@ -946,7 +955,9 @@ impl<S: State + serde::Serialize> Store<S> {
                         },
                         _,
                     ) => {
-                        if self.player.is_none() {
+                        if self.player.is_none() && !self.p2p
+                            || self.player == Some(*player) && self.p2p
+                        {
                             if let Some(secret) = &secrets[usize::from(*player)] {
                                 let secret = reveal(
                                     &*secret.try_borrow().map_err(|error| error.to_string())?,

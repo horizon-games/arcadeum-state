@@ -19,7 +19,7 @@
 
 #[cfg(feature = "std")]
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell},
     convert::TryInto,
     fmt::{Debug, Error, Formatter},
     future::Future,
@@ -42,7 +42,7 @@ use {
         vec,
     },
     core::{
-        cell::RefCell,
+        cell::{Ref, RefCell},
         convert::TryInto,
         future::Future,
         mem::size_of,
@@ -453,7 +453,7 @@ impl<S: State + serde::Serialize> Store<S> {
     pub fn new(
         player: Option<crate::Player>,
         root: &[u8],
-        secrets: [Option<S::Secret>; 2],
+        [secret1, secret2]: [Option<(S::Secret, [u8; 16])>; 2],
         p2p: bool,
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
@@ -466,12 +466,13 @@ impl<S: State + serde::Serialize> Store<S> {
             proof: crate::Proof::new(crate::RootProof::<StoreState<S>>::deserialize_and_init(
                 root,
                 |state| {
-                    if let StoreState::Ready {
-                        secrets: state_secrets,
-                        ..
-                    } = state
-                    {
-                        *state_secrets = secrets;
+                    if let StoreState::Ready { secrets, .. } = state {
+                        *secrets = [
+                            secret1
+                                .map(|(secret, seed)| (secret, rand::SeedableRng::from_seed(seed))),
+                            secret2
+                                .map(|(secret, seed)| (secret, rand::SeedableRng::from_seed(seed))),
+                        ];
                     } else {
                         unreachable!();
                     }
@@ -523,7 +524,13 @@ impl<S: State + serde::Serialize> Store<S> {
                 let secret = S::Secret::deserialize(&data[..size])?;
                 data = &data[size..];
 
-                Some(secret)
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let random = rand_xorshift::XorShiftRng::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some((secret, random))
             } else {
                 None
             };
@@ -535,7 +542,13 @@ impl<S: State + serde::Serialize> Store<S> {
                 let secret = S::Secret::deserialize(&data[..size])?;
                 data = &data[size..];
 
-                Some(secret)
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let random = rand_xorshift::XorShiftRng::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some((secret, random))
             } else {
                 None
             };
@@ -576,7 +589,13 @@ impl<S: State + serde::Serialize> Store<S> {
                 let secret = S::Secret::deserialize(&data[..size])?;
                 data = &data[size..];
 
-                Some(secret)
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let random = rand_xorshift::XorShiftRng::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some((secret, random))
             } else {
                 None
             };
@@ -588,7 +607,13 @@ impl<S: State + serde::Serialize> Store<S> {
                 let secret = S::Secret::deserialize(&data[..size])?;
                 data = &data[size..];
 
-                Some(secret)
+                let size = crate::utils::read_u32_usize(&mut data)?;
+
+                crate::forbid!(data.len() < size);
+                let random = rand_xorshift::XorShiftRng::deserialize(&data[..size])?;
+                data = &data[size..];
+
+                Some((secret, random))
             } else {
                 None
             };
@@ -675,12 +700,16 @@ impl<S: State + serde::Serialize> Store<S> {
             for (i, secret) in secrets.iter().enumerate() {
                 if player.is_none() || player == Some(i.try_into().unwrap()) {
                     match secret {
-                        Some(secret) => {
+                        Some((secret, random)) => {
                             crate::utils::write_u8_bool(&mut data, true);
 
                             let secret = secret.serialize();
                             crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
                             data.extend(secret);
+
+                            let random = random.serialize();
+                            crate::utils::write_u32_usize(&mut data, random.len()).unwrap();
+                            data.extend(random);
                         }
                         None => crate::utils::write_u8_bool(&mut data, false),
                     }
@@ -713,12 +742,16 @@ impl<S: State + serde::Serialize> Store<S> {
             for (i, secret) in secrets.iter().enumerate() {
                 if player.is_none() || player == Some(i.try_into().unwrap()) {
                     match secret {
-                        Some(secret) => {
+                        Some((secret, random)) => {
                             crate::utils::write_u8_bool(&mut data, true);
 
                             let secret = secret.serialize();
                             crate::utils::write_u32_usize(&mut data, secret.len()).unwrap();
                             data.extend(secret);
+
+                            let random = random.serialize();
+                            crate::utils::write_u32_usize(&mut data, random.len()).unwrap();
+                            data.extend(random);
                         }
                         None => crate::utils::write_u8_bool(&mut data, false),
                     }
@@ -822,7 +855,13 @@ impl<S: State + serde::Serialize> Store<S> {
             StoreState::Ready { state, secrets, .. } => {
                 self.seed = None;
 
-                (self.ready)(state, [secrets[0].as_ref(), secrets[1].as_ref()]);
+                (self.ready)(
+                    state,
+                    [
+                        secrets[0].as_ref().map(|(secret, _)| secret),
+                        secrets[1].as_ref().map(|(secret, _)| secret),
+                    ],
+                );
 
                 None
             }
@@ -960,7 +999,7 @@ impl<S: State + serde::Serialize> Store<S> {
                         {
                             if let Some(secret) = &secrets[usize::from(*player)] {
                                 let secret = reveal(
-                                    &*secret.try_borrow().map_err(|error| error.to_string())?,
+                                    &secret.try_borrow().map_err(|error| error.to_string())?.0,
                                 );
 
                                 crate::forbid!(!verify(&secret));
@@ -984,7 +1023,13 @@ impl<S: State + serde::Serialize> Store<S> {
             StoreState::Ready { state, secrets, .. } => {
                 self.seed = None;
 
-                (self.ready)(state, [secrets[0].as_ref(), secrets[1].as_ref()]);
+                (self.ready)(
+                    state,
+                    [
+                        secrets[0].as_ref().map(|(secret, _)| secret),
+                        secrets[1].as_ref().map(|(secret, _)| secret),
+                    ],
+                );
 
                 None
             }
@@ -1008,13 +1053,13 @@ type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
 pub enum StoreState<S: State + serde::Serialize> {
     Ready {
         state: S,
-        secrets: [Option<S::Secret>; 2],
+        secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
         nonce: usize,
         logger: Rc<RefCell<Logger>>,
     },
     Pending {
         state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
-        secrets: [Option<Rc<RefCell<S::Secret>>>; 2],
+        secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
         phase: Rc<RefCell<Phase<S>>>,
         logger: Rc<RefCell<Logger>>,
     },
@@ -1045,13 +1090,16 @@ impl<S: State + serde::Serialize> StoreState<S> {
         match self {
             Self::Ready { secrets, .. } => secrets[usize::from(player)]
                 .as_ref()
-                .map(|secret| Box::new(secret) as Box<dyn Deref<Target = S::Secret>>),
+                .map(|(secret, _)| Box::new(secret) as Box<dyn Deref<Target = S::Secret>>),
 
             Self::Pending { secrets, .. } => {
                 secrets[usize::from(player)].as_ref().and_then(|secret| {
                     secret
                         .try_borrow()
-                        .map(|secret| Box::new(secret) as Box<dyn Deref<Target = S::Secret>>)
+                        .map(|secret| {
+                            Box::new(Ref::map(secret, |(secret, _)| secret))
+                                as Box<dyn Deref<Target = S::Secret>>
+                        })
                         .ok()
                 })
             }
@@ -1559,7 +1607,7 @@ impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone> Secret for T {
 /// [State::apply] utilities
 pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
-    secrets: [Option<Rc<RefCell<S::Secret>>>; 2],
+    secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
     nonce: usize,
     logger: Rc<RefCell<Logger>>,
 }
@@ -1569,7 +1617,7 @@ impl<S: State> Context<S> {
     pub fn mutate_secret(
         &mut self,
         player: crate::Player,
-        mutate: impl Fn(&mut S::Secret, &mut dyn FnMut(&dyn Event)),
+        mutate: impl Fn(&mut S::Secret, &mut dyn rand::RngCore, &mut dyn FnMut(&dyn Event)),
     ) {
         self.nonce += 1;
 
@@ -1588,12 +1636,12 @@ impl<S: State> Context<S> {
         };
 
         if let Some(secret) = &self.secrets[usize::from(player)] {
-            let mut secret = secret.try_borrow_mut().unwrap();
+            let (secret, random) = &mut *secret.try_borrow_mut().unwrap();
 
             if log {
-                mutate(&mut secret, &mut logger.unwrap().log);
+                mutate(secret, random, &mut logger.unwrap().log);
             } else {
-                mutate(&mut secret, &mut |_| ());
+                mutate(secret, random, &mut |_| ());
             }
         }
     }
@@ -1692,7 +1740,7 @@ impl<S: State> Context<S> {
     #[doc(hidden)]
     pub fn new(
         phase: Rc<RefCell<Phase<S>>>,
-        secrets: [Option<Rc<RefCell<S::Secret>>>; 2],
+        secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
         log: impl FnMut(&dyn Event) + 'static,
     ) -> Self {
         Self {

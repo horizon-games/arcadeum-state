@@ -131,7 +131,10 @@ where
                 crate::store::Store::new(
                     None,
                     &root,
-                    [Some(secret1.clone()), Some(secret2.clone())],
+                    [
+                        Some((secret1.clone(), [1; 16])),
+                        Some((secret2.clone(), [2; 16])),
+                    ],
                     false,
                     |_, _| println!("[0: ready]"),
                     move |message| Ok(crate::crypto::sign(message, &keys[0])),
@@ -146,7 +149,7 @@ where
                 crate::store::Store::new(
                     Some(0),
                     &root,
-                    [Some(secret1), None],
+                    [Some((secret1.clone(), [1; 16])), None],
                     false,
                     |_, _| println!("[1: ready]"),
                     move |message| Ok(crate::crypto::sign(message, &subkey1)),
@@ -161,7 +164,7 @@ where
                 crate::store::Store::new(
                     Some(1),
                     &root,
-                    [None, Some(secret2)],
+                    [None, Some((secret2.clone(), [2; 16]))],
                     false,
                     |_, _| println!("[2: ready]"),
                     move |message| Ok(crate::crypto::sign(message, &subkey2)),

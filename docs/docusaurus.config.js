@@ -1,23 +1,23 @@
 module.exports = {
-  title: 'My Site',
-  tagline: 'The tagline of my site',
-  url: 'https://your-docusaurus-test-site.com',
+  title: 'Arcadeum State',
+  tagline: '',
+  url: 'https://github.com/horizon-games/arcadeum-state',
   baseUrl: '/',
   favicon: 'img/favicon.ico',
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'arcadeum', // Usually your GitHub org/user name.
+  projectName: 'arcadeum-state', // Usually your repo name.
   themeConfig: {
     navbar: {
-      title: 'My Site',
+      title: 'Arcadeum',
       logo: {
-        alt: 'My Site Logo',
+        alt: 'Arcadeum Logo',
         src: 'img/logo.svg',
       },
       links: [
         {to: 'docs/doc1', label: 'Docs', position: 'left'},
         {to: 'blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/horizon-games/arcadeum-state',
           label: 'GitHub',
           position: 'right',
         },
@@ -43,12 +43,8 @@ module.exports = {
           title: 'Community',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-            },
-            {
               label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              href: 'https://discord.gg/vPTDAzP',
             },
           ],
         },
@@ -61,16 +57,12 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
-            },
-            {
-              label: 'Twitter',
-              href: 'https://twitter.com/docusaurus',
+              href: 'https://github.com/horizon-games/arcadeum-state',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Horizon Blockchain Games, Inc. Built with Docusaurus.`,
     },
   },
   presets: [

@@ -8,14 +8,12 @@
 module.exports = {
   sidebar: [
     {
-      type: 'category',
-      label: 'Docusaurus',
-      items: ['doc1', 'doc2', 'doc3'],
+      type: 'doc',
+      id: 'guide',
     },
     {
-      type: 'category',
-      label: 'Features',
-      items: ['mdx'],
+      type: 'doc',
+      id: 'design',
     },
   ],
 };

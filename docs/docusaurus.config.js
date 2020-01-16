@@ -29,12 +29,12 @@ module.exports = {
           title: 'Docs',
           items: [
             {
-              label: 'Style Guide',
-              to: 'docs/doc1',
+              label: 'User Guide',
+              to: 'docs/guide',
             },
             {
-              label: 'Second Doc',
-              to: 'docs/doc2',
+              label: 'Internal Design',
+              to: 'docs/design',
             },
           ],
         },

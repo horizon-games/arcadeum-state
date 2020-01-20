@@ -300,6 +300,11 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
+            pub fn hash(&self) -> String {
+                $crate::utils::hex(self.store.hash())
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
                 wasm_bindgen::JsValue::from_serde(self.store.state().state().state().ok_or(
                     wasm_bindgen::JsValue::from("self.store.state().state().state().is_none()"),
@@ -783,6 +788,11 @@ impl<S: State + serde::Serialize> Store<S> {
     /// Gets the player associated with the store.
     pub fn player(&self) -> Option<crate::Player> {
         self.player
+    }
+
+    /// Gets the hash of the store's proof.
+    pub fn hash(&self) -> &crate::crypto::Hash {
+        &self.proof.hash
     }
 
     /// Gets the state of the store's proof.

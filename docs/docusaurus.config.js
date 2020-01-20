@@ -14,7 +14,7 @@ module.exports = {
         src: 'img/logo.svg',
       },
       links: [
-        {to: 'docs/doc1', label: 'Docs', position: 'left'},
+        {to: 'docs/guide', label: 'User Guide', position: 'left'},
         {
           href: 'https://github.com/horizon-games/arcadeum-state',
           label: 'GitHub',

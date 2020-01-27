@@ -161,7 +161,14 @@ impl<S: State> Proof<S> {
     ///
     /// `diff` must have been constructed using [Proof::diff] on a proof with the same digest.
     pub fn apply(&mut self, diff: &Diff<S::Action>) -> Result<(), error::Error> {
-        forbid!(diff.proof != self.hash);
+        if diff.proof != self.hash {
+            return Err(format!(
+                "diff.proof != self.hash: {} != {}",
+                utils::hex(&diff.proof),
+                utils::hex(&self.hash)
+            )
+            .into());
+        }
 
         let player = if diff.author == self.root.author {
             None

@@ -368,6 +368,11 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn flush(&mut self) -> Result<(), wasm_bindgen::JsValue> {
+                Ok(self.store.flush()?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
                 let action: <$type as $crate::store::State>::Action =
                     action.into_serde().map_err(|error| error.to_string())?;
@@ -459,6 +464,8 @@ pub struct Store<S: State + serde::Serialize> {
 impl<S: State + serde::Serialize> Store<S> {
     /// Constructs a new store for a given player.
     ///
+    /// You should call [Store::flush] on the new store.
+    ///
     /// `root` must have been constructed using [RootProof::serialize](crate::RootProof::serialize).
     pub fn new(
         player: Option<crate::Player>,
@@ -471,7 +478,7 @@ impl<S: State + serde::Serialize> Store<S> {
         log: impl FnMut(&dyn Event) + 'static,
         random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
-        let mut store = Self {
+        Ok(Self {
             player,
             proof: crate::Proof::new(crate::RootProof::<StoreState<S>>::deserialize_and_init(
                 root,
@@ -496,14 +503,12 @@ impl<S: State + serde::Serialize> Store<S> {
             send: Box::new(send),
             random: Box::new(random),
             seed: None,
-        };
-
-        store.flush()?;
-
-        Ok(store)
+        })
     }
 
     /// Constructs a store from its binary representation.
+    ///
+    /// You should call [Store::flush] on the new store.
     ///
     /// `data` must have been constructed using [Store::serialize].
     pub fn deserialize(
@@ -660,7 +665,7 @@ impl<S: State + serde::Serialize> Store<S> {
             None
         };
 
-        let mut store = Self {
+        Ok(Self {
             player,
             proof,
             p2p,
@@ -669,11 +674,7 @@ impl<S: State + serde::Serialize> Store<S> {
             send: Box::new(send),
             random: Box::new(random),
             seed,
-        };
-
-        store.flush()?;
-
-        Ok(store)
+        })
     }
 
     /// Generates a binary representation that can be used to reconstruct the store for a given
@@ -893,42 +894,8 @@ impl<S: State + serde::Serialize> Store<S> {
         Ok(())
     }
 
-    /// Verifies and applies a cryptographically constructed diff to the store.
-    ///
-    /// `diff` must have been constructed using [Store::diff] on a store with the same state.
-    pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
-        self.proof
-            .state
-            .state
-            .logger()
-            .try_borrow_mut()
-            .map_err(|error| error.to_string())?
-            .enabled = true;
-
-        self.proof.apply(diff)?;
-
-        self.flush()
-    }
-
-    /// Generates a diff that can be applied to a store with the same state.
-    ///
-    /// See [Store::apply].
-    pub fn diff(
-        &mut self,
-        actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
-    ) -> Result<StoreDiff<S>, String> {
-        self.proof
-            .state
-            .state
-            .logger()
-            .try_borrow_mut()
-            .map_err(|error| error.to_string())?
-            .enabled = false;
-
-        self.proof.diff(actions, &mut self.sign)
-    }
-
-    fn flush(&mut self) -> Result<(), String> {
+    /// Dispatches any actions the client is required to send.
+    pub fn flush(&mut self) -> Result<(), String> {
         let action = match &self.proof.state.state {
             StoreState::Pending { phase, secrets, .. } => {
                 match (&*phase.try_borrow().unwrap(), self.player) {
@@ -1059,6 +1026,41 @@ impl<S: State + serde::Serialize> Store<S> {
         }
 
         Ok(())
+    }
+
+    /// Verifies and applies a cryptographically constructed diff to the store.
+    ///
+    /// `diff` must have been constructed using [Store::diff] on a store with the same state.
+    pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
+        self.proof
+            .state
+            .state
+            .logger()
+            .try_borrow_mut()
+            .map_err(|error| error.to_string())?
+            .enabled = true;
+
+        self.proof.apply(diff)?;
+
+        self.flush()
+    }
+
+    /// Generates a diff that can be applied to a store with the same state.
+    ///
+    /// See [Store::apply].
+    pub fn diff(
+        &mut self,
+        actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
+    ) -> Result<StoreDiff<S>, String> {
+        self.proof
+            .state
+            .state
+            .logger()
+            .try_borrow_mut()
+            .map_err(|error| error.to_string())?
+            .enabled = false;
+
+        self.proof.diff(actions, &mut self.sign)
     }
 }
 

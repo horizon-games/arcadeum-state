@@ -128,54 +128,72 @@ where
             let [subkey1, subkey2] = subkeys;
 
             [
-                crate::store::Store::new(
-                    None,
-                    &root,
-                    [
-                        Some((secret1.clone(), [1; 16])),
-                        Some((secret2.clone(), [2; 16])),
-                    ],
-                    false,
-                    |_, _| println!("[0: ready]"),
-                    move |message| Ok(crate::crypto::sign(message, &keys[0])),
-                    {
-                        let queue = queues[0].clone();
+                {
+                    let mut store = crate::store::Store::new(
+                        None,
+                        &root,
+                        [
+                            Some((secret1.clone(), [1; 16])),
+                            Some((secret2.clone(), [2; 16])),
+                        ],
+                        false,
+                        |_, _| println!("[0: ready]"),
+                        move |message| Ok(crate::crypto::sign(message, &keys[0])),
+                        {
+                            let queue = queues[0].clone();
 
-                        move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
-                    },
-                    |event| println!("[0: log] {:?}", event),
-                    random0,
-                )?,
-                crate::store::Store::new(
-                    Some(0),
-                    &root,
-                    [Some((secret1.clone(), [1; 16])), None],
-                    false,
-                    |_, _| println!("[1: ready]"),
-                    move |message| Ok(crate::crypto::sign(message, &subkey1)),
-                    {
-                        let queue = queues[1].clone();
+                            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
+                        },
+                        |event| println!("[0: log] {:?}", event),
+                        random0,
+                    )?;
 
-                        move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
-                    },
-                    |event| println!("[1: log] {:?}", event),
-                    random1,
-                )?,
-                crate::store::Store::new(
-                    Some(1),
-                    &root,
-                    [None, Some((secret2.clone(), [2; 16]))],
-                    false,
-                    |_, _| println!("[2: ready]"),
-                    move |message| Ok(crate::crypto::sign(message, &subkey2)),
-                    {
-                        let queue = queues[2].clone();
+                    store.flush()?;
 
-                        move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
-                    },
-                    |event| println!("[2: log] {:?}", event),
-                    random2,
-                )?,
+                    store
+                },
+                {
+                    let mut store = crate::store::Store::new(
+                        Some(0),
+                        &root,
+                        [Some((secret1.clone(), [1; 16])), None],
+                        false,
+                        |_, _| println!("[1: ready]"),
+                        move |message| Ok(crate::crypto::sign(message, &subkey1)),
+                        {
+                            let queue = queues[1].clone();
+
+                            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
+                        },
+                        |event| println!("[1: log] {:?}", event),
+                        random1,
+                    )?;
+
+                    store.flush()?;
+
+                    store
+                },
+                {
+                    let mut store = crate::store::Store::new(
+                        Some(1),
+                        &root,
+                        [None, Some((secret2.clone(), [2; 16]))],
+                        false,
+                        |_, _| println!("[2: ready]"),
+                        move |message| Ok(crate::crypto::sign(message, &subkey2)),
+                        {
+                            let queue = queues[2].clone();
+
+                            move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
+                        },
+                        |event| println!("[2: log] {:?}", event),
+                        random2,
+                    )?;
+
+                    store.flush()?;
+
+                    store
+                },
             ]
         };
 
@@ -396,7 +414,7 @@ fn generate_keys_and_subkeys<R: rand::Rng>(
 fn deserialize_store<S: crate::store::State + serde::Serialize>(
     data: &[u8],
 ) -> Result<crate::store::Store<S>, String> {
-    crate::store::Store::deserialize(
+    let mut store = crate::store::Store::deserialize(
         data,
         false,
         |_, _| (),
@@ -404,7 +422,11 @@ fn deserialize_store<S: crate::store::State + serde::Serialize>(
         |_| (),
         |_| (),
         UnreachableRng,
-    )
+    )?;
+
+    store.flush()?;
+
+    Ok(store)
 }
 
 fn deserialize_proof<S: crate::store::State + serde::Serialize>(

@@ -849,6 +849,11 @@ impl<A: Action> Diff<A> {
         data
     }
 
+    /// Gets the hash of the proof the diff was constructed on.
+    pub fn proof(&self) -> &crypto::Hash {
+        &self.proof
+    }
+
     fn new(
         proof: crypto::Hash,
         actions: Vec<ProofAction<A>>,

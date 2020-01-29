@@ -450,7 +450,7 @@ macro_rules! bind {
 pub mod bindings;
 
 /// Client [State] store
-pub struct Store<S: State + serde::Serialize> {
+pub struct Store<S: State> {
     player: Option<crate::Player>,
     proof: crate::Proof<StoreState<S>>,
     p2p: bool,
@@ -461,7 +461,7 @@ pub struct Store<S: State + serde::Serialize> {
     seed: Option<Vec<u8>>,
 }
 
-impl<S: State + serde::Serialize> Store<S> {
+impl<S: State> Store<S> {
     /// Constructs a new store for a given player.
     ///
     /// You should call [Store::flush] on the new store.
@@ -1067,7 +1067,7 @@ impl<S: State + serde::Serialize> Store<S> {
 type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
 
 #[doc(hidden)]
-pub enum StoreState<S: State + serde::Serialize> {
+pub enum StoreState<S: State> {
     Ready {
         state: S,
         secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
@@ -1082,7 +1082,7 @@ pub enum StoreState<S: State + serde::Serialize> {
     },
 }
 
-impl<S: State + serde::Serialize> StoreState<S> {
+impl<S: State> StoreState<S> {
     pub fn new(state: S) -> Self {
         Self::Ready {
             state,
@@ -1180,7 +1180,7 @@ impl<S: State + serde::Serialize> StoreState<S> {
     }
 }
 
-impl<S: State + serde::Serialize> crate::State for StoreState<S> {
+impl<S: State> crate::State for StoreState<S> {
     type ID = S::ID;
     type Nonce = S::Nonce;
     type Action = StoreAction<S::Action>;
@@ -1436,7 +1436,7 @@ impl<S: State + serde::Serialize> crate::State for StoreState<S> {
     }
 }
 
-impl<S: State + serde::Serialize> Clone for StoreState<S> {
+impl<S: State> Clone for StoreState<S> {
     fn clone(&self) -> Self {
         match self {
             Self::Ready {

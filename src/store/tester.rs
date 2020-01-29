@@ -37,9 +37,8 @@ macro_rules! println {
 }
 
 /// Store tester
-pub struct Tester<S>
+pub struct Tester<S: crate::store::State>
 where
-    S: crate::store::State + serde::Serialize,
     S::ID: Default,
 {
     proof: crate::Proof<crate::store::StoreState<S>>,
@@ -47,9 +46,8 @@ where
     queues: [Rc<RefCell<VecDeque<Vec<u8>>>>; 3],
 }
 
-impl<S> Tester<S>
+impl<S: crate::store::State> Tester<S>
 where
-    S: crate::store::State + serde::Serialize,
     S::ID: Default,
 {
     /// Constructs a new store tester.
@@ -411,7 +409,7 @@ fn generate_keys_and_subkeys<R: rand::Rng>(
     )
 }
 
-fn deserialize_store<S: crate::store::State + serde::Serialize>(
+fn deserialize_store<S: crate::store::State>(
     data: &[u8],
 ) -> Result<crate::store::Store<S>, String> {
     let mut store = crate::store::Store::deserialize(
@@ -429,7 +427,7 @@ fn deserialize_store<S: crate::store::State + serde::Serialize>(
     Ok(store)
 }
 
-fn deserialize_proof<S: crate::store::State + serde::Serialize>(
+fn deserialize_proof<S: crate::store::State>(
     data: &[u8],
     root: crate::RootProof<crate::store::StoreState<S>>,
 ) -> Result<crate::Proof<crate::store::StoreState<S>>, String> {
@@ -440,7 +438,7 @@ fn deserialize_proof<S: crate::store::State + serde::Serialize>(
     Ok(proof)
 }
 
-fn deserialize_root_proof<S: crate::store::State + serde::Serialize>(
+fn deserialize_root_proof<S: crate::store::State>(
     data: &[u8],
 ) -> Result<crate::RootProof<crate::store::StoreState<S>>, String> {
     crate::RootProof::deserialize(data)

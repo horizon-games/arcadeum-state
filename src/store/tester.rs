@@ -156,7 +156,7 @@ where
                     let mut store = crate::store::Store::new(
                         Some(0),
                         &root,
-                        [Some((secret1.clone(), [1; 16])), None],
+                        [Some((secret1, [1; 16])), None],
                         false,
                         |_, _| println!("[1: ready]"),
                         move |message| Ok(crate::crypto::sign(message, &subkey1)),
@@ -177,7 +177,7 @@ where
                     let mut store = crate::store::Store::new(
                         Some(1),
                         &root,
-                        [None, Some((secret2.clone(), [2; 16]))],
+                        [None, Some((secret2, [2; 16]))],
                         false,
                         |_, _| println!("[2: ready]"),
                         move |message| Ok(crate::crypto::sign(message, &subkey2)),

@@ -380,7 +380,7 @@ impl<S: State> Proof<S> {
             }
         }
 
-        Ok(Diff::new(self.hash, actions, signature, sign)?)
+        Ok(Diff::new(self.hash, actions, signature, sign, &author)?)
     }
 
     fn deserialize_and_init(
@@ -866,6 +866,7 @@ impl<A: Action> Diff<A> {
         actions: Vec<ProofAction<A>>,
         proof_signature: crypto::Signature,
         sign: &mut impl FnMut(&[u8]) -> Result<crypto::Signature, String>,
+        author: &crypto::Address,
     ) -> Result<Self, String> {
         let mut diff = Self {
             proof,
@@ -879,7 +880,7 @@ impl<A: Action> Diff<A> {
         let message = &message[..message.len() - size_of::<crypto::Signature>()];
 
         diff.signature = sign(message)?;
-        diff.author = crypto::recover(message, &diff.signature)?;
+        diff.author = *author;
 
         Ok(diff)
     }

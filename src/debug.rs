@@ -27,7 +27,7 @@ macro_rules! console_log {
         $arg_1:expr
         $(,)?
     ) => {
-        if let Ok(arg_1) = &wasm_bindgen::JsValue::from_serde(&$arg_1) {
+        if let Ok(arg_1) = &$crate::utils::to_js(&$arg_1) {
             $crate::debug::log_1(arg_1);
         } else {
             $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
@@ -38,10 +38,9 @@ macro_rules! console_log {
         $arg_2:expr
         $(,)?
     ) => {
-        if let (Ok(arg_1), Ok(arg_2)) = &(
-            wasm_bindgen::JsValue::from_serde(&$arg_1),
-            wasm_bindgen::JsValue::from_serde(&$arg_2),
-        ) {
+        if let (Ok(arg_1), Ok(arg_2)) =
+            &($crate::utils::to_js(&$arg_1), $crate::utils::to_js(&$arg_2))
+        {
             $crate::debug::log_2(arg_1, arg_2);
         } else {
             $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
@@ -54,9 +53,9 @@ macro_rules! console_log {
         $(,)?
     ) => {
         if let (Ok(arg_1), Ok(arg_2), Ok(arg_3)) = &(
-            wasm_bindgen::JsValue::from_serde(&$arg_1),
-            wasm_bindgen::JsValue::from_serde(&$arg_2),
-            wasm_bindgen::JsValue::from_serde(&$arg_3),
+            $crate::utils::to_js(&$arg_1),
+            $crate::utils::to_js(&$arg_2),
+            $crate::utils::to_js(&$arg_3),
         ) {
             $crate::debug::log_3(arg_1, arg_2, arg_3);
         } else {
@@ -71,10 +70,10 @@ macro_rules! console_log {
         $(,)?
     ) => {
         if let (Ok(arg_1), Ok(arg_2), Ok(arg_3), Ok(arg_4)) = &(
-            wasm_bindgen::JsValue::from_serde(&$arg_1),
-            wasm_bindgen::JsValue::from_serde(&$arg_2),
-            wasm_bindgen::JsValue::from_serde(&$arg_3),
-            wasm_bindgen::JsValue::from_serde(&$arg_4),
+            $crate::utils::to_js(&$arg_1),
+            $crate::utils::to_js(&$arg_2),
+            $crate::utils::to_js(&$arg_3),
+            $crate::utils::to_js(&$arg_4),
         ) {
             $crate::debug::log_4(arg_1, arg_2, arg_3, arg_4);
         } else {
@@ -90,11 +89,11 @@ macro_rules! console_log {
         $(,)?
     ) => {
         if let (Ok(arg_1), Ok(arg_2), Ok(arg_3), Ok(arg_4), Ok(arg_5)) = &(
-            wasm_bindgen::JsValue::from_serde(&$arg_1),
-            wasm_bindgen::JsValue::from_serde(&$arg_2),
-            wasm_bindgen::JsValue::from_serde(&$arg_3),
-            wasm_bindgen::JsValue::from_serde(&$arg_4),
-            wasm_bindgen::JsValue::from_serde(&$arg_5),
+            $crate::utils::to_js(&$arg_1),
+            $crate::utils::to_js(&$arg_2),
+            $crate::utils::to_js(&$arg_3),
+            $crate::utils::to_js(&$arg_4),
+            $crate::utils::to_js(&$arg_5),
         ) {
             $crate::debug::log_5(arg_1, arg_2, arg_3, arg_4, arg_5);
         } else {
@@ -111,12 +110,12 @@ macro_rules! console_log {
         $(,)?
     ) => {
         if let (Ok(arg_1), Ok(arg_2), Ok(arg_3), Ok(arg_4), Ok(arg_5), Ok(arg_6)) = &(
-            wasm_bindgen::JsValue::from_serde(&$arg_1),
-            wasm_bindgen::JsValue::from_serde(&$arg_2),
-            wasm_bindgen::JsValue::from_serde(&$arg_3),
-            wasm_bindgen::JsValue::from_serde(&$arg_4),
-            wasm_bindgen::JsValue::from_serde(&$arg_5),
-            wasm_bindgen::JsValue::from_serde(&$arg_6),
+            $crate::utils::to_js(&$arg_1),
+            $crate::utils::to_js(&$arg_2),
+            $crate::utils::to_js(&$arg_3),
+            $crate::utils::to_js(&$arg_4),
+            $crate::utils::to_js(&$arg_5),
+            $crate::utils::to_js(&$arg_6),
         ) {
             $crate::debug::log_6(arg_1, arg_2, arg_3, arg_4, arg_5, arg_6);
         } else {
@@ -134,13 +133,13 @@ macro_rules! console_log {
         $(,)?
     ) => {
         if let (Ok(arg_1), Ok(arg_2), Ok(arg_3), Ok(arg_4), Ok(arg_5), Ok(arg_6), Ok(arg_7)) = &(
-            wasm_bindgen::JsValue::from_serde(&$arg_1),
-            wasm_bindgen::JsValue::from_serde(&$arg_2),
-            wasm_bindgen::JsValue::from_serde(&$arg_3),
-            wasm_bindgen::JsValue::from_serde(&$arg_4),
-            wasm_bindgen::JsValue::from_serde(&$arg_5),
-            wasm_bindgen::JsValue::from_serde(&$arg_6),
-            wasm_bindgen::JsValue::from_serde(&$arg_7),
+            $crate::utils::to_js(&$arg_1),
+            $crate::utils::to_js(&$arg_2),
+            $crate::utils::to_js(&$arg_3),
+            $crate::utils::to_js(&$arg_4),
+            $crate::utils::to_js(&$arg_5),
+            $crate::utils::to_js(&$arg_6),
+            $crate::utils::to_js(&$arg_7),
         ) {
             $crate::debug::log_7(arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7);
         } else {

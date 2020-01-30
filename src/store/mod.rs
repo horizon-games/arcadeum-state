@@ -89,29 +89,23 @@ macro_rules! bind {
                             player,
                             root,
                             match player {
-                                None => secret.into_serde().map_err(|error| format!("{}", error))?,
-                                Some(0) => [
-                                    Some(secret.into_serde().map_err(|error| format!("{}", error))?),
-                                    None,
-                                ],
-                                Some(1) => [
-                                    None,
-                                    Some(secret.into_serde().map_err(|error| format!("{}", error))?),
-                                ],
+                                None => $crate::utils::from_js(&secret)?,
+                                Some(0) => [Some($crate::utils::from_js(&secret)?), None],
+                                Some(1) => [None, Some($crate::utils::from_js(&secret)?)],
                                 _ => return Err("player.is_some() && player.unwrap() >= 2".into()),
                             },
                             p2p,
                             move |state, secrets| {
-                                if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
+                                if let Ok(state) = $crate::utils::to_js(state) {
                                     match secrets {
                                         [Some(secret1), Some(secret2)] => {
                                             drop(
                                                 ready.call3(
                                                     &wasm_bindgen::JsValue::UNDEFINED,
                                                     &state,
-                                                    &wasm_bindgen::JsValue::from_serde(secret1)
+                                                    &$crate::utils::to_js(secret1)
                                                         .unwrap_or(wasm_bindgen::JsValue::NULL),
-                                                    &wasm_bindgen::JsValue::from_serde(secret2)
+                                                    &$crate::utils::to_js(secret2)
                                                         .unwrap_or(wasm_bindgen::JsValue::NULL),
                                                 ),
                                             );
@@ -121,7 +115,7 @@ macro_rules! bind {
                                                 ready.call2(
                                                     &wasm_bindgen::JsValue::UNDEFINED,
                                                     &state,
-                                                    &wasm_bindgen::JsValue::from_serde(secret)
+                                                    &$crate::utils::to_js(secret)
                                                         .unwrap_or(wasm_bindgen::JsValue::NULL),
                                                 ),
                                             );
@@ -133,15 +127,14 @@ macro_rules! bind {
                                 }
                             },
                             move |message| {
-                                let data: Vec<_> = sign
-                                    .call1(
-                                        &wasm_bindgen::JsValue::UNDEFINED,
-                                        &wasm_bindgen::JsValue::from_serde(message)
-                                            .map_err(|error| format!("{}", error))?,
-                                    )
-                                    .map_err(|error| format!("{:?}", error))?
-                                    .into_serde()
-                                    .map_err(|error| format!("{}", error))?;
+                                let data: Vec<_> = $crate::utils::from_js(
+                                    &sign
+                                        .call1(
+                                            &wasm_bindgen::JsValue::UNDEFINED,
+                                            &$crate::utils::to_js(message)?,
+                                        )
+                                        .map_err(|error| format!("{:?}", error))?,
+                                )?;
 
                                 if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
                                     return Err(
@@ -159,14 +152,13 @@ macro_rules! bind {
                                 let send = send.clone();
 
                                 move |diff| {
-                                    if let Ok(value) = &wasm_bindgen::JsValue::from_serde(&diff.serialize())
-                                    {
+                                    if let Ok(value) = &$crate::utils::to_js(&diff.serialize()) {
                                         drop(send.call1(&wasm_bindgen::JsValue::UNDEFINED, value));
                                     }
                                 }
                             },
                             move |event| {
-                                if let Ok(event) = wasm_bindgen::JsValue::from_serde(&*event) {
+                                if let Ok(event) = $crate::utils::to_js(&*event) {
                                     drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
                                 }
                             },
@@ -194,16 +186,16 @@ macro_rules! bind {
                             data,
                             p2p,
                             move |state, secrets| {
-                                if let Ok(state) = wasm_bindgen::JsValue::from_serde(state) {
+                                if let Ok(state) = $crate::utils::to_js(state) {
                                     match secrets {
                                         [Some(secret1), Some(secret2)] => {
                                             drop(
                                                 ready.call3(
                                                     &wasm_bindgen::JsValue::UNDEFINED,
                                                     &state,
-                                                    &wasm_bindgen::JsValue::from_serde(secret1)
+                                                    &$crate::utils::to_js(secret1)
                                                         .unwrap_or(wasm_bindgen::JsValue::NULL),
-                                                    &wasm_bindgen::JsValue::from_serde(secret2)
+                                                    &$crate::utils::to_js(secret2)
                                                         .unwrap_or(wasm_bindgen::JsValue::NULL),
                                                 ),
                                             );
@@ -213,7 +205,7 @@ macro_rules! bind {
                                                 ready.call2(
                                                     &wasm_bindgen::JsValue::UNDEFINED,
                                                     &state,
-                                                    &wasm_bindgen::JsValue::from_serde(secret)
+                                                    &$crate::utils::to_js(secret)
                                                         .unwrap_or(wasm_bindgen::JsValue::NULL),
                                                 ),
                                             );
@@ -225,15 +217,14 @@ macro_rules! bind {
                                 }
                             },
                             move |message| {
-                                let data: Vec<_> = sign
-                                    .call1(
-                                        &wasm_bindgen::JsValue::UNDEFINED,
-                                        &wasm_bindgen::JsValue::from_serde(message)
-                                            .map_err(|error| format!("{}", error))?,
-                                    )
-                                    .map_err(|error| format!("{:?}", error))?
-                                    .into_serde()
-                                    .map_err(|error| format!("{}", error))?;
+                                let data: Vec<_> = $crate::utils::from_js(
+                                    &sign
+                                        .call1(
+                                            &wasm_bindgen::JsValue::UNDEFINED,
+                                            &$crate::utils::to_js(message)?,
+                                        )
+                                        .map_err(|error| format!("{:?}", error))?,
+                                )?;
 
                                 if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
                                     return Err(
@@ -251,14 +242,13 @@ macro_rules! bind {
                                 let send = send.clone();
 
                                 move |diff| {
-                                    if let Ok(value) = &wasm_bindgen::JsValue::from_serde(&diff.serialize())
-                                    {
+                                    if let Ok(value) = &$crate::utils::to_js(&diff.serialize()) {
                                         drop(send.call1(&wasm_bindgen::JsValue::UNDEFINED, value));
                                     }
                                 }
                             },
                             move |event| {
-                                if let Ok(event) = wasm_bindgen::JsValue::from_serde(&*event) {
+                                if let Ok(event) = $crate::utils::to_js(&*event) {
                                     drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
                                 }
                             },
@@ -287,7 +277,7 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn addresses(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                wasm_bindgen::JsValue::from_serde(
+                Ok($crate::utils::to_js(
                     &self
                         .store
                         .state()
@@ -295,8 +285,7 @@ macro_rules! bind {
                         .iter()
                         .map($crate::crypto::Addressable::eip55)
                         .collect::<Vec<_>>(),
-                )
-                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
+                )?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
@@ -306,10 +295,15 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                wasm_bindgen::JsValue::from_serde(self.store.state().state().state().ok_or(
-                    wasm_bindgen::JsValue::from("self.store.state().state().state().is_none()"),
+                Ok($crate::utils::to_js(
+                    self.store
+                        .state()
+                        .state()
+                        .state()
+                        .ok_or(wasm_bindgen::JsValue::from(
+                            "self.store.state().state().state().is_none()",
+                        ))?,
                 )?)
-                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -317,15 +311,14 @@ macro_rules! bind {
                 &self,
                 player: $crate::Player,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                wasm_bindgen::JsValue::from_serde(
+                Ok($crate::utils::to_js(
                     &**self
                         .store
                         .state()
                         .state()
                         .secret(player)
                         .ok_or("self.store.state().state().secret(player).is_none()")?,
-                )
-                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))
+                )?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter, js_name = pendingPlayer)]
@@ -358,13 +351,11 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action =
-                    action.into_serde().map_err(|error| error.to_string())?;
+                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(&action)?;
 
-                Ok(wasm_bindgen::JsValue::from_serde(
+                Ok($crate::utils::to_js(
                     &self.store.state().state().simulate(player, &action)?,
-                )
-                .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?)
+                )?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -374,8 +365,7 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action =
-                    action.into_serde().map_err(|error| error.to_string())?;
+                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(&action)?;
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
@@ -384,8 +374,7 @@ macro_rules! bind {
 
                 self.send.call1(
                     &wasm_bindgen::JsValue::UNDEFINED,
-                    &wasm_bindgen::JsValue::from_serde(&diff.serialize())
-                        .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?,
+                    &$crate::utils::to_js(&diff.serialize())?,
                 )?;
 
                 self.store.apply(&diff)?;

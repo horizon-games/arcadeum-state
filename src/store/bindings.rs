@@ -38,12 +38,13 @@ impl rand::RngCore for JsRng {
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
         let length: u32 = dest.len().try_into().map_err(rand::Error::new)?;
 
-        let random: Vec<u8> = self
-            .0
-            .call1(&wasm_bindgen::JsValue::UNDEFINED, &length.into())
-            .map_err(|error| rand::Error::new(JsRngError(format!("{:?}", error))))?
-            .into_serde()
-            .map_err(rand::Error::new)?;
+        let random: Vec<u8> = crate::utils::from_js(
+            &self
+                .0
+                .call1(&wasm_bindgen::JsValue::UNDEFINED, &length.into())
+                .map_err(|error| rand::Error::new(JsRngError(format!("{:?}", error))))?,
+        )
+        .map_err(rand::Error::new)?;
 
         if random.len() != dest.len() {
             return Err(rand::Error::new(JsRngError(

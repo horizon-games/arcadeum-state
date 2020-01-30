@@ -8,8 +8,8 @@ edition = "2018"
 default = ["std"]
 no-crypto = []
 tester = []
-debug = ["wasm-bindgen", "web-sys"]
-bindings = ["std", "wasm-bindgen", "js-sys", "rand_core"]
+debug = ["wasm-bindgen", "serde-wasm-bindgen", "web-sys"]
+bindings = ["std", "wasm-bindgen", "serde-wasm-bindgen", "js-sys", "rand_core"]
 std = ["rand/std", "serde/std", "serde_cbor/std", "cached", "erased-serde/std", "replace_with/std"]
 
 [dependencies]

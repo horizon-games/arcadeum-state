@@ -106,15 +106,15 @@ pub fn unhex(mut hex: &str) -> Result<Vec<u8>, String> {
 #[cfg(any(feature = "bindings", feature = "debug"))]
 #[doc(hidden)]
 pub fn from_js<T: for<'a> serde::Deserialize<'a>>(
-    value: &wasm_bindgen::JsValue,
+    value: wasm_bindgen::JsValue,
 ) -> Result<T, String> {
-    value.into_serde().map_err(|error| error.to_string())
+    serde_wasm_bindgen::from_value(value).map_err(|error| error.to_string())
 }
 
 #[cfg(any(feature = "bindings", feature = "debug"))]
 #[doc(hidden)]
 pub fn to_js<T: serde::Serialize + ?Sized>(value: &T) -> Result<wasm_bindgen::JsValue, String> {
-    wasm_bindgen::JsValue::from_serde(value).map_err(|error| error.to_string())
+    serde_wasm_bindgen::to_value(&value).map_err(|error| error.to_string())
 }
 
 pub(crate) fn read_u32_usize(data: &mut &[u8]) -> Result<usize, String> {

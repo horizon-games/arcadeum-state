@@ -30,7 +30,7 @@ macro_rules! console_log {
         if let Ok(arg_1) = &$crate::utils::to_js(&$arg_1) {
             $crate::debug::log_1(arg_1);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
     (
@@ -43,7 +43,7 @@ macro_rules! console_log {
         {
             $crate::debug::log_2(arg_1, arg_2);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
     (
@@ -59,7 +59,7 @@ macro_rules! console_log {
         ) {
             $crate::debug::log_3(arg_1, arg_2, arg_3);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
     (
@@ -77,7 +77,7 @@ macro_rules! console_log {
         ) {
             $crate::debug::log_4(arg_1, arg_2, arg_3, arg_4);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
     (
@@ -97,7 +97,7 @@ macro_rules! console_log {
         ) {
             $crate::debug::log_5(arg_1, arg_2, arg_3, arg_4, arg_5);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
     (
@@ -119,7 +119,7 @@ macro_rules! console_log {
         ) {
             $crate::debug::log_6(arg_1, arg_2, arg_3, arg_4, arg_5, arg_6);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
     (
@@ -143,7 +143,7 @@ macro_rules! console_log {
         ) {
             $crate::debug::log_7(arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7);
         } else {
-            $crate::debug::log_1(&"wasm_bindgen::JsValue::from_serde(_) == Err(_)".into());
+            $crate::debug::log_1(&"serde_wasm_bindgen::to_value(_) == Err(_)".into());
         }
     };
 }

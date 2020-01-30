@@ -39,8 +39,7 @@ impl rand::RngCore for JsRng {
         let length: u32 = dest.len().try_into().map_err(rand::Error::new)?;
 
         let random: Vec<u8> = crate::utils::from_js(
-            &self
-                .0
+            self.0
                 .call1(&wasm_bindgen::JsValue::UNDEFINED, &length.into())
                 .map_err(|error| rand::Error::new(JsRngError(format!("{:?}", error))))?,
         )

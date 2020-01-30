@@ -89,9 +89,9 @@ macro_rules! bind {
                             player,
                             root,
                             match player {
-                                None => $crate::utils::from_js(&secret)?,
-                                Some(0) => [Some($crate::utils::from_js(&secret)?), None],
-                                Some(1) => [None, Some($crate::utils::from_js(&secret)?)],
+                                None => $crate::utils::from_js(secret)?,
+                                Some(0) => [Some($crate::utils::from_js(secret)?), None],
+                                Some(1) => [None, Some($crate::utils::from_js(secret)?)],
                                 _ => return Err("player.is_some() && player.unwrap() >= 2".into()),
                             },
                             p2p,
@@ -128,12 +128,11 @@ macro_rules! bind {
                             },
                             move |message| {
                                 let data: Vec<_> = $crate::utils::from_js(
-                                    &sign
-                                        .call1(
-                                            &wasm_bindgen::JsValue::UNDEFINED,
-                                            &$crate::utils::to_js(message)?,
-                                        )
-                                        .map_err(|error| format!("{:?}", error))?,
+                                    sign.call1(
+                                        &wasm_bindgen::JsValue::UNDEFINED,
+                                        &$crate::utils::to_js(message)?,
+                                    )
+                                    .map_err(|error| format!("{:?}", error))?,
                                 )?;
 
                                 if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
@@ -218,12 +217,11 @@ macro_rules! bind {
                             },
                             move |message| {
                                 let data: Vec<_> = $crate::utils::from_js(
-                                    &sign
-                                        .call1(
-                                            &wasm_bindgen::JsValue::UNDEFINED,
-                                            &$crate::utils::to_js(message)?,
-                                        )
-                                        .map_err(|error| format!("{:?}", error))?,
+                                    sign.call1(
+                                        &wasm_bindgen::JsValue::UNDEFINED,
+                                        &$crate::utils::to_js(message)?,
+                                    )
+                                    .map_err(|error| format!("{:?}", error))?,
                                 )?;
 
                                 if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
@@ -351,7 +349,7 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(&action)?;
+                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(action)?;
 
                 Ok($crate::utils::to_js(
                     &self.store.state().state().simulate(player, &action)?,
@@ -365,7 +363,7 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(&action)?;
+                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(action)?;
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),

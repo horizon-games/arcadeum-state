@@ -27,3 +27,4 @@ erased-serde = { git = "https://github.com/attente/erased-serde.git", branch = "
 objekt = "0.1.2"
 serde_cbor = { version = "0.10.2", default-features = false, features = ["alloc"] }
 cached = { version = "0.11.0", optional = true }
+dyn-clone = "1.0.1"

@@ -1132,7 +1132,7 @@ impl<S: State> StoreState<S> {
                             events
                                 .try_borrow_mut()
                                 .unwrap()
-                                .push(objekt::clone_box(event))
+                                .push(dyn_clone::clone_box(event))
                         }
                     }))),
                 };
@@ -1784,7 +1784,7 @@ impl Logger {
 }
 
 /// [Context::log] event trait
-pub trait Event: erased_serde::Serialize + objekt::Clone + Debug + 'static {}
+pub trait Event: erased_serde::Serialize + dyn_clone::DynClone + Debug + 'static {}
 
 impl<T: serde::Serialize + Clone + Debug + 'static> Event for T {}
 

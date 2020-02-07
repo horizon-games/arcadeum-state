@@ -1137,9 +1137,50 @@ impl<S: State> StoreState<S> {
 
                 crate::State::apply(&mut state, player, &StoreAction::Action(action.clone()))?;
 
-                match state {
-                    Self::Ready { .. } => Log::Complete,
-                    Self::Pending { .. } => Log::Incomplete,
+                let mut complete = true;
+
+                while let Self::Pending {
+                    state: pending,
+                    secrets,
+                    phase,
+                    logger,
+                } = state
+                {
+                    let (player, secret) = if let Phase::Reveal {
+                        request: RevealRequest { player, reveal, .. },
+                        ..
+                    } = &*phase.try_borrow().unwrap()
+                    {
+                        (
+                            *player,
+                            if let Some(secret) = &secrets[usize::from(*player)] {
+                                reveal(&secret.try_borrow().unwrap().0)
+                            } else {
+                                complete = false;
+
+                                break;
+                            },
+                        )
+                    } else {
+                        complete = false;
+
+                        break;
+                    };
+
+                    state = Self::Pending {
+                        state: pending,
+                        secrets,
+                        phase,
+                        logger,
+                    };
+
+                    crate::State::apply(&mut state, Some(player), &StoreAction::Reveal(secret))?;
+                }
+
+                if complete {
+                    Log::Complete
+                } else {
+                    Log::Incomplete
                 }
             }(Rc::try_unwrap(events).unwrap().into_inner()))
         } else {

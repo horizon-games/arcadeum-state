@@ -401,6 +401,15 @@ macro_rules! bind {
             ))
         }
 
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
+        pub fn root_proof_id(root: &[u8]) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
+            Ok($crate::ID::serialize(
+                $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
+                    .state()
+                    .id(),
+            ))
+        }
+
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofPlayer)]
         pub fn root_proof_player(
             root: &[u8],
@@ -414,15 +423,6 @@ macro_rules! bind {
                 .state()
                 .player(std::convert::TryInto::<_>::try_into(player).map_err(|error| format!("{}", error))?)
                 .ok_or("root.state().player(player).is_none()".into())
-        }
-
-        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
-        pub fn root_proof_id(root: &[u8]) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
-            Ok($crate::ID::serialize(
-                $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
-                    .state()
-                    .id(),
-            ))
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffProof)]

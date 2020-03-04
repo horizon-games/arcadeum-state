@@ -429,6 +429,11 @@ macro_rules! bind {
         pub fn diff_proof(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
             Ok($crate::utils::hex($crate::Diff::<$crate::store::StoreAction<<$type as $crate::store::State>::Action>>::deserialize(diff)?.proof()))
         }
+
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffDebugString)]
+        pub fn diff_debug_string(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
+            Ok(format!("{:?}", $crate::Diff::<$crate::store::StoreAction<<$type as $crate::store::State>::Action>>::deserialize(diff)?))
+        }
     };
 }
 

@@ -23,7 +23,7 @@ use std::{convert::TryInto, mem::size_of};
 #[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*, vec},
-    core::{convert::TryInto, mem::size_of},
+    core::{column, convert::TryInto, file, line, mem::size_of},
 };
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]
@@ -785,7 +785,7 @@ impl<T: MerkleLeaf> MerkleProof<T> {
                 &match path.path % 2 {
                     0 => [&root[..], &hash[..]],
                     1 => [&hash[..], &root[..]],
-                    _ => unreachable!(),
+                    _ => unreachable!("{}:{}:{}", file!(), line!(), column!()),
                 }
                 .concat(),
             );

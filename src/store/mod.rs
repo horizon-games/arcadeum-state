@@ -43,8 +43,11 @@ use {
     },
     core::{
         cell::{Ref, RefCell},
+        column,
         convert::TryInto,
+        file,
         future::Future,
+        line,
         mem::size_of,
         ops::Deref,
         pin::Pin,
@@ -334,7 +337,7 @@ macro_rules! bind {
                         $crate::store::Phase::RandomReveal {
                             owner_hash: true, ..
                         } => Ok(None),
-                        _ => unreachable!(),
+                        _ => unreachable!("{}:{}:{}", file!(), line!(), column!()),
                     }
                 } else {
                     Err(wasm_bindgen::JsValue::from(
@@ -483,7 +486,7 @@ impl<S: State> Store<S> {
                                 .map(|(secret, seed)| (secret, rand::SeedableRng::from_seed(seed))),
                         ];
                     } else {
-                        unreachable!();
+                        unreachable!("{}:{}:{}", file!(), line!(), column!());
                     }
 
                     state.set_logger(Rc::new(RefCell::new(Logger::new(log))));
@@ -576,7 +579,7 @@ impl<S: State> Store<S> {
                 {
                     *state_secrets = secrets;
                 } else {
-                    unreachable!();
+                    unreachable!("{}:{}:{}", file!(), line!(), column!());
                 }
 
                 state.set_logger(log.clone());
@@ -641,7 +644,7 @@ impl<S: State> Store<S> {
             {
                 *state_secrets = secrets;
             } else {
-                unreachable!();
+                unreachable!("{}:{}:{}", file!(), line!(), column!());
             }
 
             state.set_logger(log);
@@ -721,7 +724,7 @@ impl<S: State> Store<S> {
                 }
             }
         } else {
-            unreachable!();
+            unreachable!("{}:{}:{}", file!(), line!(), column!());
         }
 
         crate::utils::write_u32_usize(&mut data, root.len()).unwrap();
@@ -763,7 +766,7 @@ impl<S: State> Store<S> {
                 }
             }
         } else {
-            unreachable!();
+            unreachable!("{}:{}:{}", file!(), line!(), column!());
         }
 
         crate::utils::write_u32_usize(&mut data, proof.len()).unwrap();
@@ -1311,7 +1314,9 @@ impl<S: State> crate::State for StoreState<S> {
 
         if !handled {
             match (&self, action) {
-                (Self::Ready { .. }, Self::Action::Action(_)) => unreachable!(),
+                (Self::Ready { .. }, Self::Action::Action(_)) => {
+                    unreachable!("{}:{}:{}", file!(), line!(), column!())
+                }
 
                 (Self::Pending { phase: context, .. }, Self::Action::RandomCommit(hash)) => {
                     let phase = context.try_borrow().map_err(|error| error.to_string())?;

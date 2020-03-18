@@ -23,7 +23,7 @@ use std::{cell::RefCell, collections::VecDeque, mem::size_of, ops::Deref, rc::Rc
 #[cfg(not(feature = "std"))]
 use {
     alloc::{collections::VecDeque, format, prelude::v1::*, rc::Rc, vec},
-    core::{cell::RefCell, mem::size_of, ops::Deref},
+    core::{cell::RefCell, column, file, line, mem::size_of, ops::Deref},
 };
 
 #[cfg(not(feature = "std"))]
@@ -416,7 +416,7 @@ fn deserialize_store<S: crate::store::State>(
         data,
         false,
         |_, _| (),
-        |_| unreachable!(),
+        |_| unreachable!("{}:{}:{}", file!(), line!(), column!()),
         |_| (),
         |_| (),
         UnreachableRng,
@@ -448,18 +448,18 @@ struct UnreachableRng;
 
 impl rand::RngCore for UnreachableRng {
     fn next_u32(&mut self) -> u32 {
-        unreachable!();
+        unreachable!("{}:{}:{}", file!(), line!(), column!());
     }
 
     fn next_u64(&mut self) -> u64 {
-        unreachable!();
+        unreachable!("{}:{}:{}", file!(), line!(), column!());
     }
 
     fn fill_bytes(&mut self, _dest: &mut [u8]) {
-        unreachable!();
+        unreachable!("{}:{}:{}", file!(), line!(), column!());
     }
 
     fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), rand::Error> {
-        unreachable!();
+        unreachable!("{}:{}:{}", file!(), line!(), column!());
     }
 }

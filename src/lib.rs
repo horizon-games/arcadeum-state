@@ -1052,12 +1052,7 @@ impl<S: State> ProofState<S> {
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
-        let state = if let Some(state) = self.state.serialize() {
-            state
-        } else {
-            return None;
-        };
-
+        let state = self.state.serialize()?;
         let id = self.id.serialize();
         let nonce = self.nonce.serialize();
 
@@ -1078,9 +1073,7 @@ impl<S: State> ProofState<S> {
             data.extend(player);
         }
 
-        if utils::write_u32_usize(&mut data, self.signatures.len()).is_err() {
-            return None;
-        }
+        utils::write_u32_usize(&mut data, self.signatures.len()).ok()?;
 
         for (address, signature) in &self.signatures {
             data.extend(address);

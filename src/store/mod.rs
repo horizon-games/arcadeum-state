@@ -346,6 +346,16 @@ macro_rules! bind {
                 }
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = getAddressPlayer)]
+            pub fn address_player(
+                &self,
+                address: &[u8],
+            ) -> Result<Option<$crate::Player>, wasm_bindgen::JsValue> {
+                Ok(self.store.state().player(
+                    std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?,
+                ))
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn simulate(
                 &self,
@@ -399,8 +409,7 @@ macro_rules! bind {
         #[wasm_bindgen::prelude::wasm_bindgen]
         pub fn certificate(address: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
             Ok(<$type as $crate::store::State>::certificate(
-                std::convert::TryInto::<_>::try_into(address)
-                    .map_err(|error| wasm_bindgen::JsValue::from(format!("{}", error)))?,
+                std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?,
             ))
         }
 

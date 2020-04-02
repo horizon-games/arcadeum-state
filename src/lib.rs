@@ -191,7 +191,10 @@ impl<S: State> Proof<S> {
         let mut latest = self.compute_state();
 
         for (i, action) in diff.actions.iter().enumerate() {
-            slash!(action.player != player);
+            match action.action {
+                PlayerAction::Play(_) => slash!(action.player != player),
+                PlayerAction::Certify { .. } => (),
+            }
 
             latest.apply(action).map_err(error::Error::Hard)?;
 

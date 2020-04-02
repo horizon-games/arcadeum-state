@@ -388,9 +388,55 @@ macro_rules! bind {
                     &$crate::utils::to_js(&diff.serialize())?,
                 )?;
 
-                self.store.apply(&diff)?;
+                Ok(self.store.apply(&diff)?)
+            }
 
-                Ok(())
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = dispatchCertify)]
+            pub fn dispatch_certify(
+                &mut self,
+                address: &[u8],
+                signature: &[u8],
+            ) -> Result<(), wasm_bindgen::JsValue> {
+                let address =
+                    std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?;
+
+                let signature = {
+                    if signature.len() != std::mem::size_of::<$crate::crypto::Signature>() {
+                        return Err(wasm_bindgen::JsValue::from(
+                            "signature.len() != std::mem::size_of::<$crate::crypto::Signature>()",
+                        ));
+                    }
+
+                    let mut data = [0; std::mem::size_of::<$crate::crypto::Signature>()];
+                    data.copy_from_slice(signature);
+                    data
+                };
+
+                if self.store.state().player(&address).is_some() {
+                    Ok(())
+                } else {
+                    let player = self
+                                .store
+                                .state()
+                                .player(&$crate::crypto::recover(
+                                    <$crate::store::StoreState<$type> as $crate::State>::certificate(&address)
+                                        .as_bytes(),
+                                    &signature,
+                                )?)
+                                .ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::certificate(&address).as_bytes(), &signature)?).is_none()")?;
+
+                    let diff = self.store.diff(vec![$crate::ProofAction {
+                        player: Some(player),
+                        action: $crate::PlayerAction::Certify { address, signature },
+                    }])?;
+
+                    self.send.call1(
+                        &wasm_bindgen::JsValue::UNDEFINED,
+                        &$crate::utils::to_js(&diff.serialize())?,
+                    )?;
+
+                    Ok(self.store.apply(&diff)?)
+                }
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(js_name = dispatchTimeout)]

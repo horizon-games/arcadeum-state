@@ -78,7 +78,8 @@ where
                     action: crate::PlayerAction::Certify {
                         address,
                         signature: crate::crypto::sign(
-                            S::certificate(&address).as_bytes(),
+                            <crate::store::StoreState<S> as crate::State>::certificate(&address)
+                                .as_bytes(),
                             &keys[1],
                         ),
                     },
@@ -92,7 +93,8 @@ where
                     action: crate::PlayerAction::Certify {
                         address,
                         signature: crate::crypto::sign(
-                            S::certificate(&address).as_bytes(),
+                            <crate::store::StoreState<S> as crate::State>::certificate(&address)
+                                .as_bytes(),
                             &keys[2],
                         ),
                     },

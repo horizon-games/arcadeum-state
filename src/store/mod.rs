@@ -408,9 +408,11 @@ macro_rules! bind {
 
         #[wasm_bindgen::prelude::wasm_bindgen]
         pub fn certificate(address: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok(<$type as $crate::store::State>::certificate(
-                std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?,
-            ))
+            Ok(
+                <$crate::store::StoreState<$type> as $crate::State>::certificate(
+                    std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?,
+                ),
+            )
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
@@ -1229,6 +1231,10 @@ impl<S: State> crate::State for StoreState<S> {
     type ID = S::ID;
     type Nonce = S::Nonce;
     type Action = StoreAction<S::Action>;
+
+    fn certificate(address: &crate::crypto::Address) -> String {
+        S::certificate(address)
+    }
 
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         crate::forbid!(data.len() < size_of::<u32>());

@@ -415,15 +415,7 @@ macro_rules! bind {
                 if self.store.state().player(&address).is_some() {
                     Ok(())
                 } else {
-                    let player = self
-                                .store
-                                .state()
-                                .player(&$crate::crypto::recover(
-                                    <$crate::store::StoreState<$type> as $crate::State>::certificate(&address)
-                                        .as_bytes(),
-                                    &signature,
-                                )?)
-                                .ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::certificate(&address).as_bytes(), &signature)?).is_none()")?;
+                    let player = self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::certificate(&address).as_bytes(), &signature)?).ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::certificate(&address).as_bytes(), &signature)?).is_none()")?;
 
                     let diff = self.store.diff(vec![$crate::ProofAction {
                         player: Some(player),

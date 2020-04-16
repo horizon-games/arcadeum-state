@@ -996,6 +996,14 @@ impl<S: State> ProofState<S> {
     }
 
     fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {
+        let version = S::version();
+        let size = utils::read_u32_usize(&mut data)?;
+
+        forbid!(size != version.len());
+        forbid!(data.len() < size);
+        forbid!(data[..size] != *version);
+        data = &data[size..];
+
         let id = S::ID::deserialize(&mut data)?;
         let nonce = S::Nonce::deserialize(&mut data)?;
 
@@ -1061,12 +1069,15 @@ impl<S: State> ProofState<S> {
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
+        let version = S::version();
         let state = self.state.serialize()?;
         let id = self.id.serialize();
         let nonce = self.nonce.serialize();
 
         let mut data = Vec::with_capacity(
-            id.len()
+            size_of::<u32>()
+                + version.len()
+                + id.len()
                 + nonce.len()
                 + self.players.len() * size_of::<crypto::Address>()
                 + size_of::<u32>()
@@ -1075,6 +1086,8 @@ impl<S: State> ProofState<S> {
                 + state.len(),
         );
 
+        utils::write_u32_usize(&mut data, version.len()).ok()?;
+        data.extend(version);
         data.extend(id);
         data.extend(nonce);
 
@@ -1255,6 +1268,11 @@ pub trait State: Clone {
     /// Action type
     type Action: Action;
 
+    /// Gets the ABI version of this implementation.
+    ///
+    /// See [tag] and [version::version] for potentially helpful utilities.
+    fn version() -> &'static [u8];
+
     /// Formats the message that must be signed in order to certify the subkey for a given address.
     fn certificate(address: &crypto::Address) -> String {
         format!(
@@ -1289,6 +1307,10 @@ impl<S: State> State for Box<S> {
     type ID = S::ID;
     type Nonce = S::Nonce;
     type Action = S::Action;
+
+    fn version() -> &'static [u8] {
+        S::version()
+    }
 
     fn certificate(address: &crypto::Address) -> String {
         S::certificate(address)

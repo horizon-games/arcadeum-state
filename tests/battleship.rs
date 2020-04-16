@@ -67,6 +67,10 @@ impl State for Battleship {
     type Action = u8;
     type Secret = crypto::MerkleTree<bool>;
 
+    fn version() -> &'static [u8] {
+        "Battleship".as_bytes()
+    }
+
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         if data.len() != 1 + 2 + 2 * size_of::<crypto::Hash>() {
             return Err("data.len() != 1 + 2 + 2 * size_of::<crypto::Hash>()".to_string());

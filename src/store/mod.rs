@@ -444,6 +444,11 @@ macro_rules! bind {
             }
         }
 
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getVersion)]
+        pub fn version() -> Vec<u8> {
+            <$crate::store::StoreState<$type> as $crate::State>::version().to_vec()
+        }
+
         #[wasm_bindgen::prelude::wasm_bindgen]
         pub fn certificate(address: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
             Ok(
@@ -1270,6 +1275,10 @@ impl<S: State> crate::State for StoreState<S> {
     type Nonce = S::Nonce;
     type Action = StoreAction<S::Action>;
 
+    fn version() -> &'static [u8] {
+        S::version()
+    }
+
     fn certificate(address: &crate::crypto::Address) -> String {
         S::certificate(address)
     }
@@ -1650,6 +1659,11 @@ pub trait State: Clone {
 
     /// Secret type
     type Secret: Secret;
+
+    /// Gets the ABI version of this implementation.
+    ///
+    /// See [super::tag] and [super::version::version] for potentially helpful utilities.
+    fn version() -> &'static [u8];
 
     /// Formats the message that must be signed in order to certify the subkey for a given address.
     fn certificate(address: &crate::crypto::Address) -> String {

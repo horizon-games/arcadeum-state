@@ -65,6 +65,10 @@ impl State for Coin {
     type Action = bool;
     type Secret = ();
 
+    fn version() -> &'static [u8] {
+        "Coin".as_bytes()
+    }
+
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         if data.len() != 1 + 2 {
             return Err("data.len() != 1 + 2".to_string());

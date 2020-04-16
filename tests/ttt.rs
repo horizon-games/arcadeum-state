@@ -63,6 +63,10 @@ impl State for TTT {
     type Nonce = u8;
     type Action = Action;
 
+    fn version() -> &'static [u8] {
+        "TTT".as_bytes()
+    }
+
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         if data.len() != 3 * 3 {
             return Err("data.len() != 3 * 3".to_string());

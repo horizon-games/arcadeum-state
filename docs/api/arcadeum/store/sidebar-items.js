@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Log","Simulation event log"]],"mod":[["bindings","WebAssembly-specific utilities"]],"struct":[["Context","[State::apply] utilities"],["Store","Client [State] store"],["Tester","Store tester"]],"trait":[["Event","[Context::log] event trait"],["Secret","Domain-specific store state secret trait"],["State","Domain-specific store state trait"]]});

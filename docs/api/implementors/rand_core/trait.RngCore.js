@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["arcadeum"] = [{"text":"impl <a class=\"trait\" href=\"https://rust-random.github.io/rand/rand_core/trait.RngCore.html\" title=\"trait rand_core::RngCore\">RngCore</a> for <a class=\"struct\" href=\"arcadeum/store/bindings/struct.JsRng.html\" title=\"struct arcadeum::store::bindings::JsRng\">JsRng</a>","synthetic":false,"types":["arcadeum::store::bindings::JsRng"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

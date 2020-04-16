@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `eip55` fn in crate `arcadeum`."><meta name="keywords" content="rust, rustlang, rust-lang, eip55"><title>arcadeum::crypto::eip55 - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc fn"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../arcadeum/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a><div class="sidebar-elems"><p class='location'><a href='../index.html'>arcadeum</a>::<wbr><a href='index.html'>crypto</a></p><script>window.sidebarCurrent = {name: 'eip55', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../../src/arcadeum/crypto.rs.html#414-429' title='goto source code'>[src]</a></span><span class='in-band'>Function <a href='../index.html'>arcadeum</a>::<wbr><a href='index.html'>crypto</a>::<wbr><a class="fn" href=''>eip55</a></span></h1><pre class='rust fn'>pub fn eip55(address: &amp;<a class="type" href="../../arcadeum/crypto/type.Address.html" title="type arcadeum::crypto::Address">Address</a>) -&gt; <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html" title="struct alloc::string::String">String</a></pre><div class='docblock'><p>Computes the EIP 55 representation of an address.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\x5a\xAe\xb6\x05\x3F\x3E\x94\xC9\xb9\xA0\x9f\x33\x66\x94\x35\xE7\xEf\x1B\xeA\xed&quot;</span>
+    ),
+    <span class="string">&quot;0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xfB\x69\x16\x09\x5c\xa1\xdf\x60\xbB\x79\xCe\x92\xcE\x3E\xa7\x4c\x37\xc5\xd3\x59&quot;</span>
+    ),
+    <span class="string">&quot;0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xdb\xF0\x3B\x40\x7c\x01\xE7\xcD\x3C\xBe\xa9\x95\x09\xd9\x3f\x8D\xDD\xC8\xC6\xFB&quot;</span>
+    ),
+    <span class="string">&quot;0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xD1\x22\x0A\x0c\xf4\x7c\x7B\x9B\xe7\xA2\xE6\xBA\x89\xF4\x29\x76\x2e\x7b\x9a\xDb&quot;</span>
+    ),
+    <span class="string">&quot;0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\x52\x90\x84\x00\x09\x85\x27\x88\x6E\x0F\x70\x30\x06\x98\x57\xD2\xE4\x16\x9E\xE7&quot;</span>
+    ),
+    <span class="string">&quot;0x52908400098527886E0F7030069857D2E4169EE7&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\x86\x17\xE3\x40\xB3\xD0\x1F\xA5\xF1\x1F\x30\x6F\x40\x90\xFD\x50\xE2\x38\x07\x0D&quot;</span>
+    ),
+    <span class="string">&quot;0x8617E340B3D01FA5F11F306F4090FD50E238070D&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xde\x70\x9f\x21\x02\x30\x62\x20\x92\x10\x60\x31\x47\x15\x62\x90\x80\xe2\xfb\x77&quot;</span>
+    ),
+    <span class="string">&quot;0xde709f2102306220921060314715629080e2fb77&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\x27\xb1\xfd\xb0\x47\x52\xbb\xc5\x36\x00\x7a\x92\x0d\x24\xac\xb0\x45\x56\x1c\x26&quot;</span>
+    ),
+    <span class="string">&quot;0x27b1fdb04752bbc536007a920d24acb045561c26&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\x5a\xAe\xb6\x05\x3F\x3E\x94\xC9\xb9\xA0\x9f\x33\x66\x94\x35\xE7\xEf\x1B\xeA\xed&quot;</span>
+    ),
+    <span class="string">&quot;0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xfB\x69\x16\x09\x5c\xa1\xdf\x60\xbB\x79\xCe\x92\xcE\x3E\xa7\x4c\x37\xc5\xd3\x59&quot;</span>
+    ),
+    <span class="string">&quot;0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xdb\xF0\x3B\x40\x7c\x01\xE7\xcD\x3C\xBe\xa9\x95\x09\xd9\x3f\x8D\xDD\xC8\xC6\xFB&quot;</span>
+    ),
+    <span class="string">&quot;0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB&quot;</span>
+);
+
+<span class="macro">assert_eq</span><span class="macro">!</span>(
+    <span class="ident">arcadeum</span>::<span class="ident">crypto</span>::<span class="ident">eip55</span>(
+        <span class="string">b&quot;\xD1\x22\x0A\x0c\xf4\x7c\x7B\x9B\xe7\xA2\xE6\xBA\x89\xF4\x29\x76\x2e\x7b\x9a\xDb&quot;</span>
+    ),
+    <span class="string">&quot;0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb&quot;</span>
+);</pre></div>
+</div></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "arcadeum";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>

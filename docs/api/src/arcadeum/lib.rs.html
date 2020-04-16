@@ -1402,6 +1402,12 @@
 <span id="1402">1402</span>
 <span id="1403">1403</span>
 <span id="1404">1404</span>
+<span id="1405">1405</span>
+<span id="1406">1406</span>
+<span id="1407">1407</span>
+<span id="1408">1408</span>
+<span id="1409">1409</span>
+<span id="1410">1410</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Arcadeum blockchain game framework
@@ -1460,6 +1466,12 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>)]</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">debug</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;version&quot;</span>)]</span>
+<span class="doccomment">/// ABI versioning utilities</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">version</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;version&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">version</span>::<span class="ident">tag</span>;
 
 <span class="kw">mod</span> <span class="ident">error</span>;
 

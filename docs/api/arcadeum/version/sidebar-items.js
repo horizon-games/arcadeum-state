@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["tag","Generates a module exporting a canonical digest of the contents of the files and directories at the given paths."],["version","Generates a canonical digest of the contents of the files and directories at the given paths."]]});

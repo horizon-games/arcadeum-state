@@ -173,8 +173,8 @@ impl arcadeum::Action for Action {
 #[cfg(not(feature = "no-crypto"))]
 fn generate_keys_and_subkeys<R: rand::Rng>(
     randoms: &mut [R; 3],
-) -> ([SecretKey; 3], [SecretKey; 2]) {
-    (
+) -> Result<([SecretKey; 3], [SecretKey; 2]), String> {
+    Ok((
         [
             SecretKey::random(&mut randoms[0]),
             SecretKey::random(&mut randoms[1]),
@@ -184,44 +184,64 @@ fn generate_keys_and_subkeys<R: rand::Rng>(
             SecretKey::random(&mut randoms[1]),
             SecretKey::random(&mut randoms[2]),
         ],
-    )
+    ))
 }
 
 #[cfg(feature = "no-crypto")]
 fn generate_keys_and_subkeys<R: rand::Rng>(
     randoms: &mut [R; 3],
-) -> ([SecretKey; 3], [SecretKey; 2]) {
-    (
+) -> Result<([SecretKey; 3], [SecretKey; 2]), String> {
+    Ok((
         [
             {
                 let mut key = SecretKey::default();
-                randoms[0].try_fill_bytes(&mut key).unwrap();
+
+                randoms[0]
+                    .try_fill_bytes(&mut key)
+                    .map_err(|error| error.to_string())?;
+
                 key
             },
             {
                 let mut key = SecretKey::default();
-                randoms[1].try_fill_bytes(&mut key).unwrap();
+
+                randoms[1]
+                    .try_fill_bytes(&mut key)
+                    .map_err(|error| error.to_string())?;
+
                 key
             },
             {
                 let mut key = SecretKey::default();
-                randoms[2].try_fill_bytes(&mut key).unwrap();
+
+                randoms[2]
+                    .try_fill_bytes(&mut key)
+                    .map_err(|error| error.to_string())?;
+
                 key
             },
         ],
         [
             {
                 let mut subkey = SecretKey::default();
-                randoms[1].try_fill_bytes(&mut subkey).unwrap();
+
+                randoms[1]
+                    .try_fill_bytes(&mut subkey)
+                    .map_err(|error| error.to_string())?;
+
                 subkey
             },
             {
                 let mut subkey = SecretKey::default();
-                randoms[2].try_fill_bytes(&mut subkey).unwrap();
+
+                randoms[2]
+                    .try_fill_bytes(&mut subkey)
+                    .map_err(|error| error.to_string())?;
+
                 subkey
             },
         ],
-    )
+    ))
 }
 
 #[test]
@@ -236,7 +256,7 @@ fn test_ttt() {
         ]
     };
 
-    let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms);
+    let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms).unwrap();
 
     let mut id = <TTT as State>::ID::default();
     randoms[0].fill_bytes(&mut id);

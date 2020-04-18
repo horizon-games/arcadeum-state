@@ -613,19 +613,6 @@ pub struct RootProof<S: State> {
     latest: ProofState<S>,
 }
 
-impl<S: State> Clone for RootProof<S> {
-    fn clone(&self) -> Self {
-        Self {
-            state: self.state.clone(),
-            actions: self.actions.clone(),
-            signature: self.signature,
-            hash: self.hash,
-            author: self.author,
-            latest: self.compute_state(),
-        }
-    }
-}
-
 impl<S: State> RootProof<S> {
     /// Constructs a root proof from `state` and `actions`.
     ///
@@ -764,6 +751,19 @@ impl<S: State> RootProof<S> {
         }
 
         state
+    }
+}
+
+impl<S: State> Clone for RootProof<S> {
+    fn clone(&self) -> Self {
+        Self {
+            state: self.state.clone(),
+            actions: self.actions.clone(),
+            signature: self.signature,
+            hash: self.hash,
+            author: self.author,
+            latest: self.compute_state(),
+        }
     }
 }
 

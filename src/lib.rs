@@ -975,7 +975,7 @@ impl<S: State> ProofState<S> {
         }
 
         if let Some(signature) = self.signatures.get(address) {
-            if let Ok(address) = &crypto::recover(S::certificate(address).as_bytes(), signature) {
+            if let Ok(address) = &crypto::recover(S::challenge(address).as_bytes(), signature) {
                 if let Some(player) = self.players.iter().position(|player| player == address) {
                     return player.try_into().ok();
                 }
@@ -1121,7 +1121,7 @@ impl<S: State> ProofState<S> {
                 forbid!(self.signatures.contains_key(address));
 
                 forbid!(
-                    crypto::recover(S::certificate(address).as_bytes(), signature)?
+                    crypto::recover(S::challenge(address).as_bytes(), signature)?
                         != self.players[usize::from(player.unwrap())]
                 );
 
@@ -1216,9 +1216,9 @@ pub enum PlayerAction<A: Action> {
         /// The subkey address.
         address: crypto::Address,
 
-        /// The signature of the subkey address certificate.
+        /// The signature of the subkey challenge.
         ///
-        /// See [State::certificate].
+        /// See [State::challenge].
         signature: crypto::Signature,
     },
 }
@@ -1273,8 +1273,8 @@ pub trait State: Clone {
     /// See [tag] and [version::version] for potentially helpful utilities.
     fn version() -> &'static [u8];
 
-    /// Formats the message that must be signed in order to certify the subkey for a given address.
-    fn certificate(address: &crypto::Address) -> String {
+    /// Gets the challenge that must be signed in order to certify the subkey with the given address.
+    fn challenge(address: &crypto::Address) -> String {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
             crypto::Addressable::eip55(address)
@@ -1312,8 +1312,8 @@ impl<S: State> State for Box<S> {
         S::version()
     }
 
-    fn certificate(address: &crypto::Address) -> String {
-        S::certificate(address)
+    fn challenge(address: &crypto::Address) -> String {
+        S::challenge(address)
     }
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {

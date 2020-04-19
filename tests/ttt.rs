@@ -308,7 +308,7 @@ fn test_ttt() {
             player: Some(i.try_into().unwrap()),
             action: PlayerAction::Certify {
                 address,
-                signature: sign(TTT::certificate(&address).as_bytes(), key),
+                signature: sign(TTT::challenge(&address).as_bytes(), key),
             },
         };
 

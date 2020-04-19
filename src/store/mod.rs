@@ -419,7 +419,7 @@ macro_rules! bind {
                 if self.store.state().player(&address).is_some() {
                     Ok(())
                 } else {
-                    let player = self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::certificate(&address).as_bytes(), &signature)?).ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::certificate(&address).as_bytes(), &signature)?).is_none()")?;
+                    let player = self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?).ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?).is_none()")?;
 
                     let diff = self.store.diff(vec![$crate::ProofAction {
                         player: Some(player),
@@ -453,10 +453,10 @@ macro_rules! bind {
             $crate::utils::hex(<$crate::store::StoreState<$type> as $crate::State>::version())
         }
 
-        #[wasm_bindgen::prelude::wasm_bindgen]
-        pub fn certificate(address: &str) -> Result<String, wasm_bindgen::JsValue> {
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getChallenge)]
+        pub fn challenge(address: &str) -> Result<String, wasm_bindgen::JsValue> {
             Ok(
-                <$crate::store::StoreState<$type> as $crate::State>::certificate(
+                <$crate::store::StoreState<$type> as $crate::State>::challenge(
                     std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
                         .map_err(|error| format!("{}", error))?,
                 ),
@@ -1289,8 +1289,8 @@ impl<S: State> crate::State for StoreState<S> {
         S::version()
     }
 
-    fn certificate(address: &crate::crypto::Address) -> String {
-        S::certificate(address)
+    fn challenge(address: &crate::crypto::Address) -> String {
+        S::challenge(address)
     }
 
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
@@ -1675,8 +1675,8 @@ pub trait State: Clone {
     /// See [super::tag] and [super::version::version] for potentially helpful utilities.
     fn version() -> &'static [u8];
 
-    /// Formats the message that must be signed in order to certify the subkey for a given address.
-    fn certificate(address: &crate::crypto::Address) -> String {
+    /// Gets the challenge that must be signed in order to certify the subkey with the given address.
+    fn challenge(address: &crate::crypto::Address) -> String {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
             crate::crypto::Addressable::eip55(address)

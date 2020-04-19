@@ -349,10 +349,11 @@ macro_rules! bind {
             #[wasm_bindgen::prelude::wasm_bindgen(js_name = getAddressPlayer)]
             pub fn address_player(
                 &self,
-                address: &[u8],
+                address: &str,
             ) -> Result<Option<$crate::Player>, wasm_bindgen::JsValue> {
                 Ok(self.store.state().player(
-                    std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?,
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
+                        .map_err(|error| format!("{}", error))?,
                 ))
             }
 
@@ -394,13 +395,16 @@ macro_rules! bind {
             #[wasm_bindgen::prelude::wasm_bindgen(js_name = dispatchCertify)]
             pub fn dispatch_certify(
                 &mut self,
-                address: &[u8],
-                signature: &[u8],
+                address: &str,
+                signature: &str,
             ) -> Result<(), wasm_bindgen::JsValue> {
                 let address =
-                    std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?;
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
+                        .map_err(|error| format!("{}", error))?;
 
                 let signature = {
+                    let signature = $crate::utils::unhex(signature)?;
+
                     if signature.len() != std::mem::size_of::<$crate::crypto::Signature>() {
                         return Err(wasm_bindgen::JsValue::from(
                             "signature.len() != std::mem::size_of::<$crate::crypto::Signature>()",
@@ -408,7 +412,7 @@ macro_rules! bind {
                     }
 
                     let mut data = [0; std::mem::size_of::<$crate::crypto::Signature>()];
-                    data.copy_from_slice(signature);
+                    data.copy_from_slice(&signature);
                     data
                 };
 
@@ -445,15 +449,16 @@ macro_rules! bind {
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getVersion)]
-        pub fn version() -> Vec<u8> {
-            <$crate::store::StoreState<$type> as $crate::State>::version().to_vec()
+        pub fn version() -> String {
+            $crate::utils::hex(<$crate::store::StoreState<$type> as $crate::State>::version())
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen]
-        pub fn certificate(address: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
+        pub fn certificate(address: &str) -> Result<String, wasm_bindgen::JsValue> {
             Ok(
                 <$crate::store::StoreState<$type> as $crate::State>::certificate(
-                    std::convert::TryInto::<_>::try_into(address).map_err(|error| format!("{}", error))?,
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
+                        .map_err(|error| format!("{}", error))?,
                 ),
             )
         }
@@ -470,15 +475,20 @@ macro_rules! bind {
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofPlayer)]
         pub fn root_proof_player(
             root: &[u8],
-            player: &[u8],
+            player: &str,
         ) -> Result<$crate::Player, wasm_bindgen::JsValue> {
+            let player = $crate::utils::unhex(player)?;
+
             if player.len() != std::mem::size_of::<$crate::crypto::Address>() {
                 return Err("player.len() != std::mem::size_of::<$crate::crypto::Address>()".into());
             }
 
             $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
                 .state()
-                .player(std::convert::TryInto::<_>::try_into(player).map_err(|error| format!("{}", error))?)
+                .player(
+                    std::convert::TryInto::<_>::try_into(player.as_slice())
+                        .map_err(|error| format!("{}", error))?,
+                )
                 .ok_or("root.state().player(player).is_none()".into())
         }
 

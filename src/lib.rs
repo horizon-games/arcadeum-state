@@ -1284,6 +1284,10 @@ impl<S: State> State for Box<S> {
     type Nonce = S::Nonce;
     type Action = S::Action;
 
+    fn certificate(address: &crypto::Address) -> String {
+        S::certificate(address)
+    }
+
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         S::deserialize(data).map(Self::new)
     }

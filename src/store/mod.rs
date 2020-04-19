@@ -324,7 +324,8 @@ macro_rules! bind {
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter, js_name = pendingPlayer)]
             pub fn pending_player(&self) -> Result<Option<$crate::Player>, wasm_bindgen::JsValue> {
-                if let $crate::store::StoreState::Pending { phase, .. } = self.store.state().state() {
+                if let $crate::store::StoreState::Pending { phase, .. } = self.store.state().state()
+                {
                     match *phase
                         .try_borrow()
                         .map_err(|error| wasm_bindgen::JsValue::from(error.to_string()))?
@@ -363,7 +364,8 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(action)?;
+                let action: <$type as $crate::store::State>::Action =
+                    $crate::utils::from_js(action)?;
 
                 Ok($crate::utils::to_js(
                     &self.store.state().state().simulate(player, &action)?,
@@ -376,8 +378,12 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
-            pub fn dispatch(&mut self, action: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action = $crate::utils::from_js(action)?;
+            pub fn dispatch(
+                &mut self,
+                action: wasm_bindgen::JsValue,
+            ) -> Result<(), wasm_bindgen::JsValue> {
+                let action: <$type as $crate::store::State>::Action =
+                    $crate::utils::from_js(action)?;
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
@@ -480,7 +486,9 @@ macro_rules! bind {
             let player = $crate::utils::unhex(player)?;
 
             if player.len() != std::mem::size_of::<$crate::crypto::Address>() {
-                return Err("player.len() != std::mem::size_of::<$crate::crypto::Address>()".into());
+                return Err(
+                    "player.len() != std::mem::size_of::<$crate::crypto::Address>()".into(),
+                );
             }
 
             $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
@@ -494,12 +502,24 @@ macro_rules! bind {
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffProof)]
         pub fn diff_proof(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok($crate::utils::hex($crate::Diff::<$crate::store::StoreAction<<$type as $crate::store::State>::Action>>::deserialize(diff)?.proof()))
+            Ok(
+                $crate::utils::hex(
+                    $crate::Diff::<
+                        $crate::store::StoreAction<<$type as $crate::store::State>::Action>,
+                    >::deserialize(diff)?
+                    .proof(),
+                ),
+            )
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffDebugString)]
         pub fn diff_debug_string(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok(format!("{:?}", $crate::Diff::<$crate::store::StoreAction<<$type as $crate::store::State>::Action>>::deserialize(diff)?))
+            Ok(format!(
+                    "{:?}",
+                    $crate::Diff::<
+                        $crate::store::StoreAction<<$type as $crate::store::State>::Action>,
+                    >::deserialize(diff)?
+                ))
         }
     };
 }

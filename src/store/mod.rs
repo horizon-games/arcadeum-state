@@ -67,13 +67,13 @@ pub use tester::Tester;
 macro_rules! bind {
     ($type:ty) => {
         #[wasm_bindgen::prelude::wasm_bindgen]
-        pub struct JsGame {
+        pub struct WasmMatch {
             store: $crate::store::Store<$type>,
             send: js_sys::Function,
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen]
-        impl JsGame {
+        impl WasmMatch {
             #[wasm_bindgen::prelude::wasm_bindgen(constructor)]
             pub fn new(
                 player: Option<$crate::Player>,
@@ -85,7 +85,7 @@ macro_rules! bind {
                 send: js_sys::Function,
                 log: js_sys::Function,
                 random: js_sys::Function,
-            ) -> Result<JsGame, wasm_bindgen::JsValue> {
+            ) -> Result<WasmMatch, wasm_bindgen::JsValue> {
                 Ok(Self {
                     store: {
                         $crate::store::Store::new(
@@ -181,7 +181,7 @@ macro_rules! bind {
                 send: js_sys::Function,
                 log: js_sys::Function,
                 random: js_sys::Function,
-            ) -> Result<JsGame, wasm_bindgen::JsValue> {
+            ) -> Result<WasmMatch, wasm_bindgen::JsValue> {
                 Ok(Self {
                     store: {
                         $crate::store::Store::deserialize(

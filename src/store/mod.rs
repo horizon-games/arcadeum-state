@@ -469,6 +469,13 @@ macro_rules! bind {
             )
         }
 
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofVersion)]
+        pub fn root_proof_version(root: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
+            Ok($crate::utils::hex(&$crate::RootProof::<
+                $crate::store::StoreState<$type>,
+            >::version(root)?))
+        }
+
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
         pub fn root_proof_id(root: &[u8]) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
             Ok($crate::ID::serialize(

@@ -662,6 +662,16 @@ impl<S: State> RootProof<S> {
         Ok(proof)
     }
 
+    /// Reads the version from a root proof's binary representation.
+    ///
+    /// `data` must have been constructed using [RootProof::serialize].
+    pub fn version(mut data: &[u8]) -> Result<Vec<u8>, String> {
+        let size = utils::read_u32_usize(&mut data)?;
+
+        forbid!(data.len() < size);
+        ProofState::<S>::version(&data[..size])
+    }
+
     /// Constructs a root proof from its binary representation.
     ///
     /// `data` must have been constructed using [RootProof::serialize].
@@ -993,6 +1003,13 @@ impl<S: State> ProofState<S> {
     /// Gets the domain-specific state.
     pub fn state(&self) -> &S {
         &self.state
+    }
+
+    fn version(mut data: &[u8]) -> Result<Vec<u8>, String> {
+        let size = utils::read_u32_usize(&mut data)?;
+
+        forbid!(data.len() < size);
+        Ok(data[..size].to_vec())
     }
 
     fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {

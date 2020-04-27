@@ -982,133 +982,137 @@ impl<S: State> Store<S> {
 
     /// Dispatches any actions the client is required to send.
     pub fn flush(&mut self) -> Result<(), String> {
-        let action = match &self.proof.state.state {
-            StoreState::Pending { phase, secrets, .. } => {
-                match (&*phase.try_borrow().unwrap(), self.player) {
-                    (Phase::RandomCommit, Some(0)) => {
-                        let seed = {
-                            let mut seed =
-                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+        self.proof
+            .state
+            .state
+            .logger()
+            .try_borrow_mut()
+            .map_err(|error| error.to_string())?
+            .enabled = false;
 
-                            self.random.fill_bytes(&mut seed);
-                            seed
-                        };
+        let mut state = self.proof.compute_state().state;
+        let mut actions = Vec::new();
 
-                        self.seed = Some(seed.to_vec());
+        loop {
+            let action = match &state {
+                StoreState::Pending { phase, secrets, .. } => {
+                    match (&*phase.try_borrow().unwrap(), self.player) {
+                        (Phase::RandomCommit, Some(0)) => {
+                            let seed = {
+                                let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+                                self.random.fill_bytes(&mut seed);
+                                seed
+                            };
 
-                        Some(crate::ProofAction {
-                            player: Some(0),
-                            action: crate::PlayerAction::Play(
-                                StoreAction::<S::Action>::RandomCommit(tiny_keccak::keccak256(
-                                    &seed,
-                                )),
-                            ),
-                        })
-                    }
-                    (Phase::RandomReply { .. }, Some(1)) => {
-                        let seed = {
-                            let mut seed =
-                                <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+                            self.seed = Some(seed.to_vec());
 
-                            self.random.fill_bytes(&mut seed);
-                            seed
-                        };
-
-                        Some(crate::ProofAction {
-                            player: Some(1),
-                            action: crate::PlayerAction::Play(
-                                StoreAction::<S::Action>::RandomReply(seed.to_vec()),
-                            ),
-                        })
-                    }
-                    (
-                        Phase::RandomReveal {
-                            hash,
-                            owner_hash: false,
-                            ..
-                        },
-                        Some(0),
-                    )
-                    | (
-                        Phase::RandomReveal {
-                            hash,
-                            owner_hash: true,
-                            ..
-                        },
-                        None,
-                    ) => {
-                        if let Some(seed) = &self.seed {
-                            crate::forbid!(&tiny_keccak::keccak256(seed) != hash);
-
-                            Some(crate::ProofAction {
-                                player: self.player,
-                                action: crate::PlayerAction::Play(
-                                    StoreAction::<S::Action>::RandomReveal(seed.to_vec()),
-                                ),
-                            })
-                        } else {
-                            return Err("self.seed.is_none()".to_string());
+                            Some(StoreAction::<S::Action>::RandomCommit(
+                                tiny_keccak::keccak256(&seed),
+                            ))
                         }
-                    }
-                    (
-                        Phase::Reveal {
-                            request:
-                                RevealRequest {
-                                    player,
-                                    reveal,
-                                    verify,
-                                },
-                            ..
-                        },
-                        _,
-                    ) => {
-                        if self.player.is_none() && !self.p2p
-                            || self.player == Some(*player) && self.p2p
-                        {
-                            if let Some(secret) = &secrets[usize::from(*player)] {
-                                let secret = reveal(
-                                    &secret.try_borrow().map_err(|error| error.to_string())?.0,
-                                );
+                        (Phase::RandomReply { .. }, Some(1)) => {
+                            let seed = {
+                                let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+                                self.random.fill_bytes(&mut seed);
+                                seed
+                            };
 
-                                crate::forbid!(!verify(&secret));
+                            Some(StoreAction::<S::Action>::RandomReply(seed.to_vec()))
+                        }
+                        (
+                            Phase::RandomReveal {
+                                hash,
+                                owner_hash: false,
+                                ..
+                            },
+                            Some(0),
+                        )
+                        | (
+                            Phase::RandomReveal {
+                                hash,
+                                owner_hash: true,
+                                ..
+                            },
+                            None,
+                        ) => {
+                            if let Some(seed) = &self.seed {
+                                crate::forbid!(&tiny_keccak::keccak256(seed) != hash);
 
-                                Some(crate::ProofAction {
-                                    player: self.player,
-                                    action: crate::PlayerAction::Play(
-                                        StoreAction::<S::Action>::Reveal(secret),
-                                    ),
-                                })
+                                Some(StoreAction::<S::Action>::RandomReveal(seed.to_vec()))
+                            } else {
+                                return Err("self.seed.is_none()".to_string());
+                            }
+                        }
+                        (
+                            Phase::Reveal {
+                                request:
+                                    RevealRequest {
+                                        player,
+                                        reveal,
+                                        verify,
+                                    },
+                                ..
+                            },
+                            _,
+                        ) => {
+                            if self.player.is_none() && !self.p2p
+                                || self.player == Some(*player) && self.p2p
+                            {
+                                if let Some(secret) = &secrets[usize::from(*player)] {
+                                    let secret = reveal(
+                                        &secret.try_borrow().map_err(|error| error.to_string())?.0,
+                                    );
+
+                                    crate::forbid!(!verify(&secret));
+
+                                    Some(StoreAction::<S::Action>::Reveal(secret))
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
                             }
-                        } else {
-                            None
                         }
+                        _ => None,
                     }
-                    _ => None,
                 }
+                StoreState::Ready { .. } => None,
+            };
+
+            match action {
+                Some(action) => {
+                    crate::State::apply(&mut state, self.player, &action)?;
+
+                    actions.push(action);
+                }
+                None => break,
             }
-            StoreState::Ready { state, secrets, .. } => {
-                self.seed = None;
+        }
 
-                (self.ready)(
-                    state,
-                    [
-                        secrets[0].as_ref().map(|(secret, _)| secret),
-                        secrets[1].as_ref().map(|(secret, _)| secret),
-                    ],
-                );
-
-                None
-            }
-        };
-
-        if let Some(action) = action {
-            let diff = self.diff(vec![action])?;
+        if !actions.is_empty() {
+            let diff = self.diff(
+                actions
+                    .into_iter()
+                    .map(|action| crate::ProofAction {
+                        player: self.player,
+                        action: crate::PlayerAction::Play(action),
+                    })
+                    .collect(),
+            )?;
 
             (self.send)(&diff);
 
             self.apply(&diff)?;
+        } else if let StoreState::Ready { state, secrets, .. } = &self.proof.state.state {
+            self.seed = None;
+
+            (self.ready)(
+                state,
+                [
+                    secrets[0].as_ref().map(|(secret, _)| secret),
+                    secrets[1].as_ref().map(|(secret, _)| secret),
+                ],
+            );
         }
 
         Ok(())

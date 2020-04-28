@@ -521,12 +521,14 @@ macro_rules! bind {
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffDebugString)]
         pub fn diff_debug_string(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok(format!(
+            Ok(
+                format!(
                     "{:?}",
                     $crate::Diff::<
                         $crate::store::StoreAction<<$type as $crate::store::State>::Action>,
                     >::deserialize(diff)?
-                ))
+                ),
+            )
         }
     };
 }

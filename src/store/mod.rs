@@ -895,6 +895,7 @@ impl<S: State> Store<S> {
     }
 
     /// Dispatches an action that will continue a stalled commit-reveal sequence.
+    ///
     /// Only call this if the pending player isn't live.
     /// Only the owner can call this.
     pub fn dispatch_timeout(&mut self) -> Result<(), String> {

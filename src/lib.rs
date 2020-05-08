@@ -43,13 +43,8 @@ use {
     },
 };
 
-/// Client store
-pub mod store;
-
-/// Cryptographic utilities
 pub mod crypto;
-
-/// Utilities
+pub mod store;
 pub mod utils;
 
 #[cfg(feature = "debug")]
@@ -57,7 +52,6 @@ pub mod utils;
 pub mod debug;
 
 #[cfg(feature = "version")]
-/// ABI versioning utilities
 pub mod version;
 #[cfg(feature = "version")]
 pub use version::tag;

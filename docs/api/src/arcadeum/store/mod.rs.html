@@ -2067,6 +2067,7 @@
 <span id="2067">2067</span>
 <span id="2068">2068</span>
 <span id="2069">2069</span>
+<span id="2070">2070</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Arcadeum blockchain game framework
@@ -2086,6 +2087,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */</span>
+
+<span class="doccomment">//! Client store</span>
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -2604,7 +2607,6 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bindings&quot;</span>)]</span>
-<span class="doccomment">/// WebAssembly-specific utilities</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bindings</span>;
 
 <span class="doccomment">/// Client [State] store</span>

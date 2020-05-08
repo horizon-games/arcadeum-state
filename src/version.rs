@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+//! ABI versioning utilities
+
 /// Generates a module exporting a canonical digest of the contents of the files and directories at the given paths.
 ///
 /// The module is written to the given module path.

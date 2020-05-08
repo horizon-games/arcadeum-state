@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+//! Cryptographic utilities
+
 #[cfg(feature = "std")]
 use std::{convert::TryInto, mem::size_of};
 

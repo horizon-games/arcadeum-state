@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+//! Store tester
+
 #[cfg(feature = "std")]
 use std::{cell::RefCell, collections::VecDeque, mem::size_of, ops::Deref, rc::Rc};
 

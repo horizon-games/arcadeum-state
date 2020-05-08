@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+//! Client store
+
 #[cfg(feature = "std")]
 use std::{
     cell::{Ref, RefCell},
@@ -534,7 +536,6 @@ macro_rules! bind {
 }
 
 #[cfg(feature = "bindings")]
-/// WebAssembly-specific utilities
 pub mod bindings;
 
 /// Client [State] store

@@ -986,6 +986,46 @@ impl<S: State> Store<S> {
 
     /// Dispatches any actions the client is required to send.
     pub fn flush(&mut self) -> Result<(), String> {
+        let actions = self.flush_actions(true)?;
+
+        if !actions.is_empty() {
+            let diff = self.diff(
+                actions
+                    .into_iter()
+                    .map(|action| crate::ProofAction {
+                        player: self.player,
+                        action: crate::PlayerAction::Play(action),
+                    })
+                    .collect(),
+            )?;
+
+            (self.send)(&diff);
+
+            self.apply(&diff)?;
+        } else if let StoreState::Ready { state, secrets, .. } = &self.proof.state.state {
+            self.seed = None;
+
+            (self.ready)(
+                state,
+                [
+                    secrets[0].as_ref().map(|(secret, _)| secret),
+                    secrets[1].as_ref().map(|(secret, _)| secret),
+                ],
+            );
+        }
+
+        Ok(())
+    }
+
+    #[doc(hidden)]
+    /// Gets any actions the client is required to send.
+    ///
+    /// If `check_sender` is `false`, also includes actions that the client is capable of sending
+    /// due to knowing secret information, but shouldn't due to not being the expected sender.
+    pub fn flush_actions(
+        &mut self,
+        check_sender: bool,
+    ) -> Result<Vec<StoreAction<S::Action>>, String> {
         self.proof
             .state
             .state
@@ -1059,7 +1099,8 @@ impl<S: State> Store<S> {
                             },
                             _,
                         ) => {
-                            if self.player.is_none() && !self.p2p
+                            if !check_sender
+                                || self.player.is_none() && !self.p2p
                                 || self.player == Some(*player) && self.p2p
                             {
                                 if let Some(secret) = &secrets[usize::from(*player)] {
@@ -1093,33 +1134,7 @@ impl<S: State> Store<S> {
             }
         }
 
-        if !actions.is_empty() {
-            let diff = self.diff(
-                actions
-                    .into_iter()
-                    .map(|action| crate::ProofAction {
-                        player: self.player,
-                        action: crate::PlayerAction::Play(action),
-                    })
-                    .collect(),
-            )?;
-
-            (self.send)(&diff);
-
-            self.apply(&diff)?;
-        } else if let StoreState::Ready { state, secrets, .. } = &self.proof.state.state {
-            self.seed = None;
-
-            (self.ready)(
-                state,
-                [
-                    secrets[0].as_ref().map(|(secret, _)| secret),
-                    secrets[1].as_ref().map(|(secret, _)| secret),
-                ],
-            );
-        }
-
-        Ok(())
+        Ok(actions)
     }
 
     /// Verifies and applies a cryptographically constructed diff to the store.

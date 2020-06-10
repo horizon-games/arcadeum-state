@@ -126,11 +126,11 @@ impl State for Coin {
 fn test_coin() {
     let mut tester = Tester::new(Coin::default(), Default::default(), Vec::new()).unwrap();
 
-    tester.apply(0, &true).unwrap();
-    tester.apply(1, &true).unwrap();
-    tester.apply(0, &true).unwrap();
-    tester.apply(1, &true).unwrap();
-    tester.apply(0, &true).unwrap();
-    tester.apply(1, &true).unwrap();
-    tester.apply(0, &true).unwrap();
+    tester.apply(Some(0), &true).unwrap();
+    tester.apply(Some(1), &true).unwrap();
+    tester.apply(Some(0), &true).unwrap();
+    tester.apply(Some(1), &true).unwrap();
+    tester.apply(Some(0), &true).unwrap();
+    tester.apply(Some(1), &true).unwrap();
+    tester.apply(Some(0), &true).unwrap();
 }

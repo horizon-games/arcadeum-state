@@ -226,10 +226,19 @@ where
             .unwrap()
     }
 
-    /// Applies an action by a given player to the tester.
-    pub fn apply(&mut self, player: crate::Player, action: &S::Action) -> Result<(), String> {
-        let diff = self.stores[1 + usize::from(player)].diff(vec![crate::ProofAction {
-            player: Some(player),
+    /// Applies an action by a given player (or the owner) to the tester.
+    pub fn apply(
+        &mut self,
+        player: Option<crate::Player>,
+        action: &S::Action,
+    ) -> Result<(), String> {
+        let diff = self.stores[if let Some(player) = player {
+            1 + usize::from(player)
+        } else {
+            0
+        }]
+        .diff(vec![crate::ProofAction {
+            player,
             action: crate::PlayerAction::Play(crate::store::StoreAction::Action(action.clone())),
         }])?;
 

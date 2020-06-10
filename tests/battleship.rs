@@ -189,11 +189,11 @@ fn test_battleship() {
 
     for _ in 0..20 {
         tester
-            .apply(0, &(random.next_u32() % 100).try_into().unwrap())
+            .apply(Some(0), &(random.next_u32() % 100).try_into().unwrap())
             .unwrap();
 
         tester
-            .apply(1, &(random.next_u32() % 100).try_into().unwrap())
+            .apply(Some(1), &(random.next_u32() % 100).try_into().unwrap())
             .unwrap();
     }
 }

@@ -227,11 +227,12 @@ where
     }
 
     /// Applies an action by a given player (or the owner) to the tester.
+    /// Returns a Vec of all the bytes revealed as a result of that action.
     pub fn apply(
         &mut self,
         player: Option<crate::Player>,
         action: &S::Action,
-    ) -> Result<(), String> {
+    ) -> Result<Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>, String> {
         let diff = self.stores[if let Some(player) = player {
             1 + usize::from(player)
         } else {
@@ -248,9 +249,9 @@ where
             store.apply(&diff)?;
         }
 
-        self.flush()?;
+        let revealed_data = self.flush()?;
 
-        self.check()
+        self.check().map(|_| revealed_data)
     }
 
     fn check(&self) -> Result<(), String> {
@@ -315,16 +316,20 @@ where
         Ok(())
     }
 
-    fn flush(&mut self) -> Result<(), String> {
-        while {
-            let mut repeat = false;
-
+    fn flush(
+        &mut self,
+    ) -> Result<Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>, String> {
+        let mut revealed_data = Vec::new();
+        let mut repeat = true;
+        while repeat {
+            repeat = false;
             if let Some(diff) = self.queues[0]
                 .try_borrow_mut()
                 .map_err(|error| error.to_string())?
                 .pop_front()
             {
                 let diff = crate::Diff::deserialize(&diff)?;
+                revealed_data.extend(diff.actions.clone());
 
                 self.proof.apply(&diff)?;
                 self.stores[1].apply(&diff)?;
@@ -339,6 +344,7 @@ where
                 .pop_front()
             {
                 let diff = crate::Diff::deserialize(&diff)?;
+                revealed_data.extend(diff.actions.clone());
 
                 self.proof.apply(&diff)?;
                 self.stores[0].apply(&diff)?;
@@ -353,6 +359,7 @@ where
                 .pop_front()
             {
                 let diff = crate::Diff::deserialize(&diff)?;
+                revealed_data.extend(diff.actions.clone());
 
                 self.proof.apply(&diff)?;
                 self.stores[0].apply(&diff)?;
@@ -360,11 +367,9 @@ where
 
                 repeat = true;
             }
+        }
 
-            repeat
-        } {}
-
-        Ok(())
+        Ok(revealed_data)
     }
 }
 

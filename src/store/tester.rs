@@ -270,11 +270,13 @@ where
     }
 
     /// Applies an action by a given player (or the owner) to the tester.
+    ///
+    /// Returns a [Vec] of actions that were automatically dispatched as a result.
     pub fn apply(
         &mut self,
         player: Option<crate::Player>,
         action: &S::Action,
-    ) -> Result<(), String> {
+    ) -> Result<Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>, String> {
         let diff = self.stores[if let Some(player) = player {
             1 + usize::from(player)
         } else {
@@ -291,9 +293,9 @@ where
             store.apply(&diff)?;
         }
 
-        self.flush()?;
+        let reveals = self.flush()?;
 
-        self.check()
+        self.check().map(|_| reveals)
     }
 
     fn check(&self) -> Result<(), String> {
@@ -358,8 +360,12 @@ where
         Ok(())
     }
 
-    fn flush(&mut self) -> Result<(), String> {
-        while {
+    fn flush(
+        &mut self,
+    ) -> Result<Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>, String> {
+        let mut reveals = Vec::new();
+
+        loop {
             let mut repeat = false;
 
             if let Some(diff) = self.queues[0]
@@ -368,6 +374,8 @@ where
                 .pop_front()
             {
                 let diff = crate::Diff::deserialize(&diff)?;
+
+                reveals.extend(diff.actions.clone());
 
                 self.proof.apply(&diff)?;
                 self.stores[1].apply(&diff)?;
@@ -383,6 +391,8 @@ where
             {
                 let diff = crate::Diff::deserialize(&diff)?;
 
+                reveals.extend(diff.actions.clone());
+
                 self.proof.apply(&diff)?;
                 self.stores[0].apply(&diff)?;
                 self.stores[2].apply(&diff)?;
@@ -397,6 +407,8 @@ where
             {
                 let diff = crate::Diff::deserialize(&diff)?;
 
+                reveals.extend(diff.actions.clone());
+
                 self.proof.apply(&diff)?;
                 self.stores[0].apply(&diff)?;
                 self.stores[1].apply(&diff)?;
@@ -404,10 +416,12 @@ where
                 repeat = true;
             }
 
-            repeat
-        } {}
+            if !repeat {
+                break;
+            }
+        }
 
-        Ok(())
+        Ok(reveals)
     }
 }
 

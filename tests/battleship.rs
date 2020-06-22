@@ -187,13 +187,33 @@ fn test_battleship() {
 
     let mut tester = Tester::new(state, secrets, Vec::new()).unwrap();
 
-    for _ in 0..20 {
+    // In your tests, you can assert that specific information was revealed during application of an action.
+    // This is returned as ProofAction structs, so you can use debug or serialized representations to make assertions.
+
+    let revealed = format!(
+        "{:#?}",
         tester
             .apply(Some(0), &(random.next_u32() % 100).try_into().unwrap())
+            .unwrap()
+    );
+
+    let expected =
+"[
+    ProofAction {
+        player: None,
+        action: PlayerAction::Play(StoreAction::Reveal(0xa667656c656d656e74f56473616c749018a6188418c418e8188818b318b81888182918cf189718ec186718fc1885184965696e64657816666c656e6774681864666861736865738698201518fc1866189618e218b0184e18ca03189d10181b18c718fb18c218d118a6187f184b183118531885183d185518b6184e13189f18bf18bc188e18b5982018181843188718f518de18f218b0184518df18c618b2189e189918b0186018fa18c518cf18b518e618ec18af187a18671835189d189a0e188818f4189518a8982018fa181b187718ce18bb18c5189518480b185818df1819189e1889185b1418a8151856181d187318c718b9183718241837184f181e18e31899181d187698201862182b1834184d1867181a18f418a3181f185e18a018f50118b418ec18f5182c18ad18bf181b0018ab18e6181f1875188f18fd18e018b7189a184618dc98201418401867189918ac18bb18a50d050218b918e7183918b718be189518d2186018ef181a18f718b318f2189e1883188018c518ff1858181f1859185498200c186b09188e18eb1875187418d218901897182118351878187f18fd189e186c188d00188118c3185a18f818b30718e4186a18fb185918311849185864726f6f749820189818c9185118fb18bc07182e0918fc181c18c018d91836185d181c18e218fd18ee189418701879189518e418e818fc187818f3188d1716041869)),
+    },
+]";
+
+    assert_eq!(revealed, expected);
+
+    for _ in 0..20 {
+        tester
+            .apply(Some(1), &(random.next_u32() % 100).try_into().unwrap())
             .unwrap();
 
         tester
-            .apply(Some(1), &(random.next_u32() % 100).try_into().unwrap())
+            .apply(Some(0), &(random.next_u32() % 100).try_into().unwrap())
             .unwrap();
     }
 }

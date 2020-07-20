@@ -4184,7 +4184,7 @@
     }
 
     <span class="doccomment">/// Logs an event.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Event</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event</span>: <span class="kw-2">&amp;</span><span class="ident">dyn</span> <span class="ident">Event</span>) {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">logger</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">logger</span>.<span class="ident">try_borrow_mut</span>() {
             <span class="self">self</span>.<span class="ident">nonce</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 

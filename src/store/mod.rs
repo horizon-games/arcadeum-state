@@ -2004,7 +2004,7 @@ impl<S: State> Context<S> {
     }
 
     /// Logs an event.
-    pub fn log(&mut self, event: &impl Event) {
+    pub fn log(&mut self, event: &dyn Event) {
         if let Ok(mut logger) = self.logger.try_borrow_mut() {
             self.nonce += 1;
 

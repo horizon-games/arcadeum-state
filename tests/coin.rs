@@ -124,7 +124,14 @@ impl State for Coin {
 
 #[test]
 fn test_coin() {
-    let mut tester = Tester::new(Coin::default(), Default::default(), Vec::new()).unwrap();
+    let mut tester = Tester::new(
+        Coin::default(),
+        Default::default(),
+        Vec::new(),
+        |player, _, _| println!("[{:?}: ready]", player),
+        |player, event| println!("[{:?}: log] {:?}", player, event),
+    )
+    .unwrap();
 
     // In your tests, you can assert that specific information was revealed during application of an action.
     // This is returned as ProofAction structs, so you can use debug or serialized representations to make assertions.

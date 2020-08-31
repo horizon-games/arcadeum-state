@@ -185,7 +185,14 @@ fn test_battleship() {
         ],
     };
 
-    let mut tester = Tester::new(state, secrets, Vec::new()).unwrap();
+    let mut tester = Tester::new(
+        state,
+        secrets,
+        Vec::new(),
+        |player, _, _| println!("[{:?}: ready]", player),
+        |player, event| println!("[{:?}: log] {:?}", player, event),
+    )
+    .unwrap();
 
     // In your tests, you can assert that specific information was revealed during application of an action.
     // This is returned as ProofAction structs, so you can use debug or serialized representations to make assertions.

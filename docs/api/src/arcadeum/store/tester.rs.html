@@ -554,6 +554,22 @@
 <span id="553">553</span>
 <span id="554">554</span>
 <span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Arcadeum blockchain game framework
@@ -585,16 +601,6 @@
     <span class="ident">core</span>::{<span class="ident">cell</span>::<span class="ident">RefCell</span>, <span class="ident">column</span>, <span class="ident">file</span>, <span class="ident">line</span>, <span class="ident">mem</span>::<span class="ident">size_of</span>, <span class="ident">ops</span>::<span class="ident">Deref</span>},
 };
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
-<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">println</span> {
-    () <span class="op">=</span><span class="op">&gt;</span> {
-        ()
-    };
-    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        ()
-    };
-}
-
 <span class="doccomment">/// Store tester</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Tester</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">State</span><span class="op">&gt;</span>
 <span class="kw">where</span>
@@ -614,6 +620,8 @@
         <span class="ident">state</span>: <span class="ident">S</span>,
         [<span class="ident">secret1</span>, <span class="ident">secret2</span>]: [<span class="ident">S</span>::<span class="ident">Secret</span>; <span class="number">2</span>],
         <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">ready</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">S</span>, [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span>; <span class="number">2</span>]) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">dyn</span> <span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">randoms</span> <span class="op">=</span> {
             <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span> <span class="op">=</span>
@@ -728,6 +736,8 @@
         <span class="kw">let</span> <span class="ident">stores</span> <span class="op">=</span> {
             <span class="kw">let</span> [<span class="ident">random0</span>, <span class="ident">random1</span>, <span class="ident">random2</span>] <span class="op">=</span> <span class="ident">randoms</span>;
             <span class="kw">let</span> [<span class="ident">subkey1</span>, <span class="ident">subkey2</span>] <span class="op">=</span> <span class="ident">subkeys</span>;
+            <span class="kw">let</span> <span class="ident">ready</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">ready</span>));
+            <span class="kw">let</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">log</span>));
 
             [
                 {
@@ -739,14 +749,24 @@
                             <span class="prelude-val">Some</span>((<span class="ident">secret2</span>.<span class="ident">clone</span>(), [<span class="number">2</span>; <span class="number">16</span>])),
                         ],
                         <span class="bool-val">false</span>,
-                        <span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;[0: ready]&quot;</span>),
+                        {
+                            <span class="kw">let</span> <span class="ident">ready</span> <span class="op">=</span> <span class="ident">ready</span>.<span class="ident">clone</span>();
+
+                            <span class="kw">move</span> <span class="op">|</span><span class="ident">state</span>, <span class="ident">secrets</span><span class="op">|</span> {
+                                (<span class="ident">ready</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>())(<span class="prelude-val">None</span>, <span class="ident">state</span>, <span class="ident">secrets</span>)
+                            }
+                        },
                         <span class="kw">move</span> <span class="op">|</span><span class="ident">message</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">sign</span>(<span class="ident">message</span>, <span class="kw-2">&amp;</span><span class="ident">keys</span>[<span class="number">0</span>])),
                         {
                             <span class="kw">let</span> <span class="ident">queue</span> <span class="op">=</span> <span class="ident">queues</span>[<span class="number">0</span>].<span class="ident">clone</span>();
 
                             <span class="kw">move</span> <span class="op">|</span><span class="ident">diff</span><span class="op">|</span> <span class="ident">queue</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>().<span class="ident">push_back</span>(<span class="ident">diff</span>.<span class="ident">serialize</span>())
                         },
-                        <span class="op">|</span><span class="ident">event</span><span class="op">|</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;[0: log] {:?}&quot;</span>, <span class="ident">event</span>),
+                        {
+                            <span class="kw">let</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">clone</span>();
+
+                            <span class="kw">move</span> <span class="op">|</span><span class="ident">event</span><span class="op">|</span> (<span class="ident">log</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>())(<span class="prelude-val">None</span>, <span class="ident">event</span>)
+                        },
                         <span class="ident">random0</span>,
                     )<span class="question-mark">?</span>;
 
@@ -760,14 +780,24 @@
                         <span class="kw-2">&amp;</span><span class="ident">root</span>,
                         [<span class="prelude-val">Some</span>((<span class="ident">secret1</span>, [<span class="number">1</span>; <span class="number">16</span>])), <span class="prelude-val">None</span>],
                         <span class="bool-val">false</span>,
-                        <span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;[1: ready]&quot;</span>),
+                        {
+                            <span class="kw">let</span> <span class="ident">ready</span> <span class="op">=</span> <span class="ident">ready</span>.<span class="ident">clone</span>();
+
+                            <span class="kw">move</span> <span class="op">|</span><span class="ident">state</span>, <span class="ident">secrets</span><span class="op">|</span> {
+                                (<span class="ident">ready</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>())(<span class="prelude-val">Some</span>(<span class="number">0</span>), <span class="ident">state</span>, <span class="ident">secrets</span>)
+                            }
+                        },
                         <span class="kw">move</span> <span class="op">|</span><span class="ident">message</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">sign</span>(<span class="ident">message</span>, <span class="kw-2">&amp;</span><span class="ident">subkey1</span>)),
                         {
                             <span class="kw">let</span> <span class="ident">queue</span> <span class="op">=</span> <span class="ident">queues</span>[<span class="number">1</span>].<span class="ident">clone</span>();
 
                             <span class="kw">move</span> <span class="op">|</span><span class="ident">diff</span><span class="op">|</span> <span class="ident">queue</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>().<span class="ident">push_back</span>(<span class="ident">diff</span>.<span class="ident">serialize</span>())
                         },
-                        <span class="op">|</span><span class="ident">event</span><span class="op">|</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;[1: log] {:?}&quot;</span>, <span class="ident">event</span>),
+                        {
+                            <span class="kw">let</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">clone</span>();
+
+                            <span class="kw">move</span> <span class="op">|</span><span class="ident">event</span><span class="op">|</span> (<span class="ident">log</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>())(<span class="prelude-val">Some</span>(<span class="number">0</span>), <span class="ident">event</span>)
+                        },
                         <span class="ident">random1</span>,
                     )<span class="question-mark">?</span>;
 
@@ -781,14 +811,16 @@
                         <span class="kw-2">&amp;</span><span class="ident">root</span>,
                         [<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>((<span class="ident">secret2</span>, [<span class="number">2</span>; <span class="number">16</span>]))],
                         <span class="bool-val">false</span>,
-                        <span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;[2: ready]&quot;</span>),
+                        <span class="kw">move</span> <span class="op">|</span><span class="ident">state</span>, <span class="ident">secrets</span><span class="op">|</span> {
+                            (<span class="ident">ready</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>())(<span class="prelude-val">Some</span>(<span class="number">1</span>), <span class="ident">state</span>, <span class="ident">secrets</span>)
+                        },
                         <span class="kw">move</span> <span class="op">|</span><span class="ident">message</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">sign</span>(<span class="ident">message</span>, <span class="kw-2">&amp;</span><span class="ident">subkey2</span>)),
                         {
                             <span class="kw">let</span> <span class="ident">queue</span> <span class="op">=</span> <span class="ident">queues</span>[<span class="number">2</span>].<span class="ident">clone</span>();
 
                             <span class="kw">move</span> <span class="op">|</span><span class="ident">diff</span><span class="op">|</span> <span class="ident">queue</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>().<span class="ident">push_back</span>(<span class="ident">diff</span>.<span class="ident">serialize</span>())
                         },
-                        <span class="op">|</span><span class="ident">event</span><span class="op">|</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;[2: log] {:?}&quot;</span>, <span class="ident">event</span>),
+                        <span class="kw">move</span> <span class="op">|</span><span class="ident">event</span><span class="op">|</span> (<span class="ident">log</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>())(<span class="prelude-val">Some</span>(<span class="number">1</span>), <span class="ident">event</span>),
                         <span class="ident">random2</span>,
                     )<span class="question-mark">?</span>;
 

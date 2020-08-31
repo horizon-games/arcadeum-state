@@ -28,16 +28,6 @@ use {
     core::{cell::RefCell, column, file, line, mem::size_of, ops::Deref},
 };
 
-#[cfg(not(feature = "std"))]
-macro_rules! println {
-    () => {
-        ()
-    };
-    ($($arg:tt)*) => {
-        ()
-    };
-}
-
 /// Store tester
 pub struct Tester<S: crate::store::State>
 where
@@ -57,6 +47,8 @@ where
         state: S,
         [secret1, secret2]: [S::Secret; 2],
         actions: Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>,
+        ready: impl FnMut(Option<crate::Player>, &S, [Option<&S::Secret>; 2]) + 'static,
+        log: impl FnMut(Option<crate::Player>, &dyn crate::store::Event) + 'static,
     ) -> Result<Self, String> {
         let mut randoms = {
             const SIZE: usize =
@@ -171,6 +163,8 @@ where
         let stores = {
             let [random0, random1, random2] = randoms;
             let [subkey1, subkey2] = subkeys;
+            let ready = Rc::new(RefCell::new(ready));
+            let log = Rc::new(RefCell::new(log));
 
             [
                 {
@@ -182,14 +176,24 @@ where
                             Some((secret2.clone(), [2; 16])),
                         ],
                         false,
-                        |_, _| println!("[0: ready]"),
+                        {
+                            let ready = ready.clone();
+
+                            move |state, secrets| {
+                                (ready.try_borrow_mut().unwrap())(None, state, secrets)
+                            }
+                        },
                         move |message| Ok(crate::crypto::sign(message, &keys[0])),
                         {
                             let queue = queues[0].clone();
 
                             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
                         },
-                        |event| println!("[0: log] {:?}", event),
+                        {
+                            let log = log.clone();
+
+                            move |event| (log.try_borrow_mut().unwrap())(None, event)
+                        },
                         random0,
                     )?;
 
@@ -203,14 +207,24 @@ where
                         &root,
                         [Some((secret1, [1; 16])), None],
                         false,
-                        |_, _| println!("[1: ready]"),
+                        {
+                            let ready = ready.clone();
+
+                            move |state, secrets| {
+                                (ready.try_borrow_mut().unwrap())(Some(0), state, secrets)
+                            }
+                        },
                         move |message| Ok(crate::crypto::sign(message, &subkey1)),
                         {
                             let queue = queues[1].clone();
 
                             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
                         },
-                        |event| println!("[1: log] {:?}", event),
+                        {
+                            let log = log.clone();
+
+                            move |event| (log.try_borrow_mut().unwrap())(Some(0), event)
+                        },
                         random1,
                     )?;
 
@@ -224,14 +238,16 @@ where
                         &root,
                         [None, Some((secret2, [2; 16]))],
                         false,
-                        |_, _| println!("[2: ready]"),
+                        move |state, secrets| {
+                            (ready.try_borrow_mut().unwrap())(Some(1), state, secrets)
+                        },
                         move |message| Ok(crate::crypto::sign(message, &subkey2)),
                         {
                             let queue = queues[2].clone();
 
                             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
                         },
-                        |event| println!("[2: log] {:?}", event),
+                        move |event| (log.try_borrow_mut().unwrap())(Some(1), event),
                         random2,
                     )?;
 

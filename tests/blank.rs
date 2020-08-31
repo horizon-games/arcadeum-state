@@ -97,7 +97,14 @@ impl State for Blank {
 
 #[test]
 fn test_blank_game() {
-    let mut tester = Tester::new(Blank::default(), Default::default(), Vec::new()).unwrap();
+    let mut tester = Tester::new(
+        Blank::default(),
+        Default::default(),
+        Vec::new(),
+        |player, _, _| println!("[{:?}: ready]", player),
+        |player, event| println!("[{:?}: log] {:?}", player, event),
+    )
+    .unwrap();
 
     tester.apply(None, &()).unwrap();
     tester.apply(Some(0), &()).unwrap();

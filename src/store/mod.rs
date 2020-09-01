@@ -162,7 +162,7 @@ macro_rules! bind {
                                 }
                             },
                             move |event| {
-                                if let Ok(event) = $crate::utils::to_js(&*event) {
+                                if let Ok(event) = $crate::utils::to_js(&event) {
                                     drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
                                 }
                             },
@@ -251,7 +251,7 @@ macro_rules! bind {
                                 }
                             },
                             move |event| {
-                                if let Ok(event) = $crate::utils::to_js(&*event) {
+                                if let Ok(event) = $crate::utils::to_js(&event) {
                                     drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
                                 }
                             },
@@ -598,14 +598,12 @@ macro_rules! bind {
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffDebugString)]
         pub fn diff_debug_string(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok(
-                format!(
+            Ok(format!(
                     "{:?}",
                     $crate::Diff::<
                         $crate::store::StoreAction<<$type as $crate::store::State>::Action>,
                     >::deserialize(diff)?
-                ),
-            )
+                ))
         }
     };
 }
@@ -639,7 +637,7 @@ impl<S: State> Store<S> {
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(&dyn Event) + 'static,
+        log: impl FnMut(S::Event) + 'static,
         random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
         Ok(Self {
@@ -681,7 +679,7 @@ impl<S: State> Store<S> {
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(&dyn Event) + 'static,
+        log: impl FnMut(S::Event) + 'static,
         random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -1261,13 +1259,13 @@ pub enum StoreState<S: State> {
         state: S,
         secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
         nonce: usize,
-        logger: Rc<RefCell<Logger>>,
+        logger: Rc<RefCell<Logger<S>>>,
     },
     Pending {
         state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
         secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
         phase: Rc<RefCell<Phase<S>>>,
-        logger: Rc<RefCell<Logger>>,
+        logger: Rc<RefCell<Logger<S>>>,
     },
 }
 
@@ -1316,7 +1314,10 @@ impl<S: State> StoreState<S> {
         &self,
         player: Option<crate::Player>,
         action: &S::Action,
-    ) -> Result<Log, String> {
+    ) -> Result<Log<S>, String>
+    where
+        S::Event: serde::Serialize + 'static,
+    {
         if let Self::Ready { state, secrets, .. } = self {
             let events = Rc::new(RefCell::new(Vec::new()));
 
@@ -1328,12 +1329,7 @@ impl<S: State> StoreState<S> {
                     logger: Rc::new(RefCell::new(Logger::new({
                         let events = events.clone();
 
-                        move |event| {
-                            events
-                                .try_borrow_mut()
-                                .unwrap()
-                                .push(dyn_clone::clone_box(event))
-                        }
+                        move |event| events.try_borrow_mut().unwrap().push(event)
                     }))),
                 };
 
@@ -1384,19 +1380,21 @@ impl<S: State> StoreState<S> {
                 } else {
                     Log::Incomplete
                 }
-            }(Rc::try_unwrap(events).unwrap().into_inner()))
+            }(
+                Rc::try_unwrap(events).ok().unwrap().into_inner()
+            ))
         } else {
             Err("self != StoreState::Ready { .. }".to_string())
         }
     }
 
-    fn logger(&self) -> &Rc<RefCell<Logger>> {
+    fn logger(&self) -> &Rc<RefCell<Logger<S>>> {
         match self {
             Self::Ready { logger, .. } | Self::Pending { logger, .. } => logger,
         }
     }
 
-    fn set_logger(&mut self, logger: Rc<RefCell<Logger>>) {
+    fn set_logger(&mut self, logger: Rc<RefCell<Logger<S>>>) {
         match self {
             Self::Ready {
                 logger: state_logger,
@@ -1702,14 +1700,16 @@ impl<S: State> Clone for StoreState<S> {
 /// Simulation event log
 #[derive(serde::Serialize)]
 #[serde(tag = "status", content = "events")]
-pub enum Log {
+pub enum Log<S: State> {
     /// A log for a complete transition.
     #[serde(rename = "complete")]
-    Complete(Vec<Box<dyn Event>>),
+    #[serde(bound = "S::Event: serde::Serialize")]
+    Complete(Vec<S::Event>),
 
     /// A log for an incomplete transition.
     #[serde(rename = "incomplete")]
-    Incomplete(Vec<Box<dyn Event>>),
+    #[serde(bound = "S::Event: serde::Serialize")]
+    Incomplete(Vec<S::Event>),
 }
 
 #[doc(hidden)]
@@ -1801,6 +1801,9 @@ pub trait State: Clone {
     /// Action type
     type Action: crate::Action + Debug;
 
+    /// Event type
+    type Event;
+
     /// Secret type
     type Secret: Secret;
 
@@ -1884,7 +1887,7 @@ pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
     secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
     nonce: usize,
-    logger: Rc<RefCell<Logger>>,
+    logger: Rc<RefCell<Logger<S>>>,
 }
 
 impl<S: State> Context<S> {
@@ -1892,7 +1895,7 @@ impl<S: State> Context<S> {
     pub fn mutate_secret(
         &mut self,
         player: crate::Player,
-        mutate: impl Fn(&mut S::Secret, &mut dyn rand::RngCore, &mut dyn FnMut(&dyn Event)),
+        mutate: impl Fn(&mut S::Secret, &mut dyn rand::RngCore, &mut dyn FnMut(S::Event)),
     ) {
         self.nonce += 1;
 
@@ -2004,7 +2007,7 @@ impl<S: State> Context<S> {
     }
 
     /// Logs an event.
-    pub fn log(&mut self, event: &dyn Event) {
+    pub fn log(&mut self, event: S::Event) {
         if let Ok(mut logger) = self.logger.try_borrow_mut() {
             self.nonce += 1;
 
@@ -2016,7 +2019,7 @@ impl<S: State> Context<S> {
     pub fn new(
         phase: Rc<RefCell<Phase<S>>>,
         secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
-        log: impl FnMut(&dyn Event) + 'static,
+        log: impl FnMut(S::Event) + 'static,
     ) -> Self {
         Self {
             phase,
@@ -2028,14 +2031,14 @@ impl<S: State> Context<S> {
 }
 
 #[doc(hidden)]
-pub struct Logger {
-    log: Box<dyn FnMut(&dyn Event)>,
+pub struct Logger<S: State> {
+    log: Box<dyn FnMut(S::Event)>,
     nonce: usize,
     enabled: bool,
 }
 
-impl Logger {
-    pub fn new(log: impl FnMut(&dyn Event) + 'static) -> Self {
+impl<S: State> Logger<S> {
+    pub fn new(log: impl FnMut(S::Event) + 'static) -> Self {
         Self {
             log: Box::new(log),
             nonce: Default::default(),
@@ -2043,23 +2046,12 @@ impl Logger {
         }
     }
 
-    fn log(&mut self, nonce: usize, event: &dyn Event) {
+    fn log(&mut self, nonce: usize, event: S::Event) {
         if self.enabled && nonce > self.nonce {
             self.nonce = nonce;
 
             (self.log)(event);
         }
-    }
-}
-
-/// [Context::log] event trait
-pub trait Event: erased_serde::Serialize + dyn_clone::DynClone + Debug + 'static {}
-
-impl<T: serde::Serialize + Clone + Debug + 'static> Event for T {}
-
-impl<'a> serde::Serialize for dyn Event + 'a {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        erased_serde::serialize(self, serializer)
     }
 }
 

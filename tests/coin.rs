@@ -63,6 +63,7 @@ impl State for Coin {
     type ID = [u8; 16];
     type Nonce = u8;
     type Action = bool;
+    type Event = u32;
     type Secret = ();
 
     fn version() -> &'static [u8] {
@@ -106,9 +107,9 @@ impl State for Coin {
             let action = *action;
 
             async move {
-                let random: u32 = context.random().await.next_u32();
+                let random = context.random().await.next_u32();
 
-                context.log(&random);
+                context.log(random);
 
                 if action == (random % 2 != 0) {
                     self.score[usize::from(player.unwrap())] += 1;

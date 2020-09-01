@@ -65,6 +65,7 @@ impl State for Battleship {
     type ID = [u8; 16];
     type Nonce = u8;
     type Action = u8;
+    type Event = bool;
     type Secret = crypto::MerkleTree<bool>;
 
     fn version() -> &'static [u8] {
@@ -135,7 +136,7 @@ impl State for Battleship {
                     )
                     .await;
 
-                context.log(proof.element());
+                context.log(*proof.element());
 
                 if *proof.element() {
                     self.score[usize::from(player.unwrap())] += 1;

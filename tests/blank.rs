@@ -59,6 +59,7 @@ impl State for Blank {
     type ID = [u8; 16];
     type Nonce = u8;
     type Action = ();
+    type Event = ();
     type Secret = ();
 
     fn version() -> &'static [u8] {

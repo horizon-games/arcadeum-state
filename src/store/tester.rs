@@ -48,7 +48,7 @@ where
         [secret1, secret2]: [S::Secret; 2],
         actions: Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>,
         ready: impl FnMut(Option<crate::Player>, &S, [Option<&S::Secret>; 2]) + 'static,
-        log: impl FnMut(Option<crate::Player>, &dyn crate::store::Event) + 'static,
+        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
     ) -> Result<Self, String> {
         let mut randoms = {
             const SIZE: usize =

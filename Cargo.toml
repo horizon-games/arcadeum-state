@@ -13,7 +13,7 @@ tester-approve = []
 version = ["std"]
 debug = ["wasm-bindgen", "serde-wasm-bindgen", "web-sys"]
 bindings = ["std", "wasm-bindgen", "serde-wasm-bindgen", "js-sys", "rand_core"]
-std = ["rand/std", "serde/std", "serde_cbor/std", "cached", "erased-serde/std", "replace_with/std"]
+std = ["rand/std", "serde/std", "serde_cbor/std", "cached", "replace_with/std"]
 
 [dependencies]
 libsecp256k1 = "^0.3.5"
@@ -26,8 +26,6 @@ wasm-bindgen = { version = "^0.2.48", optional = true, features = ["serde-serial
 js-sys = { version = "^0.3.25", optional = true }
 rand_core = { version = "^0.5.0", optional = true }
 web-sys = { version = "^0.3.25", optional = true, features = ["console"] }
-erased-serde = { git = "https://github.com/attente/erased-serde.git", branch = "no-std", default-features = false }
 serde_cbor = { version = "^0.11.1", default-features = false, features = ["alloc"] }
 cached = { version = "^0.11.0", optional = true }
-dyn-clone = "^1.0.1"
 serde-wasm-bindgen = { git = "https://github.com/awestlake87/serde-wasm-bindgen.git", optional = true }

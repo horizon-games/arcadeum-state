@@ -58,10 +58,10 @@ use {
     },
 };
 
-#[cfg(feature = "tester")]
+#[cfg(any(feature = "tester-certify", feature = "tester-approve"))]
 mod tester;
 
-#[cfg(feature = "tester")]
+#[cfg(any(feature = "tester-certify", feature = "tester-approve"))]
 pub use tester::Tester;
 
 /// Generates WebAssembly bindings for a [store::State].
@@ -357,6 +357,7 @@ macro_rules! bind {
                 Ok(self.store.state().player(
                     std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
                         .map_err(|error| format!("{}", error))?,
+                    self.store.owner(),
                 ))
             }
 
@@ -410,6 +411,15 @@ macro_rules! bind {
                     std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
                         .map_err(|error| format!("{}", error))?;
 
+                if self
+                    .store
+                    .state()
+                    .player(&address, self.store.owner())
+                    .is_some()
+                {
+                    return Ok(());
+                }
+
                 let signature = {
                     let signature = $crate::utils::unhex(signature)?;
 
@@ -424,23 +434,74 @@ macro_rules! bind {
                     data
                 };
 
-                if self.store.state().player(&address).is_some() {
-                    Ok(())
-                } else {
-                    let player = self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?).ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?).is_none()")?;
+                let player = self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?, self.store.owner()).ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?, self.store.owner()).is_none()")?;
 
-                    let diff = self.store.diff(vec![$crate::ProofAction {
-                        player: Some(player),
-                        action: $crate::PlayerAction::Certify { address, signature },
-                    }])?;
+                let diff = self.store.diff(vec![$crate::ProofAction {
+                    player: Some(player),
+                    action: $crate::PlayerAction::Certify { address, signature },
+                }])?;
 
-                    self.send.call1(
-                        &wasm_bindgen::JsValue::UNDEFINED,
-                        &$crate::utils::to_js(&diff.serialize())?,
-                    )?;
+                self.send.call1(
+                    &wasm_bindgen::JsValue::UNDEFINED,
+                    &$crate::utils::to_js(&diff.serialize())?,
+                )?;
 
-                    Ok(self.store.apply(&diff)?)
+                Ok(self.store.apply(&diff)?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = dispatchApprove)]
+            pub fn dispatch_approve(
+                &mut self,
+                player: &str,
+                subkey: &str,
+                signature: &str,
+            ) -> Result<(), wasm_bindgen::JsValue> {
+                let subkey =
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(subkey)?.as_slice())
+                        .map_err(|error| format!("{}", error))?;
+
+                if self
+                    .store
+                    .state()
+                    .player(&subkey, self.store.owner())
+                    .is_some()
+                {
+                    return Ok(());
                 }
+
+                let player =
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(player)?.as_slice())
+                        .map_err(|error| format!("{}", error))?;
+
+                let signature = {
+                    let signature = $crate::utils::unhex(signature)?;
+
+                    if signature.len() != std::mem::size_of::<$crate::crypto::Signature>() {
+                        return Err(wasm_bindgen::JsValue::from(
+                            "signature.len() != std::mem::size_of::<$crate::crypto::Signature>()",
+                        ));
+                    }
+
+                    let mut data = [0; std::mem::size_of::<$crate::crypto::Signature>()];
+                    data.copy_from_slice(&signature);
+                    data
+                };
+
+                let diff = self.store.diff(vec![$crate::ProofAction {
+                    player: None,
+                    action: $crate::PlayerAction::Approve {
+                        player,
+                        subkey,
+                        signature,
+                    },
+                }])?;
+
+                self.send.call1(
+                    &wasm_bindgen::JsValue::UNDEFINED,
+                    &$crate::utils::to_js(&diff.serialize())?,
+                )?;
+
+                Ok(self.store.apply(&diff)?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(js_name = dispatchTimeout)]
@@ -466,6 +527,18 @@ macro_rules! bind {
             Ok(
                 <$crate::store::StoreState<$type> as $crate::State>::challenge(
                     std::convert::TryInto::<_>::try_into($crate::utils::unhex(address)?.as_slice())
+                        .map_err(|error| format!("{}", error))?,
+                ),
+            )
+        }
+
+        #[wasm_bindgen::prelude::wasm_bindgen(js_name = getApproval)]
+        pub fn approval(player: &str, subkey: &str) -> Result<String, wasm_bindgen::JsValue> {
+            Ok(
+                <$crate::store::StoreState<$type> as $crate::State>::approval(
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(player)?.as_slice())
+                        .map_err(|error| format!("{}", error))?,
+                    std::convert::TryInto::<_>::try_into($crate::utils::unhex(subkey)?.as_slice())
                         .map_err(|error| format!("{}", error))?,
                 ),
             )
@@ -500,13 +573,15 @@ macro_rules! bind {
                 );
             }
 
-            $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?
-                .state()
+            let root = $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(root)?;
+
+            root.state()
                 .player(
                     std::convert::TryInto::<_>::try_into(player.as_slice())
                         .map_err(|error| format!("{}", error))?,
+                    root.author(),
                 )
-                .ok_or("root.state().player(player).is_none()".into())
+                .ok_or("root.state().player(player, owner).is_none()".into())
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffProof)]
@@ -883,6 +958,11 @@ impl<S: State> Store<S> {
     /// Gets the player associated with the store.
     pub fn player(&self) -> Option<crate::Player> {
         self.player
+    }
+
+    /// Gets the author of the store's root proof.
+    pub fn owner(&self) -> &crate::crypto::Address {
+        self.proof.root.author()
     }
 
     /// Gets the hash of the store's proof.
@@ -1343,6 +1423,10 @@ impl<S: State> crate::State for StoreState<S> {
         S::challenge(address)
     }
 
+    fn approval(player: &crate::crypto::Address, subkey: &crate::crypto::Address) -> String {
+        S::approval(player, subkey)
+    }
+
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         crate::forbid!(data.len() < size_of::<u32>());
 
@@ -1730,6 +1814,15 @@ pub trait State: Clone {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
             crate::crypto::Addressable::eip55(address)
+        )
+    }
+
+    /// Gets the approval that must be signed by the owner in order to approve a subkey for a player.
+    fn approval(player: &crate::crypto::Address, subkey: &crate::crypto::Address) -> String {
+        format!(
+            "Approve {} for {}.",
+            crate::crypto::Addressable::eip55(subkey),
+            crate::crypto::Addressable::eip55(player),
         )
     }
 

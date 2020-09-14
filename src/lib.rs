@@ -173,7 +173,7 @@ impl<S: State> Proof<S> {
         let player = if diff.author == self.root.author {
             None
         } else {
-            let player = self.state.player(&diff.author);
+            let player = self.state.player(&diff.author, &self.root.author);
             forbid!(player.is_none());
             player
         };
@@ -194,6 +194,7 @@ impl<S: State> Proof<S> {
             match action.action {
                 PlayerAction::Play(_) => slash!(action.player != player),
                 PlayerAction::Certify { .. } => (),
+                PlayerAction::Approve { .. } => slash!(player.is_some()),
             }
 
             latest.apply(action).map_err(error::Error::Hard)?;
@@ -287,7 +288,8 @@ impl<S: State> Proof<S> {
                 slash!(
                     latest.player(
                         &crypto::recover(&message, &diff.proof_signature)
-                            .map_err(error::Error::Hard)?
+                            .map_err(error::Error::Hard)?,
+                        &self.root.author,
                     ) != Some(player)
                 );
 
@@ -374,7 +376,7 @@ impl<S: State> Proof<S> {
         let author = crypto::recover(&message, &signature)?;
 
         if author != self.root.author {
-            let player = latest.player(&author);
+            let player = latest.player(&author, &self.root.author);
 
             forbid!(player.is_none());
 
@@ -553,7 +555,10 @@ impl<S: State> Proof<S> {
 
                     match i {
                         0 => forbid!(author != self.root.author),
-                        i => forbid!(state.player(&author).map(usize::from) != Some(i - 1)),
+                        i => forbid!(
+                            state.player(&author, &self.root.author).map(usize::from)
+                                != Some(i - 1)
+                        ),
                     }
                 }
             }
@@ -699,6 +704,11 @@ impl<S: State> RootProof<S> {
     /// Gets the digest of the root proof.
     pub fn hash(&self) -> &crypto::Hash {
         &self.hash
+    }
+
+    /// Gets the author of the root proof.
+    pub fn author(&self) -> &crypto::Address {
+        &self.author
     }
 
     /// Gets the state of the root proof.
@@ -948,6 +958,7 @@ pub struct ProofState<S: State> {
     nonce: S::Nonce,
     players: [crypto::Address; 2],
     signatures: BTreeMap<crypto::Address, crypto::Signature>,
+    approvals: BTreeMap<crypto::Address, (crypto::Address, crypto::Signature)>,
     state: S,
 }
 
@@ -963,6 +974,7 @@ impl<S: State> ProofState<S> {
             nonce: Default::default(),
             players,
             signatures: BTreeMap::new(),
+            approvals: BTreeMap::new(),
             state,
         })
     }
@@ -973,14 +985,24 @@ impl<S: State> ProofState<S> {
     }
 
     /// Gets the player associated with the given `address`, if any, otherwise [None].
-    pub fn player(&self, address: &crypto::Address) -> Option<Player> {
+    pub fn player(&self, address: &crypto::Address, owner: &crypto::Address) -> Option<Player> {
         if let Some(player) = self.players.iter().position(|player| player == address) {
             return player.try_into().ok();
         }
 
         if let Some(signature) = self.signatures.get(address) {
-            if let Ok(address) = &crypto::recover(S::challenge(address).as_bytes(), signature) {
-                if let Some(player) = self.players.iter().position(|player| player == address) {
+            if let Ok(player) = &crypto::recover(S::challenge(address).as_bytes(), signature) {
+                if let Some(player) = self.players.iter().position(|address| address == player) {
+                    return player.try_into().ok();
+                }
+            }
+        }
+
+        if let Some((player, signature)) = self.approvals.get(address) {
+            if crypto::recover(S::approval(player, address).as_bytes(), signature).as_ref()
+                == Ok(owner)
+            {
+                if let Some(player) = self.players.iter().position(|address| address == player) {
                     return player.try_into().ok();
                 }
             }
@@ -1018,7 +1040,9 @@ impl<S: State> ProofState<S> {
         let id = S::ID::deserialize(&mut data)?;
         let nonce = S::Nonce::deserialize(&mut data)?;
 
-        forbid!(data.len() < 2 * size_of::<crypto::Address>() + size_of::<u32>());
+        forbid!(
+            data.len() < 2 * size_of::<crypto::Address>() + size_of::<u32>() + size_of::<u32>()
+        );
 
         let players: [crypto::Address; 2] = [
             data[..size_of::<crypto::Address>()]
@@ -1060,11 +1084,51 @@ impl<S: State> ProofState<S> {
             signatures.insert(address, signature);
         }
 
+        let length = utils::read_u32_usize(&mut data)?;
+
+        forbid!(
+            data.len()
+                < length
+                    * (size_of::<crypto::Address>()
+                        + size_of::<crypto::Address>()
+                        + size_of::<crypto::Signature>())
+        );
+
+        let mut approvals = BTreeMap::new();
+        let mut previous = None;
+
+        for _ in 0..length {
+            let subkey = data[..size_of::<crypto::Address>()]
+                .try_into()
+                .map_err(|error| format!("{}", error))?;
+
+            data = &data[size_of::<crypto::Address>()..];
+
+            if let Some(previous) = previous {
+                forbid!(subkey <= previous);
+            }
+
+            previous = Some(subkey);
+
+            let player = data[..size_of::<crypto::Address>()]
+                .try_into()
+                .map_err(|error| format!("{}", error))?;
+
+            data = &data[size_of::<crypto::Address>()..];
+
+            let mut signature = [0; size_of::<crypto::Signature>()];
+            signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
+            data = &data[size_of::<crypto::Signature>()..];
+
+            approvals.insert(subkey, (player, signature));
+        }
+
         Ok(Self {
             id,
             nonce,
             players,
             signatures,
+            approvals,
             state: {
                 let mut state = S::deserialize(data)?;
 
@@ -1094,6 +1158,11 @@ impl<S: State> ProofState<S> {
                 + size_of::<u32>()
                 + self.signatures.len()
                     * (size_of::<crypto::Address>() + size_of::<crypto::Signature>())
+                + size_of::<u32>()
+                + self.approvals.len()
+                    * (size_of::<crypto::Address>()
+                        + size_of::<crypto::Address>()
+                        + size_of::<crypto::Signature>())
                 + state.len(),
         );
 
@@ -1110,6 +1179,14 @@ impl<S: State> ProofState<S> {
 
         for (address, signature) in &self.signatures {
             data.extend(address);
+            data.extend(signature.iter());
+        }
+
+        utils::write_u32_usize(&mut data, self.approvals.len()).ok()?;
+
+        for (subkey, (player, signature)) in &self.approvals {
+            data.extend(subkey);
+            data.extend(player);
             data.extend(signature.iter());
         }
 
@@ -1130,6 +1207,7 @@ impl<S: State> ProofState<S> {
                 forbid!(player.is_none());
 
                 forbid!(self.signatures.contains_key(address));
+                forbid!(self.approvals.contains_key(address));
 
                 forbid!(
                     crypto::recover(S::challenge(address).as_bytes(), signature)?
@@ -1137,6 +1215,19 @@ impl<S: State> ProofState<S> {
                 );
 
                 self.signatures.insert(*address, *signature);
+            }
+
+            PlayerAction::Approve {
+                player,
+                subkey,
+                signature,
+            } => {
+                forbid!(action.player.is_some());
+
+                forbid!(self.signatures.contains_key(subkey));
+                forbid!(self.approvals.contains_key(subkey));
+
+                self.approvals.insert(*subkey, (*player, *signature));
             }
         }
 
@@ -1179,6 +1270,34 @@ impl<A: Action> ProofAction<A> {
 
                 PlayerAction::Certify { address, signature }
             }
+            2 => {
+                forbid!(
+                    data.len()
+                        != size_of::<crypto::Address>()
+                            + size_of::<crypto::Address>()
+                            + size_of::<crypto::Signature>()
+                );
+
+                let player = data[..size_of::<crypto::Address>()]
+                    .try_into()
+                    .map_err(|error| format!("{}", error))?;
+
+                let subkey = data[size_of::<crypto::Address>()
+                    ..size_of::<crypto::Address>() + size_of::<crypto::Address>()]
+                    .try_into()
+                    .map_err(|error| format!("{}", error))?;
+
+                let mut signature = [0; size_of::<crypto::Signature>()];
+                signature.copy_from_slice(
+                    &data[size_of::<crypto::Address>() + size_of::<crypto::Address>()..],
+                );
+
+                PlayerAction::Approve {
+                    player,
+                    subkey,
+                    signature,
+                }
+            }
             byte => return Err(format!("byte == {}", byte)),
         };
 
@@ -1210,6 +1329,23 @@ impl<A: Action> ProofAction<A> {
                 data.extend(address);
                 data.extend(signature.iter());
             }
+
+            PlayerAction::Approve {
+                player,
+                subkey,
+                signature,
+            } => {
+                data.reserve_exact(
+                    1 + size_of::<crypto::Address>()
+                        + size_of::<crypto::Address>()
+                        + size_of::<crypto::Signature>(),
+                );
+
+                utils::write_u8(&mut data, 2);
+                data.extend(player);
+                data.extend(subkey);
+                data.extend(signature.iter());
+            }
         }
 
         data
@@ -1232,6 +1368,20 @@ pub enum PlayerAction<A: Action> {
         /// See [State::challenge].
         signature: crypto::Signature,
     },
+
+    /// A subkey approval.
+    Approve {
+        /// The player address.
+        player: crypto::Address,
+
+        /// The subkey address.
+        subkey: crypto::Address,
+
+        /// The owner's signature of the subkey approval.
+        ///
+        /// See [State::approval].
+        signature: crypto::Signature,
+    },
 }
 
 impl<A: Action + Debug> Debug for PlayerAction<A> {
@@ -1250,6 +1400,23 @@ PlayerAction::Certify {{
                     crypto::Addressable::eip55(address),
                     utils::hex(signature),
                 ),
+                Self::Approve {
+                    player,
+                    subkey,
+                    signature,
+                } => writeln!(
+                    f,
+                    "\
+PlayerAction::Approve {{
+    player: {},
+    subkey: {},
+    signature: {},
+}}\
+                    ",
+                    crypto::Addressable::eip55(player),
+                    crypto::Addressable::eip55(subkey),
+                    utils::hex(signature),
+                ),
             }
         } else {
             match self {
@@ -1258,6 +1425,17 @@ PlayerAction::Certify {{
                     f,
                     "PlayerAction::Certify {{ address: {}, signature: {} }}",
                     crypto::Addressable::eip55(address),
+                    utils::hex(signature),
+                ),
+                Self::Approve {
+                    player,
+                    subkey,
+                    signature,
+                } => write!(
+                    f,
+                    "PlayerAction::Approve {{ player: {}, subkey: {}, signature: {} }}",
+                    crypto::Addressable::eip55(player),
+                    crypto::Addressable::eip55(subkey),
                     utils::hex(signature),
                 ),
             }
@@ -1289,6 +1467,15 @@ pub trait State: Clone {
         format!(
             "Sign to play! This won't cost anything.\n\n{}\n",
             crypto::Addressable::eip55(address)
+        )
+    }
+
+    /// Gets the approval that must be signed by the owner in order to approve a subkey for a player.
+    fn approval(player: &crypto::Address, subkey: &crypto::Address) -> String {
+        format!(
+            "Approve {} for {}.",
+            crypto::Addressable::eip55(subkey),
+            crypto::Addressable::eip55(player),
         )
     }
 
@@ -1325,6 +1512,10 @@ impl<S: State> State for Box<S> {
 
     fn challenge(address: &crypto::Address) -> String {
         S::challenge(address)
+    }
+
+    fn approval(player: &crypto::Address, subkey: &crypto::Address) -> String {
+        S::approval(player, subkey)
     }
 
     fn deserialize(data: &[u8]) -> Result<Self, String> {

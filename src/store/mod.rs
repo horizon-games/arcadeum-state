@@ -64,7 +64,7 @@ mod tester;
 #[cfg(any(feature = "tester-certify", feature = "tester-approve"))]
 pub use tester::Tester;
 
-/// Generates WebAssembly bindings for a [store::State].
+/// Generates WebAssembly bindings for a [State].
 #[macro_export]
 macro_rules! bind {
     ($type:ty) => {

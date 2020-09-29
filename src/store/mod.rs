@@ -1994,7 +1994,7 @@ impl<S: State> Context<S> {
     }
 
     /// Constructs a random number generator via commit-reveal.
-    pub fn random(&mut self) -> impl Future<Output = impl rand::Rng> {
+    pub fn random(&mut self) -> impl Future<Output = impl rand::RngCore> {
         let phase = self.phase.try_borrow().unwrap();
 
         if let Phase::Idle { random: None, .. } = *phase {

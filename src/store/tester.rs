@@ -442,7 +442,7 @@ where
 }
 
 #[cfg(not(feature = "no-crypto"))]
-fn generate_keys_and_subkeys<R: rand::Rng>(
+fn generate_keys_and_subkeys<R: rand::RngCore>(
     randoms: &mut [R; 3],
 ) -> Result<([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]), String> {
     Ok((
@@ -459,7 +459,7 @@ fn generate_keys_and_subkeys<R: rand::Rng>(
 }
 
 #[cfg(feature = "no-crypto")]
-fn generate_keys_and_subkeys<R: rand::Rng>(
+fn generate_keys_and_subkeys<R: rand::RngCore>(
     randoms: &mut [R; 3],
 ) -> Result<([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]), String> {
     Ok((

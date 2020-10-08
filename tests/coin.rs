@@ -139,8 +139,8 @@ fn test_coin() {
 
     let revealed = format!("{:#?}", tester.apply(Some(0), &true).unwrap());
 
-    let expected =
-"[
+    let expected = if cfg!(not(feature = "no-crypto")) {
+        "[
     ProofAction {
         player: Some(
             0,
@@ -159,7 +159,29 @@ fn test_coin() {
         ),
         action: PlayerAction::Play(StoreAction::RandomReveal(0x039213c113101b407ac84a8928400849)),
     },
-]";
+]"
+    } else {
+        "[
+    ProofAction {
+        player: Some(
+            0,
+        ),
+        action: PlayerAction::Play(StoreAction::RandomCommit(0x325ff735cad243cfae119dfa01cb7d8368b2c5409a0bcb8c60e01e249da55e3a)),
+    },
+    ProofAction {
+        player: Some(
+            1,
+        ),
+        action: PlayerAction::Play(StoreAction::RandomReply(0xc2801080c2801092c62630124236a002)),
+    },
+    ProofAction {
+        player: Some(
+            0,
+        ),
+        action: PlayerAction::Play(StoreAction::RandomReveal(0x614008406140084963131809211b5001)),
+    },
+]"
+    };
 
     assert_eq!(revealed, expected);
 

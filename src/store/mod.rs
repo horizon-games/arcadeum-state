@@ -1501,7 +1501,7 @@ impl<S: State> crate::State for StoreState<S> {
                                 phase: phase.clone(),
                                 secrets: secrets.clone(),
                                 nonce,
-                                logger: logger.clone(),
+                                logger: (true, logger.clone()),
                             },
                         ),
                         secrets,
@@ -1887,7 +1887,7 @@ pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
     secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
     nonce: usize,
-    logger: Rc<RefCell<Logger<S>>>,
+    logger: (bool, Rc<RefCell<Logger<S>>>),
 }
 
 impl<S: State> Context<S> {
@@ -1899,25 +1899,21 @@ impl<S: State> Context<S> {
     ) {
         self.nonce += 1;
 
-        let mut logger = self.logger.try_borrow_mut();
-
-        let log = if let Ok(logger) = &mut logger {
-            if logger.enabled && self.nonce > logger.nonce {
-                logger.nonce = self.nonce;
-
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        };
-
         if let Some(secret) = &self.secrets[usize::from(player)] {
             let (secret, random) = &mut *secret.try_borrow_mut().unwrap();
 
-            if log {
-                mutate(secret, random, &mut logger.unwrap().log);
+            if self.logger.0 {
+                if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
+                    if logger.enabled && self.nonce > logger.nonce {
+                        logger.nonce = self.nonce;
+
+                        mutate(secret, random, &mut logger.log);
+                    } else {
+                        mutate(secret, random, &mut |_| ());
+                    }
+                } else {
+                    mutate(secret, random, &mut |_| ());
+                }
             } else {
                 mutate(secret, random, &mut |_| ());
             }
@@ -2006,13 +2002,24 @@ impl<S: State> Context<S> {
         SharedXorShiftRngFuture(self.phase.clone())
     }
 
-    /// Logs an event.
+    /// Logs an event if logging is enabled.
+    ///
+    /// See [Context::enable_logs].
     pub fn log(&mut self, event: S::Event) {
-        if let Ok(mut logger) = self.logger.try_borrow_mut() {
-            self.nonce += 1;
+        if self.logger.0 {
+            if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
+                self.nonce += 1;
 
-            logger.log(self.nonce, event);
+                logger.log(self.nonce, event);
+            }
         }
+    }
+
+    /// Enables or disables logging.
+    ///
+    /// See [Context::log].
+    pub fn enable_logs(&mut self, enabled: bool) {
+        self.logger.0 = enabled;
     }
 
     #[doc(hidden)]
@@ -2025,7 +2032,7 @@ impl<S: State> Context<S> {
             phase,
             secrets,
             nonce: Default::default(),
-            logger: Rc::new(RefCell::new(Logger::new(log))),
+            logger: (true, Rc::new(RefCell::new(Logger::new(log)))),
         }
     }
 }

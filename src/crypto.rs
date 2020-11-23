@@ -139,15 +139,10 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
     ]
     .concat();
 
-    let digest = tiny_keccak::keccak256(&message);
-
-    let signature = {
-        let mut data = [0; size_of::<Signature>()];
-        data.copy_from_slice(signature);
-        data
-    };
-
-    _cached_recover(digest, _Signature(signature))
+    _cached_recover(
+        tiny_keccak::keccak256(&message),
+        _Signature(signature.try_into().unwrap()),
+    )
 }
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]

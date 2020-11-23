@@ -454,10 +454,8 @@ impl<S: State> Proof<S> {
                     }));
 
                     signatures.push(Some({
-                        let mut signature = [0; size_of::<crypto::Signature>()];
-
                         forbid!(data.len() < size_of::<crypto::Signature>());
-                        signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
+                        let signature = data[..size_of::<crypto::Signature>()].try_into().unwrap();
                         data = &data[size_of::<crypto::Signature>()..];
 
                         signature
@@ -744,8 +742,7 @@ impl<S: State> RootProof<S> {
         }
 
         forbid!(data.len() != size_of::<crypto::Signature>());
-        let mut signature = [0; size_of::<crypto::Signature>()];
-        signature.copy_from_slice(data);
+        let signature = data.try_into().unwrap();
 
         let mut message = state.serialize().unwrap();
         message.extend(actions.iter().flat_map(ProofAction::serialize));
@@ -839,17 +836,11 @@ impl<A: Action> Diff<A> {
 
         forbid!(data.len() != size_of::<crypto::Signature>() + size_of::<crypto::Signature>());
 
-        let mut proof_signature = [0; size_of::<crypto::Signature>()];
-        proof_signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
-
-        let mut signature = [0; size_of::<crypto::Signature>()];
-        signature.copy_from_slice(&data[size_of::<crypto::Signature>()..]);
-
         Ok(Self {
             proof,
             actions,
-            proof_signature,
-            signature,
+            proof_signature: data[..size_of::<crypto::Signature>()].try_into().unwrap(),
+            signature: data[size_of::<crypto::Signature>()..].try_into().unwrap(),
             author,
         })
     }
@@ -1074,8 +1065,8 @@ impl<S: State> ProofState<S> {
 
             previous = Some(address);
 
-            let mut signature = [0; size_of::<crypto::Signature>()];
-            signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
+            let signature = data[..size_of::<crypto::Signature>()].try_into().unwrap();
+
             data = &data[size_of::<crypto::Signature>()..];
 
             signatures.insert(address, signature);
@@ -1113,8 +1104,8 @@ impl<S: State> ProofState<S> {
 
             data = &data[size_of::<crypto::Address>()..];
 
-            let mut signature = [0; size_of::<crypto::Signature>()];
-            signature.copy_from_slice(&data[..size_of::<crypto::Signature>()]);
+            let signature = data[..size_of::<crypto::Signature>()].try_into().unwrap();
+
             data = &data[size_of::<crypto::Signature>()..];
 
             approvals.insert(subkey, (player, signature));
@@ -1262,8 +1253,7 @@ impl<A: Action> ProofAction<A> {
                     .try_into()
                     .map_err(|error| format!("{}", error))?;
 
-                let mut signature = [0; size_of::<crypto::Signature>()];
-                signature.copy_from_slice(&data[size_of::<crypto::Address>()..]);
+                let signature = data[size_of::<crypto::Address>()..].try_into().unwrap();
 
                 PlayerAction::Certify { address, signature }
             }
@@ -1284,10 +1274,9 @@ impl<A: Action> ProofAction<A> {
                     .try_into()
                     .map_err(|error| format!("{}", error))?;
 
-                let mut signature = [0; size_of::<crypto::Signature>()];
-                signature.copy_from_slice(
-                    &data[size_of::<crypto::Address>() + size_of::<crypto::Address>()..],
-                );
+                let signature = data[size_of::<crypto::Address>() + size_of::<crypto::Address>()..]
+                    .try_into()
+                    .unwrap();
 
                 PlayerAction::Approve {
                     player,

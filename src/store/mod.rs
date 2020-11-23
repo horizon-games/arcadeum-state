@@ -123,31 +123,25 @@ macro_rules! bind {
                                             );
                                         }
                                         [None, None] => {
-                                            drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                            drop(
+                                                ready.call1(
+                                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                                    &state,
+                                                ),
+                                            );
                                         }
                                     }
                                 }
                             },
                             move |message| {
-                                let data: Vec<_> = $crate::utils::from_js(
+                                std::convert::TryInto::try_into($crate::utils::from_js::<Vec<_>>(
                                     sign.call1(
                                         &wasm_bindgen::JsValue::UNDEFINED,
                                         &$crate::utils::to_js(message)?,
                                     )
                                     .map_err(|error| format!("{:?}", error))?,
-                                )?;
-
-                                if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
-                                    return Err(
-                                        "data.len() != std::mem::size_of::<$crate::crypto::Signature>()"
-                                            .to_string(),
-                                    );
-                                }
-
-                                let mut signature = [0; std::mem::size_of::<$crate::crypto::Signature>()];
-                                signature.copy_from_slice(&data);
-
-                                Ok(signature)
+                                )?)
+                                .map_err(|error| format!("{:?}", error))
                             },
                             {
                                 let send = send.clone();
@@ -212,31 +206,25 @@ macro_rules! bind {
                                             );
                                         }
                                         [None, None] => {
-                                            drop(ready.call1(&wasm_bindgen::JsValue::UNDEFINED, &state));
+                                            drop(
+                                                ready.call1(
+                                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                                    &state,
+                                                ),
+                                            );
                                         }
                                     }
                                 }
                             },
                             move |message| {
-                                let data: Vec<_> = $crate::utils::from_js(
+                                std::convert::TryInto::try_into($crate::utils::from_js::<Vec<_>>(
                                     sign.call1(
                                         &wasm_bindgen::JsValue::UNDEFINED,
                                         &$crate::utils::to_js(message)?,
                                     )
                                     .map_err(|error| format!("{:?}", error))?,
-                                )?;
-
-                                if data.len() != std::mem::size_of::<$crate::crypto::Signature>() {
-                                    return Err(
-                                        "data.len() != std::mem::size_of::<$crate::crypto::Signature>()"
-                                            .to_string(),
-                                    );
-                                }
-
-                                let mut signature = [0; std::mem::size_of::<$crate::crypto::Signature>()];
-                                signature.copy_from_slice(&data);
-
-                                Ok(signature)
+                                )?)
+                                .map_err(|error| format!("{:?}", error))
                             },
                             {
                                 let send = send.clone();
@@ -417,19 +405,9 @@ macro_rules! bind {
                     return Ok(());
                 }
 
-                let signature = {
-                    let signature = $crate::utils::unhex(signature)?;
-
-                    if signature.len() != std::mem::size_of::<$crate::crypto::Signature>() {
-                        return Err(wasm_bindgen::JsValue::from(
-                            "signature.len() != std::mem::size_of::<$crate::crypto::Signature>()",
-                        ));
-                    }
-
-                    let mut data = [0; std::mem::size_of::<$crate::crypto::Signature>()];
-                    data.copy_from_slice(&signature);
-                    data
-                };
+                let signature: $crate::crypto::Signature =
+                    std::convert::TryInto::try_into($crate::utils::unhex(signature)?)
+                        .map_err(|error| format!("{:?}", error))?;
 
                 let player = self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?, self.store.owner()).ok_or("self.store.state().player(&$crate::crypto::recover(<$crate::store::StoreState<$type> as $crate::State>::challenge(&address).as_bytes(), &signature)?, self.store.owner()).is_none()")?;
 
@@ -470,19 +448,9 @@ macro_rules! bind {
                     std::convert::TryInto::<_>::try_into($crate::utils::unhex(player)?.as_slice())
                         .map_err(|error| format!("{}", error))?;
 
-                let signature = {
-                    let signature = $crate::utils::unhex(signature)?;
-
-                    if signature.len() != std::mem::size_of::<$crate::crypto::Signature>() {
-                        return Err(wasm_bindgen::JsValue::from(
-                            "signature.len() != std::mem::size_of::<$crate::crypto::Signature>()",
-                        ));
-                    }
-
-                    let mut data = [0; std::mem::size_of::<$crate::crypto::Signature>()];
-                    data.copy_from_slice(&signature);
-                    data
-                };
+                let signature: $crate::crypto::Signature =
+                    std::convert::TryInto::try_into($crate::utils::unhex(signature)?)
+                        .map_err(|error| format!("{:?}", error))?;
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: None,

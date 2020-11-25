@@ -21,7 +21,7 @@
 use std::{
     collections::BTreeMap,
     convert::TryInto,
-    fmt::{Debug, Error, Formatter},
+    fmt::Debug,
     mem::size_of,
     ops::{Deref, DerefMut, Range},
 };
@@ -34,7 +34,7 @@ use {
     alloc::{collections::BTreeMap, format, prelude::v1::*, vec},
     core::{
         convert::TryInto,
-        fmt::{Debug, Error, Formatter},
+        fmt::Debug,
         mem::size_of,
         ops::{Deref, DerefMut, Range},
     },
@@ -789,12 +789,16 @@ struct PlayerProof<S: State> {
 }
 
 /// Authenticated state transition
-#[derive(Clone)]
+#[derive(derivative::Derivative, Clone)]
+#[derivative(Debug)]
 pub struct Diff<A: Action> {
     proof: crypto::Hash,
     actions: Vec<ProofAction<A>>,
+    #[derivative(Debug(format_with = "crate::utils::fmt_hex"))]
     proof_signature: crypto::Signature,
+    #[derivative(Debug(format_with = "crate::utils::fmt_hex"))]
     signature: crypto::Signature,
+    #[derivative(Debug(format_with = "crate::crypto::fmt_address"))]
     author: crypto::Address,
 }
 
@@ -894,48 +898,6 @@ impl<A: Action> Diff<A> {
         diff.author = *author;
 
         Ok(diff)
-    }
-}
-
-impl<A: Action + Debug> Debug for Diff<A> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        if f.alternate() {
-            writeln!(
-                f,
-                "\
-Diff {{
-    proof: {:#?},
-    actions: {:#?},
-    proof_signature: {},
-    signature: {},
-    author: {},
-}}\
-                ",
-                self.proof,
-                self.actions,
-                utils::hex(&self.proof_signature),
-                utils::hex(&self.signature),
-                crypto::Addressable::eip55(&self.author),
-            )
-        } else {
-            writeln!(
-                f,
-                "\
-Diff {{
-    proof: {:?},
-    actions: {:?},
-    proof_signature: {},
-    signature: {},
-    author: {},
-}}\
-                ",
-                self.proof,
-                self.actions,
-                utils::hex(&self.proof_signature),
-                utils::hex(&self.signature),
-                crypto::Addressable::eip55(&self.author),
-            )
-        }
     }
 }
 
@@ -1339,7 +1301,8 @@ impl<A: Action> ProofAction<A> {
 }
 
 /// State transition
-#[derive(Clone)]
+#[derive(derivative::Derivative, Clone)]
+#[derivative(Debug)]
 pub enum PlayerAction<A: Action> {
     /// A domain-specific state transition.
     Play(A),
@@ -1347,86 +1310,32 @@ pub enum PlayerAction<A: Action> {
     /// A subkey certification.
     Certify {
         /// The subkey address.
+        #[derivative(Debug(format_with = "crate::crypto::fmt_address"))]
         address: crypto::Address,
 
         /// The signature of the subkey challenge.
         ///
         /// See [State::challenge].
+        #[derivative(Debug(format_with = "crate::utils::fmt_hex"))]
         signature: crypto::Signature,
     },
 
     /// A subkey approval.
     Approve {
         /// The player address.
+        #[derivative(Debug(format_with = "crate::crypto::fmt_address"))]
         player: crypto::Address,
 
         /// The subkey address.
+        #[derivative(Debug(format_with = "crate::crypto::fmt_address"))]
         subkey: crypto::Address,
 
         /// The owner's signature of the subkey approval.
         ///
         /// See [State::approval].
+        #[derivative(Debug(format_with = "crate::utils::fmt_hex"))]
         signature: crypto::Signature,
     },
-}
-
-impl<A: Action + Debug> Debug for PlayerAction<A> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        if f.alternate() {
-            match self {
-                Self::Play(action) => write!(f, "PlayerAction::Play({:#?})", action),
-                Self::Certify { address, signature } => writeln!(
-                    f,
-                    "\
-PlayerAction::Certify {{
-    address: {},
-    signature: {},
-}}\
-                    ",
-                    crypto::Addressable::eip55(address),
-                    utils::hex(signature),
-                ),
-                Self::Approve {
-                    player,
-                    subkey,
-                    signature,
-                } => writeln!(
-                    f,
-                    "\
-PlayerAction::Approve {{
-    player: {},
-    subkey: {},
-    signature: {},
-}}\
-                    ",
-                    crypto::Addressable::eip55(player),
-                    crypto::Addressable::eip55(subkey),
-                    utils::hex(signature),
-                ),
-            }
-        } else {
-            match self {
-                Self::Play(action) => write!(f, "PlayerAction::Play({:?})", action),
-                Self::Certify { address, signature } => write!(
-                    f,
-                    "PlayerAction::Certify {{ address: {}, signature: {} }}",
-                    crypto::Addressable::eip55(address),
-                    utils::hex(signature),
-                ),
-                Self::Approve {
-                    player,
-                    subkey,
-                    signature,
-                } => write!(
-                    f,
-                    "PlayerAction::Approve {{ player: {}, subkey: {}, signature: {} }}",
-                    crypto::Addressable::eip55(player),
-                    crypto::Addressable::eip55(subkey),
-                    utils::hex(signature),
-                ),
-            }
-        }
-    }
 }
 
 /// Player identifier

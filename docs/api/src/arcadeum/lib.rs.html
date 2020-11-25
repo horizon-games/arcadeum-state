@@ -1530,97 +1530,6 @@
 <span id="1527">1527</span>
 <span id="1528">1528</span>
 <span id="1529">1529</span>
-<span id="1530">1530</span>
-<span id="1531">1531</span>
-<span id="1532">1532</span>
-<span id="1533">1533</span>
-<span id="1534">1534</span>
-<span id="1535">1535</span>
-<span id="1536">1536</span>
-<span id="1537">1537</span>
-<span id="1538">1538</span>
-<span id="1539">1539</span>
-<span id="1540">1540</span>
-<span id="1541">1541</span>
-<span id="1542">1542</span>
-<span id="1543">1543</span>
-<span id="1544">1544</span>
-<span id="1545">1545</span>
-<span id="1546">1546</span>
-<span id="1547">1547</span>
-<span id="1548">1548</span>
-<span id="1549">1549</span>
-<span id="1550">1550</span>
-<span id="1551">1551</span>
-<span id="1552">1552</span>
-<span id="1553">1553</span>
-<span id="1554">1554</span>
-<span id="1555">1555</span>
-<span id="1556">1556</span>
-<span id="1557">1557</span>
-<span id="1558">1558</span>
-<span id="1559">1559</span>
-<span id="1560">1560</span>
-<span id="1561">1561</span>
-<span id="1562">1562</span>
-<span id="1563">1563</span>
-<span id="1564">1564</span>
-<span id="1565">1565</span>
-<span id="1566">1566</span>
-<span id="1567">1567</span>
-<span id="1568">1568</span>
-<span id="1569">1569</span>
-<span id="1570">1570</span>
-<span id="1571">1571</span>
-<span id="1572">1572</span>
-<span id="1573">1573</span>
-<span id="1574">1574</span>
-<span id="1575">1575</span>
-<span id="1576">1576</span>
-<span id="1577">1577</span>
-<span id="1578">1578</span>
-<span id="1579">1579</span>
-<span id="1580">1580</span>
-<span id="1581">1581</span>
-<span id="1582">1582</span>
-<span id="1583">1583</span>
-<span id="1584">1584</span>
-<span id="1585">1585</span>
-<span id="1586">1586</span>
-<span id="1587">1587</span>
-<span id="1588">1588</span>
-<span id="1589">1589</span>
-<span id="1590">1590</span>
-<span id="1591">1591</span>
-<span id="1592">1592</span>
-<span id="1593">1593</span>
-<span id="1594">1594</span>
-<span id="1595">1595</span>
-<span id="1596">1596</span>
-<span id="1597">1597</span>
-<span id="1598">1598</span>
-<span id="1599">1599</span>
-<span id="1600">1600</span>
-<span id="1601">1601</span>
-<span id="1602">1602</span>
-<span id="1603">1603</span>
-<span id="1604">1604</span>
-<span id="1605">1605</span>
-<span id="1606">1606</span>
-<span id="1607">1607</span>
-<span id="1608">1608</span>
-<span id="1609">1609</span>
-<span id="1610">1610</span>
-<span id="1611">1611</span>
-<span id="1612">1612</span>
-<span id="1613">1613</span>
-<span id="1614">1614</span>
-<span id="1615">1615</span>
-<span id="1616">1616</span>
-<span id="1617">1617</span>
-<span id="1618">1618</span>
-<span id="1619">1619</span>
-<span id="1620">1620</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -1645,7 +1554,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::<span class="ident">BTreeMap</span>,
     <span class="ident">convert</span>::<span class="ident">TryInto</span>,
-    <span class="ident">fmt</span>::{<span class="ident">Debug</span>, <span class="ident">Error</span>, <span class="ident">Formatter</span>},
+    <span class="ident">fmt</span>::<span class="ident">Debug</span>,
     <span class="ident">mem</span>::<span class="ident">size_of</span>,
     <span class="ident">ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>, <span class="ident">Range</span>},
 };
@@ -1658,7 +1567,7 @@
     <span class="ident">alloc</span>::{<span class="ident">collections</span>::<span class="ident">BTreeMap</span>, <span class="ident">format</span>, <span class="ident">prelude</span>::<span class="ident">v1</span>::<span class="kw-2">*</span>, <span class="ident">vec</span>},
     <span class="ident">core</span>::{
         <span class="ident">convert</span>::<span class="ident">TryInto</span>,
-        <span class="ident">fmt</span>::{<span class="ident">Debug</span>, <span class="ident">Error</span>, <span class="ident">Formatter</span>},
+        <span class="ident">fmt</span>::<span class="ident">Debug</span>,
         <span class="ident">mem</span>::<span class="ident">size_of</span>,
         <span class="ident">ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>, <span class="ident">Range</span>},
     },
@@ -2413,12 +2322,16 @@
 }
 
 <span class="doccomment">/// Authenticated state transition</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> {
     <span class="ident">proof</span>: <span class="ident">crypto</span>::<span class="ident">Hash</span>,
     <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span>
     <span class="ident">proof_signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
+    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span>
     <span class="ident">signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
+    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::crypto::fmt_address&quot;</span>))]</span>
     <span class="ident">author</span>: <span class="ident">crypto</span>::<span class="ident">Address</span>,
 }
 
@@ -2518,48 +2431,6 @@
         <span class="ident">diff</span>.<span class="ident">author</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">author</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">diff</span>)
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span> <span class="op">+</span> <span class="ident">Debug</span><span class="op">&gt;</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">f</span>.<span class="ident">alternate</span>() {
-            <span class="macro">writeln</span><span class="macro">!</span>(
-                <span class="ident">f</span>,
-                <span class="string">&quot;\
-Diff {{
-    proof: {:#?},
-    actions: {:#?},
-    proof_signature: {},
-    signature: {},
-    author: {},
-}}\
-                &quot;</span>,
-                <span class="self">self</span>.<span class="ident">proof</span>,
-                <span class="self">self</span>.<span class="ident">actions</span>,
-                <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proof_signature</span>),
-                <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signature</span>),
-                <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">author</span>),
-            )
-        } <span class="kw">else</span> {
-            <span class="macro">writeln</span><span class="macro">!</span>(
-                <span class="ident">f</span>,
-                <span class="string">&quot;\
-Diff {{
-    proof: {:?},
-    actions: {:?},
-    proof_signature: {},
-    signature: {},
-    author: {},
-}}\
-                &quot;</span>,
-                <span class="self">self</span>.<span class="ident">proof</span>,
-                <span class="self">self</span>.<span class="ident">actions</span>,
-                <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proof_signature</span>),
-                <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signature</span>),
-                <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">author</span>),
-            )
-        }
     }
 }
 
@@ -2963,7 +2834,8 @@ Diff {{
 }
 
 <span class="doccomment">/// State transition</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> {
     <span class="doccomment">/// A domain-specific state transition.</span>
     <span class="ident">Play</span>(<span class="ident">A</span>),
@@ -2971,86 +2843,32 @@ Diff {{
     <span class="doccomment">/// A subkey certification.</span>
     <span class="ident">Certify</span> {
         <span class="doccomment">/// The subkey address.</span>
+        <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::crypto::fmt_address&quot;</span>))]</span>
         <span class="ident">address</span>: <span class="ident">crypto</span>::<span class="ident">Address</span>,
 
         <span class="doccomment">/// The signature of the subkey challenge.</span>
         <span class="doccomment">///</span>
         <span class="doccomment">/// See [State::challenge].</span>
+        <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span>
         <span class="ident">signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
     },
 
     <span class="doccomment">/// A subkey approval.</span>
     <span class="ident">Approve</span> {
         <span class="doccomment">/// The player address.</span>
+        <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::crypto::fmt_address&quot;</span>))]</span>
         <span class="ident">player</span>: <span class="ident">crypto</span>::<span class="ident">Address</span>,
 
         <span class="doccomment">/// The subkey address.</span>
+        <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::crypto::fmt_address&quot;</span>))]</span>
         <span class="ident">subkey</span>: <span class="ident">crypto</span>::<span class="ident">Address</span>,
 
         <span class="doccomment">/// The owner&#39;s signature of the subkey approval.</span>
         <span class="doccomment">///</span>
         <span class="doccomment">/// See [State::approval].</span>
+        <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span>
         <span class="ident">signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
     },
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span> <span class="op">+</span> <span class="ident">Debug</span><span class="op">&gt;</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">f</span>.<span class="ident">alternate</span>() {
-            <span class="kw">match</span> <span class="self">self</span> {
-                <span class="self">Self</span>::<span class="ident">Play</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;PlayerAction::Play({:#?})&quot;</span>, <span class="ident">action</span>),
-                <span class="self">Self</span>::<span class="ident">Certify</span> { <span class="ident">address</span>, <span class="ident">signature</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="macro">writeln</span><span class="macro">!</span>(
-                    <span class="ident">f</span>,
-                    <span class="string">&quot;\
-PlayerAction::Certify {{
-    address: {},
-    signature: {},
-}}\
-                    &quot;</span>,
-                    <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="ident">address</span>),
-                    <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">signature</span>),
-                ),
-                <span class="self">Self</span>::<span class="ident">Approve</span> {
-                    <span class="ident">player</span>,
-                    <span class="ident">subkey</span>,
-                    <span class="ident">signature</span>,
-                } <span class="op">=</span><span class="op">&gt;</span> <span class="macro">writeln</span><span class="macro">!</span>(
-                    <span class="ident">f</span>,
-                    <span class="string">&quot;\
-PlayerAction::Approve {{
-    player: {},
-    subkey: {},
-    signature: {},
-}}\
-                    &quot;</span>,
-                    <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="ident">player</span>),
-                    <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="ident">subkey</span>),
-                    <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">signature</span>),
-                ),
-            }
-        } <span class="kw">else</span> {
-            <span class="kw">match</span> <span class="self">self</span> {
-                <span class="self">Self</span>::<span class="ident">Play</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;PlayerAction::Play({:?})&quot;</span>, <span class="ident">action</span>),
-                <span class="self">Self</span>::<span class="ident">Certify</span> { <span class="ident">address</span>, <span class="ident">signature</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(
-                    <span class="ident">f</span>,
-                    <span class="string">&quot;PlayerAction::Certify {{ address: {}, signature: {} }}&quot;</span>,
-                    <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="ident">address</span>),
-                    <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">signature</span>),
-                ),
-                <span class="self">Self</span>::<span class="ident">Approve</span> {
-                    <span class="ident">player</span>,
-                    <span class="ident">subkey</span>,
-                    <span class="ident">signature</span>,
-                } <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(
-                    <span class="ident">f</span>,
-                    <span class="string">&quot;PlayerAction::Approve {{ player: {}, subkey: {}, signature: {} }}&quot;</span>,
-                    <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="ident">player</span>),
-                    <span class="ident">crypto</span>::<span class="ident">Addressable</span>::<span class="ident">eip55</span>(<span class="ident">subkey</span>),
-                    <span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">signature</span>),
-                ),
-            }
-        }
-    }
 }
 
 <span class="doccomment">/// Player identifier</span>

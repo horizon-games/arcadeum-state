@@ -17,12 +17,20 @@
 //! Utilities
 
 #[cfg(feature = "std")]
-use std::{convert::TryInto, mem::size_of};
+use std::{
+    convert::TryInto,
+    fmt::{Error, Formatter},
+    mem::size_of,
+};
 
 #[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*},
-    core::{convert::TryInto, mem::size_of},
+    core::{
+        convert::TryInto,
+        fmt::{Error, Formatter},
+        mem::size_of,
+    },
 };
 
 /// Encodes a byte string to its hexadecimal representation.
@@ -114,6 +122,10 @@ pub fn from_js<T: for<'a> serde::Deserialize<'a>>(
 #[doc(hidden)]
 pub fn to_js<T: serde::Serialize + ?Sized>(value: &T) -> Result<wasm_bindgen::JsValue, String> {
     serde_wasm_bindgen::to_value(&value).map_err(|error| error.to_string())
+}
+
+pub(crate) fn fmt_hex(data: &impl AsRef<[u8]>, f: &mut Formatter<'_>) -> Result<(), Error> {
+    write!(f, "{}", hex(data.as_ref()))
 }
 
 pub(crate) fn read_u32_usize(data: &mut &[u8]) -> Result<usize, String> {

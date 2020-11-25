@@ -142,19 +142,31 @@ fn test_coin() {
         player: Some(
             0,
         ),
-        action: PlayerAction::Play(StoreAction::RandomCommit(0x5a925a41304569c6f4a7b42288395db96fc0c0a0f7ddc874e8142218eee97ee9)),
+        action: Play(
+            RandomCommit(
+                0x5a925a41304569c6f4a7b42288395db96fc0c0a0f7ddc874e8142218eee97ee9,
+            ),
+        ),
     },
     ProofAction {
         player: Some(
             1,
         ),
-        action: PlayerAction::Play(StoreAction::RandomReply(0x0624278306003680d4b0951350801092)),
+        action: Play(
+            RandomReply(
+                0x0624278306003680d4b0951350801092,
+            ),
+        ),
     },
     ProofAction {
         player: Some(
             0,
         ),
-        action: PlayerAction::Play(StoreAction::RandomReveal(0x039213c113101b407ac84a8928400849)),
+        action: Play(
+            RandomReveal(
+                0x039213c113101b407ac84a8928400849,
+            ),
+        ),
     },
 ]"
     } else {
@@ -163,19 +175,31 @@ fn test_coin() {
         player: Some(
             0,
         ),
-        action: PlayerAction::Play(StoreAction::RandomCommit(0x325ff735cad243cfae119dfa01cb7d8368b2c5409a0bcb8c60e01e249da55e3a)),
+        action: Play(
+            RandomCommit(
+                0x325ff735cad243cfae119dfa01cb7d8368b2c5409a0bcb8c60e01e249da55e3a,
+            ),
+        ),
     },
     ProofAction {
         player: Some(
             1,
         ),
-        action: PlayerAction::Play(StoreAction::RandomReply(0xc2801080c2801092c62630124236a002)),
+        action: Play(
+            RandomReply(
+                0xc2801080c2801092c62630124236a002,
+            ),
+        ),
     },
     ProofAction {
         player: Some(
             0,
         ),
-        action: PlayerAction::Play(StoreAction::RandomReveal(0x614008406140084963131809211b5001)),
+        action: Play(
+            RandomReveal(
+                0x614008406140084963131809211b5001,
+            ),
+        ),
     },
 ]"
     };

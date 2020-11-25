@@ -20,7 +20,7 @@
 use std::{
     cell::{Ref, RefCell},
     convert::TryInto,
-    fmt::{Debug, Error, Formatter},
+    fmt::Debug,
     future::Future,
     mem::size_of,
     ops::Deref,
@@ -33,13 +33,7 @@ use std::{
 
 #[cfg(not(feature = "std"))]
 use {
-    alloc::{
-        fmt::{Debug, Error, Formatter},
-        format,
-        prelude::v1::*,
-        rc::Rc,
-        vec,
-    },
+    alloc::{fmt::Debug, format, prelude::v1::*, rc::Rc, vec},
     core::{
         cell::{Ref, RefCell},
         column,
@@ -1773,13 +1767,14 @@ pub enum Log<S: State> {
 }
 
 #[doc(hidden)]
-#[derive(Clone)]
+#[derive(derivative::Derivative, Clone)]
+#[derivative(Debug)]
 pub enum StoreAction<A: crate::Action> {
     Action(A),
-    RandomCommit(crate::crypto::Hash),
-    RandomReply(Vec<u8>),
-    RandomReveal(Vec<u8>),
-    Reveal(Vec<u8>),
+    RandomCommit(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] crate::crypto::Hash),
+    RandomReply(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
+    RandomReveal(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
+    Reveal(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
 }
 
 impl<A: crate::Action> crate::Action for StoreAction<A> {
@@ -1823,30 +1818,6 @@ impl<A: crate::Action> crate::Action for StoreAction<A> {
         }
 
         data
-    }
-}
-
-impl<A: crate::Action + Debug> Debug for StoreAction<A> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        match self {
-            Self::Action(action) => {
-                if f.alternate() {
-                    write!(f, "StoreAction::Action({:#?})", action)
-                } else {
-                    write!(f, "StoreAction::Action({:?})", action)
-                }
-            }
-            Self::RandomCommit(data) => {
-                write!(f, "StoreAction::RandomCommit({})", crate::utils::hex(data))
-            }
-            Self::RandomReply(data) => {
-                write!(f, "StoreAction::RandomReply({})", crate::utils::hex(data))
-            }
-            Self::RandomReveal(data) => {
-                write!(f, "StoreAction::RandomReveal({})", crate::utils::hex(data))
-            }
-            Self::Reveal(data) => write!(f, "StoreAction::Reveal({})", crate::utils::hex(data)),
-        }
     }
 }
 
@@ -2146,16 +2117,14 @@ pub enum Phase<S: State> {
 }
 
 #[doc(hidden)]
+#[derive(derivative::Derivative)]
+#[derivative(Debug)]
 pub struct RevealRequest<S: State> {
     pub player: crate::Player,
+    #[derivative(Debug = "ignore")]
     pub reveal: Box<dyn Fn(&S::Secret) -> Vec<u8>>,
+    #[derivative(Debug = "ignore")]
     pub verify: Box<dyn Fn(&[u8]) -> bool>,
-}
-
-impl<S: State> Debug for RevealRequest<S> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "RevealRequest {{ player: {} }}", self.player)
-    }
 }
 
 struct SharedXorShiftRngFuture<S: State>(Rc<RefCell<Phase<S>>>);

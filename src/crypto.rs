@@ -17,12 +17,23 @@
 //! Cryptographic utilities
 
 #[cfg(feature = "std")]
-use std::{convert::TryInto, mem::size_of};
+use std::{
+    convert::TryInto,
+    fmt::{Error, Formatter},
+    mem::size_of,
+};
 
 #[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*, vec},
-    core::{column, convert::TryInto, file, line, mem::size_of},
+    core::{
+        column,
+        convert::TryInto,
+        file,
+        fmt::{Error, Formatter},
+        line,
+        mem::size_of,
+    },
 };
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]
@@ -284,6 +295,16 @@ impl Addressable for Address {
     }
 }
 
+impl Addressable for &Address {
+    fn address(&self) -> Address {
+        **self
+    }
+
+    fn eip55(&self) -> String {
+        eip55(self)
+    }
+}
+
 /// Computes the address of a secp256k1 ECDSA public key.
 pub fn address(public: &secp256k1::PublicKey) -> Address {
     tiny_keccak::keccak256(&public.serialize()[1..])[size_of::<Hash>() - size_of::<Address>()..]
@@ -395,6 +416,10 @@ pub fn eip55(address: &Address) -> String {
     }
 
     String::from_utf8(address).unwrap()
+}
+
+pub(crate) fn fmt_address(address: &impl Addressable, f: &mut Formatter<'_>) -> Result<(), Error> {
+    write!(f, "{}", address.eip55())
 }
 
 /// Balanced Merkle tree

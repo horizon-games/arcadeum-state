@@ -2207,37 +2207,6 @@
 <span id="2204">2204</span>
 <span id="2205">2205</span>
 <span id="2206">2206</span>
-<span id="2207">2207</span>
-<span id="2208">2208</span>
-<span id="2209">2209</span>
-<span id="2210">2210</span>
-<span id="2211">2211</span>
-<span id="2212">2212</span>
-<span id="2213">2213</span>
-<span id="2214">2214</span>
-<span id="2215">2215</span>
-<span id="2216">2216</span>
-<span id="2217">2217</span>
-<span id="2218">2218</span>
-<span id="2219">2219</span>
-<span id="2220">2220</span>
-<span id="2221">2221</span>
-<span id="2222">2222</span>
-<span id="2223">2223</span>
-<span id="2224">2224</span>
-<span id="2225">2225</span>
-<span id="2226">2226</span>
-<span id="2227">2227</span>
-<span id="2228">2228</span>
-<span id="2229">2229</span>
-<span id="2230">2230</span>
-<span id="2231">2231</span>
-<span id="2232">2232</span>
-<span id="2233">2233</span>
-<span id="2234">2234</span>
-<span id="2235">2235</span>
-<span id="2236">2236</span>
-<span id="2237">2237</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -2261,7 +2230,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cell</span>::{<span class="ident">Ref</span>, <span class="ident">RefCell</span>},
     <span class="ident">convert</span>::<span class="ident">TryInto</span>,
-    <span class="ident">fmt</span>::{<span class="ident">Debug</span>, <span class="ident">Error</span>, <span class="ident">Formatter</span>},
+    <span class="ident">fmt</span>::<span class="ident">Debug</span>,
     <span class="ident">future</span>::<span class="ident">Future</span>,
     <span class="ident">mem</span>::<span class="ident">size_of</span>,
     <span class="ident">ops</span>::<span class="ident">Deref</span>,
@@ -2274,13 +2243,7 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
 <span class="kw">use</span> {
-    <span class="ident">alloc</span>::{
-        <span class="ident">fmt</span>::{<span class="ident">Debug</span>, <span class="ident">Error</span>, <span class="ident">Formatter</span>},
-        <span class="ident">format</span>,
-        <span class="ident">prelude</span>::<span class="ident">v1</span>::<span class="kw-2">*</span>,
-        <span class="ident">rc</span>::<span class="ident">Rc</span>,
-        <span class="ident">vec</span>,
-    },
+    <span class="ident">alloc</span>::{<span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">format</span>, <span class="ident">prelude</span>::<span class="ident">v1</span>::<span class="kw-2">*</span>, <span class="ident">rc</span>::<span class="ident">Rc</span>, <span class="ident">vec</span>},
     <span class="ident">core</span>::{
         <span class="ident">cell</span>::{<span class="ident">Ref</span>, <span class="ident">RefCell</span>},
         <span class="ident">column</span>,
@@ -4014,13 +3977,14 @@
 }
 
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="kw">crate</span>::<span class="ident">Action</span><span class="op">&gt;</span> {
     <span class="ident">Action</span>(<span class="ident">A</span>),
-    <span class="ident">RandomCommit</span>(<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Hash</span>),
-    <span class="ident">RandomReply</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
-    <span class="ident">RandomReveal</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
-    <span class="ident">Reveal</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+    <span class="ident">RandomCommit</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Hash</span>),
+    <span class="ident">RandomReply</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+    <span class="ident">RandomReveal</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+    <span class="ident">Reveal</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="kw">crate</span>::<span class="ident">Action</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">Action</span> <span class="kw">for</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
@@ -4064,30 +4028,6 @@
         }
 
         <span class="ident">data</span>
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="kw">crate</span>::<span class="ident">Action</span> <span class="op">+</span> <span class="ident">Debug</span><span class="op">&gt;</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Action</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="ident">f</span>.<span class="ident">alternate</span>() {
-                    <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;StoreAction::Action({:#?})&quot;</span>, <span class="ident">action</span>)
-                } <span class="kw">else</span> {
-                    <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;StoreAction::Action({:?})&quot;</span>, <span class="ident">action</span>)
-                }
-            }
-            <span class="self">Self</span>::<span class="ident">RandomCommit</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;StoreAction::RandomCommit({})&quot;</span>, <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">data</span>))
-            }
-            <span class="self">Self</span>::<span class="ident">RandomReply</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;StoreAction::RandomReply({})&quot;</span>, <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">data</span>))
-            }
-            <span class="self">Self</span>::<span class="ident">RandomReveal</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;StoreAction::RandomReveal({})&quot;</span>, <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">data</span>))
-            }
-            <span class="self">Self</span>::<span class="ident">Reveal</span>(<span class="ident">data</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;StoreAction::Reveal({})&quot;</span>, <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">hex</span>(<span class="ident">data</span>)),
-        }
     }
 }
 
@@ -4387,16 +4327,14 @@
 }
 
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RevealRequest</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="kw">pub</span> <span class="ident">player</span>: <span class="kw">crate</span>::<span class="ident">Player</span>,
+    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span> <span class="op">=</span> <span class="string">&quot;ignore&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">reveal</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Secret</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span> <span class="op">=</span> <span class="string">&quot;ignore&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">verify</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span><span class="op">&gt;</span>,
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">RevealRequest</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;RevealRequest {{ player: {} }}&quot;</span>, <span class="self">self</span>.<span class="ident">player</span>)
-    }
 }
 
 <span class="kw">struct</span> <span class="ident">SharedXorShiftRngFuture</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span>(<span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>);

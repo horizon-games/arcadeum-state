@@ -23,7 +23,7 @@ use std::{
     fmt::Debug,
     future::Future,
     mem::size_of,
-    ops::Deref,
+    ops::{Deref, DerefMut},
     pin::Pin,
     ptr,
     rc::Rc,
@@ -42,7 +42,7 @@ use {
         future::Future,
         line,
         mem::size_of,
-        ops::Deref,
+        ops::{Deref, DerefMut},
         pin::Pin,
         ptr, task,
         task::{Poll, RawWaker, RawWakerVTable, Waker},
@@ -1907,11 +1907,7 @@ pub struct Context<S: State> {
 
 impl<S: State> Context<S> {
     /// Mutates a player's secret information.
-    pub fn mutate_secret(
-        &mut self,
-        player: crate::Player,
-        mutate: impl Fn(&mut S::Secret, &mut dyn rand::RngCore, &mut dyn FnMut(S::Event)),
-    ) {
+    pub fn mutate_secret(&mut self, player: crate::Player, mutate: impl Fn(MutateSecretInfo<S>)) {
         self.event_count += 1;
 
         if let Some(secret) = &self.secrets[usize::from(player)] {
@@ -1922,15 +1918,31 @@ impl<S: State> Context<S> {
                     if logger.enabled && self.event_count > logger.event_count {
                         logger.event_count = self.event_count;
 
-                        mutate(secret, random, &mut logger.log);
+                        mutate(MutateSecretInfo {
+                            secret,
+                            random,
+                            log: &mut logger.log,
+                        });
                     } else {
-                        mutate(secret, random, &mut |_| ());
+                        mutate(MutateSecretInfo {
+                            secret,
+                            random,
+                            log: &mut |_| (),
+                        });
                     }
                 } else {
-                    mutate(secret, random, &mut |_| ());
+                    mutate(MutateSecretInfo {
+                        secret,
+                        random,
+                        log: &mut |_| (),
+                    });
                 }
             } else {
-                mutate(secret, random, &mut |_| ());
+                mutate(MutateSecretInfo {
+                    secret,
+                    random,
+                    log: &mut |_| (),
+                });
             }
         }
     }
@@ -2049,6 +2061,39 @@ impl<S: State> Context<S> {
             event_count: Default::default(),
             logger: (true, Rc::new(RefCell::new(Logger::new(log)))),
         }
+    }
+}
+
+/// [Context::mutate_secret] callback data
+pub struct MutateSecretInfo<'a, S: State> {
+    /// The secret.
+    pub secret: &'a mut S::Secret,
+
+    /// A source of entropy.
+    pub random: &'a mut dyn rand::RngCore,
+
+    /// An event logger.
+    pub log: &'a mut dyn FnMut(S::Event),
+}
+
+impl<S: State> Deref for MutateSecretInfo<'_, S> {
+    type Target = S::Secret;
+
+    fn deref(&self) -> &Self::Target {
+        self.secret
+    }
+}
+
+impl<S: State> DerefMut for MutateSecretInfo<'_, S> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.secret
+    }
+}
+
+impl<S: State> MutateSecretInfo<'_, S> {
+    /// Logs an event.
+    pub fn log(&mut self, event: S::Event) {
+        (self.log)(event)
     }
 }
 

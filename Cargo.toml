@@ -29,3 +29,4 @@ web-sys = { version = "^0.3.25", optional = true, features = ["console"] }
 serde_cbor = { version = "^0.11.1", default-features = false, features = ["alloc"] }
 cached = { version = "^0.11.0", optional = true }
 serde-wasm-bindgen = { git = "https://github.com/awestlake87/serde-wasm-bindgen.git", optional = true }
+derivative = { version = "2.1.1", features = ["use_core"] }

@@ -567,8 +567,6 @@
 <span id="564">564</span>
 <span id="565">565</span>
 <span id="566">566</span>
-<span id="567">567</span>
-<span id="568">568</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -615,7 +613,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">state</span>: <span class="ident">S</span>,
         [<span class="ident">secret1</span>, <span class="ident">secret2</span>]: [<span class="ident">S</span>::<span class="ident">Secret</span>; <span class="number">2</span>],
-        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">ready</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">S</span>, [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span>; <span class="number">2</span>]) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
@@ -861,7 +859,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
         <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Action</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">stores</span>[<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">player</span>) <span class="op">=</span> <span class="ident">player</span> {
             <span class="number">1</span> <span class="op">+</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>)
         } <span class="kw">else</span> {
@@ -945,9 +943,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">flush</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">flush</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">ProofAction</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reveals</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
         <span class="kw">loop</span> {

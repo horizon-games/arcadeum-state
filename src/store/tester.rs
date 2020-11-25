@@ -43,7 +43,7 @@ where
     pub fn new(
         state: S,
         [secret1, secret2]: [S::Secret; 2],
-        actions: Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>,
+        actions: Vec<crate::ProofAction<crate::store::StoreState<S>>>,
         ready: impl FnMut(Option<crate::Player>, &S, [Option<&S::Secret>; 2]) + 'static,
         log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
     ) -> Result<Self, String> {
@@ -289,7 +289,7 @@ where
         &mut self,
         player: Option<crate::Player>,
         action: &S::Action,
-    ) -> Result<Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>, String> {
+    ) -> Result<Vec<crate::ProofAction<crate::store::StoreState<S>>>, String> {
         let diff = self.stores[if let Some(player) = player {
             1 + usize::from(player)
         } else {
@@ -373,9 +373,7 @@ where
         Ok(())
     }
 
-    fn flush(
-        &mut self,
-    ) -> Result<Vec<crate::ProofAction<crate::store::StoreAction<S::Action>>>, String> {
+    fn flush(&mut self) -> Result<Vec<crate::ProofAction<crate::store::StoreState<S>>>, String> {
         let mut reveals = Vec::new();
 
         loop {

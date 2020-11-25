@@ -545,24 +545,17 @@ macro_rules! bind {
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffProof)]
         pub fn diff_proof(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
-            Ok(
-                $crate::utils::hex(
-                    $crate::Diff::<
-                        $crate::store::StoreAction<<$type as $crate::store::State>::Action>,
-                    >::deserialize(diff)?
-                    .proof(),
-                ),
-            )
+            Ok($crate::utils::hex(
+                $crate::Diff::<$crate::store::StoreState<$type>>::deserialize(diff)?.proof(),
+            ))
         }
 
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getDiffDebugString)]
         pub fn diff_debug_string(diff: &[u8]) -> Result<String, wasm_bindgen::JsValue> {
             Ok(format!(
-                    "{:?}",
-                    $crate::Diff::<
-                        $crate::store::StoreAction<<$type as $crate::store::State>::Action>,
-                    >::deserialize(diff)?
-                ))
+                "{:?}",
+                $crate::Diff::<$crate::store::StoreState<$type>>::deserialize(diff)?
+            ))
         }
     };
 }
@@ -957,7 +950,7 @@ impl<S: State> Store<S> {
 
                     Some(crate::ProofAction {
                         player: None,
-                        action: crate::PlayerAction::Play(StoreAction::<S::Action>::RandomCommit(
+                        action: crate::PlayerAction::Play(StoreAction::RandomCommit(
                             tiny_keccak::keccak256(&seed),
                         )),
                     })
@@ -976,9 +969,7 @@ impl<S: State> Store<S> {
 
                     Some(crate::ProofAction {
                         player: None,
-                        action: crate::PlayerAction::Play(StoreAction::<S::Action>::RandomReply(
-                            seed.to_vec(),
-                        )),
+                        action: crate::PlayerAction::Play(StoreAction::RandomReply(seed.to_vec())),
                     })
                 }
                 Phase::RandomReveal {
@@ -997,9 +988,7 @@ impl<S: State> Store<S> {
 
                     Some(crate::ProofAction {
                         player: None,
-                        action: crate::PlayerAction::Play(StoreAction::<S::Action>::RandomReveal(
-                            seed.to_vec(),
-                        )),
+                        action: crate::PlayerAction::Play(StoreAction::RandomReveal(seed.to_vec())),
                     })
                 }
                 _ => None,
@@ -1068,10 +1057,7 @@ impl<S: State> Store<S> {
     ///
     /// If `check_sender` is `false`, also includes actions that the client is capable of sending
     /// due to knowing secret information, but shouldn't due to not being the expected sender.
-    pub fn flush_actions(
-        &mut self,
-        check_sender: bool,
-    ) -> Result<Vec<StoreAction<S::Action>>, String> {
+    pub fn flush_actions(&mut self, check_sender: bool) -> Result<Vec<StoreAction<S>>, String> {
         self.proof
             .state
             .state
@@ -1100,9 +1086,7 @@ impl<S: State> Store<S> {
 
                             self.seed = Some(seed.to_vec());
 
-                            Some(StoreAction::<S::Action>::RandomCommit(
-                                tiny_keccak::keccak256(&seed),
-                            ))
+                            Some(StoreAction::RandomCommit(tiny_keccak::keccak256(&seed)))
                         }
                         (Phase::RandomReply { .. }, Some(1)) => {
                             let seed = {
@@ -1115,7 +1099,7 @@ impl<S: State> Store<S> {
                                 seed
                             };
 
-                            Some(StoreAction::<S::Action>::RandomReply(seed.to_vec()))
+                            Some(StoreAction::RandomReply(seed.to_vec()))
                         }
                         (
                             Phase::RandomReveal {
@@ -1136,7 +1120,7 @@ impl<S: State> Store<S> {
                             if let Some(seed) = &self.seed {
                                 crate::forbid!(&tiny_keccak::keccak256(seed) != hash);
 
-                                Some(StoreAction::<S::Action>::RandomReveal(seed.to_vec()))
+                                Some(StoreAction::RandomReveal(seed.to_vec()))
                             } else {
                                 return Err("self.seed.is_none()".to_string());
                             }
@@ -1164,7 +1148,7 @@ impl<S: State> Store<S> {
 
                                     crate::forbid!(!verify(&secret));
 
-                                    Some(StoreAction::<S::Action>::Reveal(secret))
+                                    Some(StoreAction::Reveal(secret))
                                 } else {
                                     None
                                 }
@@ -1213,7 +1197,7 @@ impl<S: State> Store<S> {
     /// See [Store::apply].
     pub fn diff(
         &mut self,
-        actions: Vec<crate::ProofAction<StoreAction<S::Action>>>,
+        actions: Vec<crate::ProofAction<StoreState<S>>>,
     ) -> Result<StoreDiff<S>, String> {
         self.proof
             .state
@@ -1227,7 +1211,7 @@ impl<S: State> Store<S> {
     }
 }
 
-type StoreDiff<S> = crate::Diff<StoreAction<<S as State>::Action>>;
+type StoreDiff<S> = crate::Diff<StoreState<S>>;
 
 #[doc(hidden)]
 pub enum StoreState<S: State> {
@@ -1474,7 +1458,7 @@ impl<S: State> StoreState<S> {
 impl<S: State> crate::State for StoreState<S> {
     type ID = S::ID;
     type Nonce = S::Nonce;
-    type Action = StoreAction<S::Action>;
+    type Action = StoreAction<S>;
 
     fn version() -> &'static [u8] {
         S::version()
@@ -1757,30 +1741,30 @@ impl<S: State> Clone for StoreState<S> {
 pub enum Log<S: State> {
     /// A log for a complete transition.
     #[serde(rename = "complete")]
-    #[serde(bound = "S::Event: serde::Serialize")]
+    #[serde(bound = "Vec<S::Event>: serde::Serialize")]
     Complete(Vec<S::Event>),
 
     /// A log for an incomplete transition.
     #[serde(rename = "incomplete")]
-    #[serde(bound = "S::Event: serde::Serialize")]
+    #[serde(bound = "Vec<S::Event>: serde::Serialize")]
     Incomplete(Vec<S::Event>),
 }
 
 #[doc(hidden)]
 #[derive(derivative::Derivative, Clone)]
 #[derivative(Debug)]
-pub enum StoreAction<A: crate::Action> {
-    Action(A),
+pub enum StoreAction<S: State> {
+    Action(S::Action),
     RandomCommit(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] crate::crypto::Hash),
     RandomReply(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
     RandomReveal(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
     Reveal(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
 }
 
-impl<A: crate::Action> crate::Action for StoreAction<A> {
+impl<S: State> crate::Action for StoreAction<S> {
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         match crate::utils::read_u8(&mut data)? {
-            0 => Ok(Self::Action(A::deserialize(data)?)),
+            0 => Ok(Self::Action(S::Action::deserialize(data)?)),
             1 => Ok(Self::RandomCommit(
                 data.try_into().map_err(|error| format!("{}", error))?,
             )),

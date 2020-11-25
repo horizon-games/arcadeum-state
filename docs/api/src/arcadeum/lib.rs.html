@@ -1530,6 +1530,7 @@
 <span id="1527">1527</span>
 <span id="1528">1528</span>
 <span id="1529">1529</span>
+<span id="1530">1530</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -1591,7 +1592,7 @@
 <span class="doccomment">/// Authenticated state</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Proof</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="ident">root</span>: <span class="ident">RootProof</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>,
-    <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">proofs</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PlayerProof</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">3</span>],
     <span class="ident">hash</span>: <span class="ident">crypto</span>::<span class="ident">Hash</span>,
     <span class="ident">state</span>: <span class="ident">ProofState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>,
@@ -1690,7 +1691,7 @@
     <span class="doccomment">/// Verifies and applies a cryptographically constructed diff to the proof.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// `diff` must have been constructed using [Proof::diff] on a proof with the same digest.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">diff</span>: <span class="kw-2">&amp;</span><span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">error</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">diff</span>: <span class="kw-2">&amp;</span><span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">error</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">diff</span>.<span class="ident">proof</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">hash</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(
                 <span class="string">&quot;diff.proof != self.hash: {} != {}&quot;</span>,
@@ -1858,9 +1859,9 @@
     <span class="doccomment">/// See [Proof::apply].</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">diff</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">sign</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">crypto</span>::<span class="ident">Signature</span>, <span class="ident">String</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">proofs</span>
             .<span class="ident">iter</span>()
@@ -2139,7 +2140,7 @@
 <span class="doccomment">/// Authenticated initial state</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RootProof</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="ident">state</span>: <span class="ident">ProofState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>,
-    <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
     <span class="ident">hash</span>: <span class="ident">crypto</span>::<span class="ident">Hash</span>,
     <span class="ident">author</span>: <span class="ident">crypto</span>::<span class="ident">Address</span>,
@@ -2152,7 +2153,7 @@
     <span class="doccomment">/// `state` must be serializable.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="kw-2">mut</span> <span class="ident">state</span>: <span class="ident">ProofState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>,
-        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">sign</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">crypto</span>::<span class="ident">Signature</span>, <span class="ident">String</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">start</span> <span class="op">=</span> <span class="number">0</span>;
@@ -2323,10 +2324,10 @@
 
 <span class="doccomment">/// Authenticated state transition</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">bound</span> <span class="op">=</span> <span class="string">&quot;ProofAction&lt;S&gt;: Debug&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="ident">proof</span>: <span class="ident">crypto</span>::<span class="ident">Hash</span>,
-    <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span>
     <span class="ident">proof_signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
     <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span>
@@ -2335,7 +2336,7 @@
     <span class="ident">author</span>: <span class="ident">crypto</span>::<span class="ident">Address</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> <span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">Diff</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Constructs a diff from its binary representation.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// `data` must have been constructed using [Diff::serialize].</span>
@@ -2411,7 +2412,7 @@
 
     <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">proof</span>: <span class="ident">crypto</span>::<span class="ident">Hash</span>,
-        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">actions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">proof_signature</span>: <span class="ident">crypto</span>::<span class="ident">Signature</span>,
         <span class="ident">sign</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">crypto</span>::<span class="ident">Signature</span>, <span class="ident">String</span><span class="op">&gt;</span>,
         <span class="ident">author</span>: <span class="kw-2">&amp;</span><span class="ident">crypto</span>::<span class="ident">Address</span>,
@@ -2678,7 +2679,7 @@
         <span class="prelude-val">Some</span>(<span class="ident">data</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Action</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">player</span> <span class="op">=</span> <span class="ident">action</span>.<span class="ident">player</span>;
 
         <span class="macro">forbid</span><span class="macro">!</span>(<span class="ident">player</span>.<span class="ident">is_some</span>() <span class="op">&amp;&amp;</span> <span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>.<span class="ident">unwrap</span>()) <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">players</span>.<span class="ident">len</span>());
@@ -2721,16 +2722,17 @@
 }
 
 <span class="doccomment">/// Attributable state transition</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">bound</span> <span class="op">=</span> <span class="string">&quot;PlayerAction&lt;S&gt;: Debug&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The player performing the action, or [None] if performed by the root author.</span>
     <span class="kw">pub</span> <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Player</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// The action.</span>
-    <span class="kw">pub</span> <span class="ident">action</span>: <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">action</span>: <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> <span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">ProofAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">deserialize</span>(<span class="kw-2">mut</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">player</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">utils</span>::<span class="ident">read_u8</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span> {
             <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
@@ -2738,7 +2740,7 @@
         };
 
         <span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">utils</span>::<span class="ident">read_u8</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span> {
-            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">A</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>),
+            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">S</span>::<span class="ident">Action</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>),
             <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">forbid</span><span class="macro">!</span>(
                     <span class="ident">data</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">crypto</span>::<span class="ident">Address</span><span class="op">&gt;</span>() <span class="op">+</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">crypto</span>::<span class="ident">Signature</span><span class="op">&gt;</span>()
@@ -2835,10 +2837,10 @@
 
 <span class="doccomment">/// State transition</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Action</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">bound</span> <span class="op">=</span> <span class="string">&quot;S::Action: Debug&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="doccomment">/// A domain-specific state transition.</span>
-    <span class="ident">Play</span>(<span class="ident">A</span>),
+    <span class="ident">Play</span>(<span class="ident">S</span>::<span class="ident">Action</span>),
 
     <span class="doccomment">/// A subkey certification.</span>
     <span class="ident">Certify</span> {

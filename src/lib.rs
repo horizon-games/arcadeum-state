@@ -58,7 +58,7 @@ mod error;
 /// Authenticated state
 pub struct Proof<S: State> {
     root: RootProof<S>,
-    actions: Vec<ProofAction<S::Action>>,
+    actions: Vec<ProofAction<S>>,
     proofs: [Option<PlayerProof<S>>; 3],
     hash: crypto::Hash,
     state: ProofState<S>,
@@ -157,7 +157,7 @@ impl<S: State> Proof<S> {
     /// Verifies and applies a cryptographically constructed diff to the proof.
     ///
     /// `diff` must have been constructed using [Proof::diff] on a proof with the same digest.
-    pub fn apply(&mut self, diff: &Diff<S::Action>) -> Result<(), error::Error> {
+    pub fn apply(&mut self, diff: &Diff<S>) -> Result<(), error::Error> {
         if diff.proof != self.hash {
             return Err(format!(
                 "diff.proof != self.hash: {} != {}",
@@ -325,9 +325,9 @@ impl<S: State> Proof<S> {
     /// See [Proof::apply].
     pub fn diff(
         &self,
-        actions: Vec<ProofAction<S::Action>>,
+        actions: Vec<ProofAction<S>>,
         sign: &mut impl FnMut(&[u8]) -> Result<crypto::Signature, String>,
-    ) -> Result<Diff<S::Action>, String> {
+    ) -> Result<Diff<S>, String> {
         let proof = self
             .proofs
             .iter()
@@ -606,7 +606,7 @@ impl<S: State> Clone for Proof<S> {
 /// Authenticated initial state
 pub struct RootProof<S: State> {
     state: ProofState<S>,
-    actions: Vec<ProofAction<S::Action>>,
+    actions: Vec<ProofAction<S>>,
     signature: crypto::Signature,
     hash: crypto::Hash,
     author: crypto::Address,
@@ -619,7 +619,7 @@ impl<S: State> RootProof<S> {
     /// `state` must be serializable.
     pub fn new(
         mut state: ProofState<S>,
-        actions: Vec<ProofAction<S::Action>>,
+        actions: Vec<ProofAction<S>>,
         sign: &mut impl FnMut(&[u8]) -> Result<crypto::Signature, String>,
     ) -> Result<Self, String> {
         let mut start = 0;
@@ -790,10 +790,10 @@ struct PlayerProof<S: State> {
 
 /// Authenticated state transition
 #[derive(derivative::Derivative, Clone)]
-#[derivative(Debug)]
-pub struct Diff<A: Action> {
+#[derivative(Debug(bound = "ProofAction<S>: Debug"))]
+pub struct Diff<S: State> {
     proof: crypto::Hash,
-    actions: Vec<ProofAction<A>>,
+    actions: Vec<ProofAction<S>>,
     #[derivative(Debug(format_with = "crate::utils::fmt_hex"))]
     proof_signature: crypto::Signature,
     #[derivative(Debug(format_with = "crate::utils::fmt_hex"))]
@@ -802,7 +802,7 @@ pub struct Diff<A: Action> {
     author: crypto::Address,
 }
 
-impl<A: Action> Diff<A> {
+impl<S: State> Diff<S> {
     /// Constructs a diff from its binary representation.
     ///
     /// `data` must have been constructed using [Diff::serialize].
@@ -878,7 +878,7 @@ impl<A: Action> Diff<A> {
 
     fn new(
         proof: crypto::Hash,
-        actions: Vec<ProofAction<A>>,
+        actions: Vec<ProofAction<S>>,
         proof_signature: crypto::Signature,
         sign: &mut impl FnMut(&[u8]) -> Result<crypto::Signature, String>,
         author: &crypto::Address,
@@ -1145,7 +1145,7 @@ impl<S: State> ProofState<S> {
         Some(data)
     }
 
-    fn apply(&mut self, action: &ProofAction<S::Action>) -> Result<(), String> {
+    fn apply(&mut self, action: &ProofAction<S>) -> Result<(), String> {
         let player = action.player;
 
         forbid!(player.is_some() && usize::from(player.unwrap()) >= self.players.len());
@@ -1188,16 +1188,17 @@ impl<S: State> ProofState<S> {
 }
 
 /// Attributable state transition
-#[derive(Clone, Debug)]
-pub struct ProofAction<A: Action> {
+#[derive(derivative::Derivative, Clone)]
+#[derivative(Debug(bound = "PlayerAction<S>: Debug"))]
+pub struct ProofAction<S: State> {
     /// The player performing the action, or [None] if performed by the root author.
     pub player: Option<Player>,
 
     /// The action.
-    pub action: PlayerAction<A>,
+    pub action: PlayerAction<S>,
 }
 
-impl<A: Action> ProofAction<A> {
+impl<S: State> ProofAction<S> {
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         let player = match utils::read_u8(&mut data)? {
             0 => None,
@@ -1205,7 +1206,7 @@ impl<A: Action> ProofAction<A> {
         };
 
         let action = match utils::read_u8(&mut data)? {
-            0 => PlayerAction::Play(A::deserialize(data)?),
+            0 => PlayerAction::Play(S::Action::deserialize(data)?),
             1 => {
                 forbid!(
                     data.len() != size_of::<crypto::Address>() + size_of::<crypto::Signature>()
@@ -1302,10 +1303,10 @@ impl<A: Action> ProofAction<A> {
 
 /// State transition
 #[derive(derivative::Derivative, Clone)]
-#[derivative(Debug)]
-pub enum PlayerAction<A: Action> {
+#[derivative(Debug(bound = "S::Action: Debug"))]
+pub enum PlayerAction<S: State> {
     /// A domain-specific state transition.
-    Play(A),
+    Play(S::Action),
 
     /// A subkey certification.
     Certify {

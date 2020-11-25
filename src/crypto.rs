@@ -26,10 +26,7 @@ use {
 };
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-use {
-    cached::cached,
-    std::hash::{Hash as StdHash, Hasher},
-};
+use cached::cached;
 
 #[cfg(not(feature = "no-crypto"))]
 pub use secp256k1::SecretKey;
@@ -141,19 +138,19 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
 
     _cached_recover(
         tiny_keccak::keccak256(&message),
-        _Signature(signature.try_into().unwrap()),
+        signature.try_into().unwrap(),
     )
 }
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]
 cached! {
-    RECOVER_CACHE: cached::SizedCache<(Hash, _Signature), Result<Address, String>> = cached::SizedCache::with_size(256);
+    RECOVER_CACHE: cached::SizedCache<(Hash, Signature), Result<Address, String>> = cached::SizedCache::with_size(256);
 
-    fn _cached_recover(digest: Hash, signature: _Signature) -> Result<Address, String> = {
+    fn _cached_recover(digest: Hash, signature: Signature) -> Result<Address, String> = {
         let message = secp256k1::Message::parse(&digest);
 
         let recovery =
-            secp256k1::RecoveryId::parse(match signature.0[size_of::<Signature>() - 1] {
+            secp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
                 0 | 27 => 0,
                 1 | 28 => 1,
                 2 | 29 => 2,
@@ -163,35 +160,13 @@ cached! {
             .map_err(|error| format!("{:?}", error))?;
 
         let signature =
-            secp256k1::Signature::parse_slice(&signature.0[..size_of::<Signature>() - 1])
+            secp256k1::Signature::parse_slice(&signature[..size_of::<Signature>() - 1])
                 .map_err(|error| format!("{:?}", error))?;
 
         let public = secp256k1::recover(&message, &signature, &recovery)
             .map_err(|error| format!("{:?}", error))?;
 
         Ok(address(&public))
-    }
-}
-
-#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-#[doc(hidden)]
-#[derive(Clone)]
-pub struct _Signature(Signature);
-
-#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-impl StdHash for _Signature {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write(&self.0);
-    }
-}
-
-#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-impl Eq for _Signature {}
-
-#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-impl PartialEq for _Signature {
-    fn eq(&self, other: &Self) -> bool {
-        other.0[..] == self.0[..]
     }
 }
 

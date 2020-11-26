@@ -1507,7 +1507,7 @@ impl_Nonce![i8, i16, i32, i64];
 impl_Nonce![u8, u16, u32, u64];
 
 /// Domain-specific state transition trait
-pub trait Action: Clone {
+pub trait Action: Clone + Debug {
     /// Constructs an action from its binary representation.
     ///
     /// `data` must have been constructed using [Action::serialize].
@@ -1519,7 +1519,7 @@ pub trait Action: Clone {
     fn serialize(&self) -> Vec<u8>;
 }
 
-impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone> Action for T {
+impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone + Debug> Action for T {
     fn deserialize(data: &[u8]) -> Result<Self, String> {
         serde_cbor::from_slice(data).map_err(|error| error.to_string())
     }

@@ -1814,7 +1814,7 @@ pub trait State: Clone {
     type Nonce: crate::Nonce;
 
     /// Action type
-    type Action: crate::Action + Debug;
+    type Action: crate::Action;
 
     /// Event type
     type Event;

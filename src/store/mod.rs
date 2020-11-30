@@ -1819,7 +1819,7 @@ impl<S: State> Clone for StoreState<S> {
                 nonce: *nonce,
                 logger: logger.clone(),
             },
-            _ => panic!("StoreState::Pending {{ .. }}.clone()"),
+            _ => panic!("{}", "StoreState::Pending {{ .. }}.clone()"),
         }
     }
 }

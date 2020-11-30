@@ -143,7 +143,7 @@ where
                     crate::crypto::Addressable::address(&keys[1]),
                     crate::crypto::Addressable::address(&keys[2]),
                 ],
-                crate::store::StoreState::new(state),
+                crate::store::StoreState::new(state, Default::default(), |_| ()),
             )?,
             [&certificates[..], &actions].concat(),
             &mut |message| Ok(crate::crypto::sign(message, &keys[0])),

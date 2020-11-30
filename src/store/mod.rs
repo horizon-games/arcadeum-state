@@ -1230,12 +1230,16 @@ pub enum StoreState<S: State> {
 }
 
 impl<S: State> StoreState<S> {
-    pub fn new(state: S) -> Self {
+    pub fn new(
+        state: S,
+        secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
+        log: impl FnMut(S::Event) + 'static,
+    ) -> Self {
         Self::Ready {
             state,
-            secrets: Default::default(),
+            secrets,
             event_count: Default::default(),
-            logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
+            logger: Rc::new(RefCell::new(Logger::new(log))),
         }
     }
 

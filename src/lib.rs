@@ -981,6 +981,11 @@ impl<S: State> ProofState<S> {
         &self.id
     }
 
+    /// Gets the addresses of the players.
+    pub fn players(&self) -> &[crypto::Address] {
+        &self.players
+    }
+
     /// Gets the player associated with the given `address`, if any, otherwise [None].
     pub fn player(&self, address: &crypto::Address, owner: &crypto::Address) -> Option<Player> {
         if let Some(player) = self.players.iter().position(|player| player == address) {
@@ -1006,11 +1011,6 @@ impl<S: State> ProofState<S> {
         }
 
         None
-    }
-
-    /// Gets the addresses of the players.
-    pub fn players(&self) -> &[crypto::Address] {
-        &self.players
     }
 
     /// Gets the domain-specific state.

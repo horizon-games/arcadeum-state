@@ -2196,31 +2196,6 @@ impl<S: State> MutateSecretInfo<'_, S> {
 }
 
 #[doc(hidden)]
-pub struct Logger<S: State> {
-    log: Box<dyn FnMut(S::Event)>,
-    event_count: usize,
-    enabled: bool,
-}
-
-impl<S: State> Logger<S> {
-    pub fn new(log: impl FnMut(S::Event) + 'static) -> Self {
-        Self {
-            log: Box::new(log),
-            event_count: Default::default(),
-            enabled: true,
-        }
-    }
-
-    fn log(&mut self, event_count: usize, event: S::Event) {
-        if self.enabled && event_count > self.event_count {
-            self.event_count = event_count;
-
-            (self.log)(event);
-        }
-    }
-}
-
-#[doc(hidden)]
 #[derive(Debug)]
 pub enum Phase<S: State> {
     Idle {
@@ -2252,6 +2227,30 @@ pub struct RevealRequest<S: State> {
     pub reveal: Box<dyn Fn(&S::Secret) -> Vec<u8>>,
     #[derivative(Debug = "ignore")]
     pub verify: Box<dyn Fn(&[u8]) -> bool>,
+}
+
+struct Logger<S: State> {
+    log: Box<dyn FnMut(S::Event)>,
+    event_count: usize,
+    enabled: bool,
+}
+
+impl<S: State> Logger<S> {
+    fn new(log: impl FnMut(S::Event) + 'static) -> Self {
+        Self {
+            log: Box::new(log),
+            event_count: Default::default(),
+            enabled: true,
+        }
+    }
+
+    fn log(&mut self, event_count: usize, event: S::Event) {
+        if self.enabled && event_count > self.event_count {
+            self.event_count = event_count;
+
+            (self.log)(event);
+        }
+    }
 }
 
 struct SharedXorShiftRngFuture<S: State>(Rc<RefCell<Phase<S>>>);

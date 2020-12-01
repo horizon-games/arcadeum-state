@@ -349,7 +349,7 @@ macro_rules! bind {
 
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
-                    action: $crate::PlayerAction::Play($crate::store::StoreAction::Action(action)),
+                    action: $crate::PlayerAction::Play($crate::store::StoreAction::new(action)),
                 }])?;
 
                 self.send.call1(
@@ -954,9 +954,9 @@ impl<S: State> Store<S> {
 
                     Some(crate::ProofAction {
                         player: None,
-                        action: crate::PlayerAction::Play(StoreAction::RandomCommit(
+                        action: crate::PlayerAction::Play(StoreAction(_StoreAction::RandomCommit(
                             tiny_keccak::keccak256(&seed),
-                        )),
+                        ))),
                     })
                 }
                 Phase::RandomReply { .. } => {
@@ -973,7 +973,9 @@ impl<S: State> Store<S> {
 
                     Some(crate::ProofAction {
                         player: None,
-                        action: crate::PlayerAction::Play(StoreAction::RandomReply(seed.to_vec())),
+                        action: crate::PlayerAction::Play(StoreAction(_StoreAction::RandomReply(
+                            seed.to_vec(),
+                        ))),
                     })
                 }
                 Phase::RandomReveal {
@@ -992,7 +994,9 @@ impl<S: State> Store<S> {
 
                     Some(crate::ProofAction {
                         player: None,
-                        action: crate::PlayerAction::Play(StoreAction::RandomReveal(seed.to_vec())),
+                        action: crate::PlayerAction::Play(StoreAction(_StoreAction::RandomReveal(
+                            seed.to_vec(),
+                        ))),
                     })
                 }
                 _ => None,
@@ -1090,7 +1094,7 @@ impl<S: State> Store<S> {
 
                             self.seed = Some(seed.to_vec());
 
-                            Some(StoreAction::RandomCommit(tiny_keccak::keccak256(&seed)))
+                            Some(_StoreAction::RandomCommit(tiny_keccak::keccak256(&seed)))
                         }
                         (Phase::RandomReply { .. }, Some(1)) => {
                             let seed = {
@@ -1103,7 +1107,7 @@ impl<S: State> Store<S> {
                                 seed
                             };
 
-                            Some(StoreAction::RandomReply(seed.to_vec()))
+                            Some(_StoreAction::RandomReply(seed.to_vec()))
                         }
                         (
                             Phase::RandomReveal {
@@ -1124,7 +1128,7 @@ impl<S: State> Store<S> {
                             if let Some(seed) = &self.seed {
                                 crate::forbid!(&tiny_keccak::keccak256(seed) != hash);
 
-                                Some(StoreAction::RandomReveal(seed.to_vec()))
+                                Some(_StoreAction::RandomReveal(seed.to_vec()))
                             } else {
                                 return Err("self.seed.is_none()".to_string());
                             }
@@ -1152,7 +1156,7 @@ impl<S: State> Store<S> {
 
                                     crate::forbid!(!verify(&secret));
 
-                                    Some(StoreAction::Reveal(secret))
+                                    Some(_StoreAction::Reveal(secret))
                                 } else {
                                     None
                                 }
@@ -1168,6 +1172,8 @@ impl<S: State> Store<S> {
 
             match action {
                 Some(action) => {
+                    let action = StoreAction(action);
+
                     crate::State::apply(&mut state, self.player, &action)?;
 
                     actions.push(action);
@@ -1394,7 +1400,7 @@ impl<S: State> _StoreState<S> {
                     }))),
                 };
 
-                crate::State::apply(&mut state, player, &StoreAction::Action(action.clone()))?;
+                crate::State::apply(&mut state, player, &StoreAction::new(action.clone()))?;
 
                 let mut complete = true;
 
@@ -1420,7 +1426,11 @@ impl<S: State> _StoreState<S> {
                         break;
                     };
 
-                    crate::State::apply(&mut state, Some(player), &StoreAction::Reveal(secret))?;
+                    crate::State::apply(
+                        &mut state,
+                        Some(player),
+                        &StoreAction(_StoreAction::Reveal(secret)),
+                    )?;
                 }
 
                 if complete {
@@ -1442,7 +1452,7 @@ impl<S: State> _StoreState<S> {
         action: S::Action,
         random: &mut impl rand::RngCore,
     ) -> Result<(), String> {
-        crate::State::apply(self, player, &StoreAction::Action(action))?;
+        crate::State::apply(self, player, &StoreAction::new(action))?;
 
         while let Self::Pending { secrets, phase, .. } = &self {
             let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
@@ -1523,7 +1533,11 @@ impl<S: State> _StoreState<S> {
 
                         drop(borrowed_phase);
 
-                        crate::State::apply(self, Some(player), &StoreAction::Reveal(secret))?;
+                        crate::State::apply(
+                            self,
+                            Some(player),
+                            &StoreAction(_StoreAction::Reveal(secret)),
+                        )?;
                     }
                 }
                 _ => (),
@@ -1611,8 +1625,8 @@ impl<S: State> crate::State for _StoreState<S> {
         player: Option<crate::Player>,
         action: &Self::Action,
     ) -> Result<(), String> {
-        match action {
-            Self::Action::Action(action) => {
+        match &action.0 {
+            _StoreAction::Play(action) => {
                 if let Self::Ready { state, .. } = self {
                     state.verify(player, action)?;
 
@@ -1657,7 +1671,7 @@ impl<S: State> crate::State for _StoreState<S> {
                     return Err("self != _StoreState::Ready { .. }".to_string());
                 }
             }
-            Self::Action::RandomCommit(hash) => {
+            _StoreAction::RandomCommit(hash) => {
                 if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
@@ -1677,7 +1691,7 @@ impl<S: State> crate::State for _StoreState<S> {
                     return Err("self != _StoreState::Pending { .. }".to_string());
                 }
             }
-            Self::Action::RandomReply(seed) => {
+            _StoreAction::RandomReply(seed) => {
                 if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
@@ -1698,7 +1712,7 @@ impl<S: State> crate::State for _StoreState<S> {
                     return Err("self != _StoreState::Pending { .. }".to_string());
                 }
             }
-            Self::Action::RandomReveal(seed) => {
+            _StoreAction::RandomReveal(seed) => {
                 if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
@@ -1740,7 +1754,7 @@ impl<S: State> crate::State for _StoreState<S> {
                     return Err("self != _StoreState::Pending { .. }".to_string());
                 }
             }
-            Self::Action::Reveal(secret) => {
+            _StoreAction::Reveal(secret) => {
                 if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
@@ -1848,21 +1862,43 @@ pub enum Log<S: State> {
     Incomplete(Vec<S::Event>),
 }
 
-#[doc(hidden)]
+/// Client store state transition
+#[derive(derivative::Derivative, Clone)]
+#[derivative(Debug = "transparent")]
+#[derivative(Debug(bound = "S::Action: Debug"))]
+pub struct StoreAction<S: State>(_StoreAction<S>);
+
+impl<S: State> StoreAction<S> {
+    /// Constructs a new store state transition.
+    pub fn new(action: S::Action) -> Self {
+        Self(_StoreAction::Play(action))
+    }
+}
+
+impl<S: State> crate::Action for StoreAction<S> {
+    fn deserialize(data: &[u8]) -> Result<Self, String> {
+        Ok(Self(_StoreAction::deserialize(data)?))
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        self.0.serialize()
+    }
+}
+
 #[derive(derivative::Derivative, Clone)]
 #[derivative(Debug)]
-pub enum StoreAction<S: State> {
-    Action(S::Action),
+enum _StoreAction<S: State> {
+    Play(S::Action),
     RandomCommit(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] crate::crypto::Hash),
     RandomReply(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
     RandomReveal(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
     Reveal(#[derivative(Debug(format_with = "crate::utils::fmt_hex"))] Vec<u8>),
 }
 
-impl<S: State> crate::Action for StoreAction<S> {
+impl<S: State> crate::Action for _StoreAction<S> {
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
         match crate::utils::read_u8(&mut data)? {
-            0 => Ok(Self::Action(S::Action::deserialize(data)?)),
+            0 => Ok(Self::Play(S::Action::deserialize(data)?)),
             1 => Ok(Self::RandomCommit(
                 data.try_into().map_err(|error| format!("{}", error))?,
             )),
@@ -1877,7 +1913,7 @@ impl<S: State> crate::Action for StoreAction<S> {
         let mut data = Vec::new();
 
         match self {
-            Self::Action(action) => {
+            Self::Play(action) => {
                 crate::utils::write_u8(&mut data, 0);
                 data.extend(action.serialize());
             }

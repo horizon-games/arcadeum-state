@@ -867,7 +867,7 @@
         }]
         .<span class="ident">diff</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="kw">crate</span>::<span class="ident">ProofAction</span> {
             <span class="ident">player</span>,
-            <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreAction</span>::<span class="ident">Action</span>(<span class="ident">action</span>.<span class="ident">clone</span>())),
+            <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="kw">crate</span>::<span class="ident">store</span>::<span class="ident">StoreAction</span>::<span class="ident">new</span>(<span class="ident">action</span>.<span class="ident">clone</span>())),
         }])<span class="question-mark">?</span>;
 
         <span class="self">self</span>.<span class="ident">proof</span>.<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="ident">diff</span>)<span class="question-mark">?</span>;

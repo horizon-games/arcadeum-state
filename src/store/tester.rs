@@ -297,7 +297,7 @@ where
         }]
         .diff(vec![crate::ProofAction {
             player,
-            action: crate::PlayerAction::Play(crate::store::StoreAction::Action(action.clone())),
+            action: crate::PlayerAction::Play(crate::store::StoreAction::new(action.clone())),
         }])?;
 
         self.proof.apply(&diff)?;

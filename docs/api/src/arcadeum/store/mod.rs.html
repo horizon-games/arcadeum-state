@@ -2333,6 +2333,42 @@
 <span id="2330">2330</span>
 <span id="2331">2331</span>
 <span id="2332">2332</span>
+<span id="2333">2333</span>
+<span id="2334">2334</span>
+<span id="2335">2335</span>
+<span id="2336">2336</span>
+<span id="2337">2337</span>
+<span id="2338">2338</span>
+<span id="2339">2339</span>
+<span id="2340">2340</span>
+<span id="2341">2341</span>
+<span id="2342">2342</span>
+<span id="2343">2343</span>
+<span id="2344">2344</span>
+<span id="2345">2345</span>
+<span id="2346">2346</span>
+<span id="2347">2347</span>
+<span id="2348">2348</span>
+<span id="2349">2349</span>
+<span id="2350">2350</span>
+<span id="2351">2351</span>
+<span id="2352">2352</span>
+<span id="2353">2353</span>
+<span id="2354">2354</span>
+<span id="2355">2355</span>
+<span id="2356">2356</span>
+<span id="2357">2357</span>
+<span id="2358">2358</span>
+<span id="2359">2359</span>
+<span id="2360">2360</span>
+<span id="2361">2361</span>
+<span id="2362">2362</span>
+<span id="2363">2363</span>
+<span id="2364">2364</span>
+<span id="2365">2365</span>
+<span id="2366">2366</span>
+<span id="2367">2367</span>
+<span id="2368">2368</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -2685,7 +2721,7 @@
 
                 <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">store</span>.<span class="ident">diff</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">ProofAction</span> {
                     <span class="ident">player</span>: <span class="self">self</span>.<span class="ident">store</span>.<span class="ident">player</span>(),
-                    <span class="ident">action</span>: <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">PlayerAction</span>::<span class="ident">Play</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">store</span>::<span class="ident">StoreAction</span>::<span class="ident">Action</span>(<span class="ident">action</span>)),
+                    <span class="ident">action</span>: <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">PlayerAction</span>::<span class="ident">Play</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">store</span>::<span class="ident">StoreAction</span>::<span class="ident">new</span>(<span class="ident">action</span>)),
                 }])<span class="question-mark">?</span>;
 
                 <span class="self">self</span>.<span class="ident">send</span>.<span class="ident">call1</span>(
@@ -3290,9 +3326,9 @@
 
                     <span class="prelude-val">Some</span>(<span class="kw">crate</span>::<span class="ident">ProofAction</span> {
                         <span class="ident">player</span>: <span class="prelude-val">None</span>,
-                        <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">StoreAction</span>::<span class="ident">RandomCommit</span>(
+                        <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">StoreAction</span>(<span class="ident">_StoreAction</span>::<span class="ident">RandomCommit</span>(
                             <span class="ident">tiny_keccak</span>::<span class="ident">keccak256</span>(<span class="kw-2">&amp;</span><span class="ident">seed</span>),
-                        )),
+                        ))),
                     })
                 }
                 <span class="ident">Phase</span>::<span class="ident">RandomReply</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
@@ -3309,7 +3345,9 @@
 
                     <span class="prelude-val">Some</span>(<span class="kw">crate</span>::<span class="ident">ProofAction</span> {
                         <span class="ident">player</span>: <span class="prelude-val">None</span>,
-                        <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">StoreAction</span>::<span class="ident">RandomReply</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>())),
+                        <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">StoreAction</span>(<span class="ident">_StoreAction</span>::<span class="ident">RandomReply</span>(
+                            <span class="ident">seed</span>.<span class="ident">to_vec</span>(),
+                        ))),
                     })
                 }
                 <span class="ident">Phase</span>::<span class="ident">RandomReveal</span> {
@@ -3328,7 +3366,9 @@
 
                     <span class="prelude-val">Some</span>(<span class="kw">crate</span>::<span class="ident">ProofAction</span> {
                         <span class="ident">player</span>: <span class="prelude-val">None</span>,
-                        <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">StoreAction</span>::<span class="ident">RandomReveal</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>())),
+                        <span class="ident">action</span>: <span class="kw">crate</span>::<span class="ident">PlayerAction</span>::<span class="ident">Play</span>(<span class="ident">StoreAction</span>(<span class="ident">_StoreAction</span>::<span class="ident">RandomReveal</span>(
+                            <span class="ident">seed</span>.<span class="ident">to_vec</span>(),
+                        ))),
                     })
                 }
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
@@ -3426,7 +3466,7 @@
 
                             <span class="self">self</span>.<span class="ident">seed</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>());
 
-                            <span class="prelude-val">Some</span>(<span class="ident">StoreAction</span>::<span class="ident">RandomCommit</span>(<span class="ident">tiny_keccak</span>::<span class="ident">keccak256</span>(<span class="kw-2">&amp;</span><span class="ident">seed</span>)))
+                            <span class="prelude-val">Some</span>(<span class="ident">_StoreAction</span>::<span class="ident">RandomCommit</span>(<span class="ident">tiny_keccak</span>::<span class="ident">keccak256</span>(<span class="kw-2">&amp;</span><span class="ident">seed</span>)))
                         }
                         (<span class="ident">Phase</span>::<span class="ident">RandomReply</span> { .. }, <span class="prelude-val">Some</span>(<span class="number">1</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">let</span> <span class="ident">seed</span> <span class="op">=</span> {
@@ -3439,7 +3479,7 @@
                                 <span class="ident">seed</span>
                             };
 
-                            <span class="prelude-val">Some</span>(<span class="ident">StoreAction</span>::<span class="ident">RandomReply</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>()))
+                            <span class="prelude-val">Some</span>(<span class="ident">_StoreAction</span>::<span class="ident">RandomReply</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>()))
                         }
                         (
                             <span class="ident">Phase</span>::<span class="ident">RandomReveal</span> {
@@ -3460,7 +3500,7 @@
                             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">seed</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">seed</span> {
                                 <span class="kw">crate</span>::<span class="macro">forbid</span><span class="macro">!</span>(<span class="kw-2">&amp;</span><span class="ident">tiny_keccak</span>::<span class="ident">keccak256</span>(<span class="ident">seed</span>) <span class="op">!</span><span class="op">=</span> <span class="ident">hash</span>);
 
-                                <span class="prelude-val">Some</span>(<span class="ident">StoreAction</span>::<span class="ident">RandomReveal</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>()))
+                                <span class="prelude-val">Some</span>(<span class="ident">_StoreAction</span>::<span class="ident">RandomReveal</span>(<span class="ident">seed</span>.<span class="ident">to_vec</span>()))
                             } <span class="kw">else</span> {
                                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self.seed.is_none()&quot;</span>.<span class="ident">to_string</span>());
                             }
@@ -3488,7 +3528,7 @@
 
                                     <span class="kw">crate</span>::<span class="macro">forbid</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>));
 
-                                    <span class="prelude-val">Some</span>(<span class="ident">StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>))
+                                    <span class="prelude-val">Some</span>(<span class="ident">_StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>))
                                 } <span class="kw">else</span> {
                                     <span class="prelude-val">None</span>
                                 }
@@ -3504,6 +3544,8 @@
 
             <span class="kw">match</span> <span class="ident">action</span> {
                 <span class="prelude-val">Some</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="ident">StoreAction</span>(<span class="ident">action</span>);
+
                     <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="self">self</span>.<span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">action</span>)<span class="question-mark">?</span>;
 
                     <span class="ident">actions</span>.<span class="ident">push</span>(<span class="ident">action</span>);
@@ -3730,7 +3772,7 @@
                     }))),
                 };
 
-                <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">Action</span>(<span class="ident">action</span>.<span class="ident">clone</span>()))<span class="question-mark">?</span>;
+                <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">new</span>(<span class="ident">action</span>.<span class="ident">clone</span>()))<span class="question-mark">?</span>;
 
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">complete</span> <span class="op">=</span> <span class="bool-val">true</span>;
 
@@ -3756,7 +3798,11 @@
                         <span class="kw">break</span>;
                     };
 
-                    <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="prelude-val">Some</span>(<span class="ident">player</span>), <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>))<span class="question-mark">?</span>;
+                    <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(
+                        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>,
+                        <span class="prelude-val">Some</span>(<span class="ident">player</span>),
+                        <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>(<span class="ident">_StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>)),
+                    )<span class="question-mark">?</span>;
                 }
 
                 <span class="kw">if</span> <span class="ident">complete</span> {
@@ -3778,7 +3824,7 @@
         <span class="ident">action</span>: <span class="ident">S</span>::<span class="ident">Action</span>,
         <span class="ident">random</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">rand</span>::<span class="ident">RngCore</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">Action</span>(<span class="ident">action</span>))<span class="question-mark">?</span>;
+        <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">new</span>(<span class="ident">action</span>))<span class="question-mark">?</span>;
 
         <span class="kw">while</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span> {
             <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
@@ -3859,7 +3905,11 @@
 
                         <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
 
-                        <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="self">self</span>, <span class="prelude-val">Some</span>(<span class="ident">player</span>), <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>))<span class="question-mark">?</span>;
+                        <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(
+                            <span class="self">self</span>,
+                            <span class="prelude-val">Some</span>(<span class="ident">player</span>),
+                            <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>(<span class="ident">_StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>)),
+                        )<span class="question-mark">?</span>;
                     }
                 }
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
@@ -3947,8 +3997,8 @@
         <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
         <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Action</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">action</span> {
-            <span class="self">Self</span>::<span class="ident">Action</span>::<span class="ident">Action</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">action</span>.<span class="number">0</span> {
+            <span class="ident">_StoreAction</span>::<span class="ident">Play</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span> <span class="self">self</span> {
                     <span class="ident">state</span>.<span class="ident">verify</span>(<span class="ident">player</span>, <span class="ident">action</span>)<span class="question-mark">?</span>;
 
@@ -3993,7 +4043,7 @@
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Ready { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
-            <span class="self">Self</span>::<span class="ident">Action</span>::<span class="ident">RandomCommit</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">_StoreAction</span>::<span class="ident">RandomCommit</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="self">self</span> {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -4013,7 +4063,7 @@
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
-            <span class="self">Self</span>::<span class="ident">Action</span>::<span class="ident">RandomReply</span>(<span class="ident">seed</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">_StoreAction</span>::<span class="ident">RandomReply</span>(<span class="ident">seed</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="self">self</span> {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -4034,7 +4084,7 @@
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
-            <span class="self">Self</span>::<span class="ident">Action</span>::<span class="ident">RandomReveal</span>(<span class="ident">seed</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">_StoreAction</span>::<span class="ident">RandomReveal</span>(<span class="ident">seed</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="self">self</span> {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -4076,7 +4126,7 @@
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
-            <span class="self">Self</span>::<span class="ident">Action</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">_StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="self">self</span> {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -4184,21 +4234,43 @@
     <span class="ident">Incomplete</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span>),
 }
 
-<span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
+<span class="doccomment">/// Client store state transition</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span> <span class="op">=</span> <span class="string">&quot;transparent&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">bound</span> <span class="op">=</span> <span class="string">&quot;S::Action: Debug&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span>(<span class="ident">_StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>);
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// Constructs a new store state transition.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">action</span>: <span class="ident">S</span>::<span class="ident">Action</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span>(<span class="ident">_StoreAction</span>::<span class="ident">Play</span>(<span class="ident">action</span>))
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">Action</span> <span class="kw">for</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">deserialize</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(<span class="ident">_StoreAction</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>))
+    }
+
+    <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">serialize</span>()
+    }
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
 <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
-    <span class="ident">Action</span>(<span class="ident">S</span>::<span class="ident">Action</span>),
+<span class="kw">enum</span> <span class="ident">_StoreAction</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
+    <span class="ident">Play</span>(<span class="ident">S</span>::<span class="ident">Action</span>),
     <span class="ident">RandomCommit</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Hash</span>),
     <span class="ident">RandomReply</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
     <span class="ident">RandomReveal</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
     <span class="ident">Reveal</span>(<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">format_with</span> <span class="op">=</span> <span class="string">&quot;crate::utils::fmt_hex&quot;</span>))]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">Action</span> <span class="kw">for</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">Action</span> <span class="kw">for</span> <span class="ident">_StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">deserialize</span>(<span class="kw-2">mut</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u8</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span> {
-            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">Action</span>(<span class="ident">S</span>::<span class="ident">Action</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>)),
+            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">Play</span>(<span class="ident">S</span>::<span class="ident">Action</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>)),
             <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">RandomCommit</span>(
                 <span class="ident">data</span>.<span class="ident">try_into</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">error</span>))<span class="question-mark">?</span>,
             )),
@@ -4213,7 +4285,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Action</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="self">Self</span>::<span class="ident">Play</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">write_u8</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>, <span class="number">0</span>);
                 <span class="ident">data</span>.<span class="ident">extend</span>(<span class="ident">action</span>.<span class="ident">serialize</span>());
             }

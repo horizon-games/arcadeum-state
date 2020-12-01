@@ -2277,6 +2277,8 @@
 <span id="2274">2274</span>
 <span id="2275">2275</span>
 <span id="2276">2276</span>
+<span id="2277">2277</span>
+<span id="2278">2278</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -3520,7 +3522,7 @@
     <span class="ident">Ready</span> {
         <span class="ident">state</span>: <span class="ident">S</span>,
         <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">nonce</span>: <span class="ident">usize</span>,
+        <span class="ident">event_count</span>: <span class="ident">usize</span>,
         <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     },
     <span class="ident">Pending</span> {
@@ -3536,7 +3538,7 @@
         <span class="self">Self</span>::<span class="ident">Ready</span> {
             <span class="ident">state</span>,
             <span class="ident">secrets</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">nonce</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+            <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
             <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()))),
         }
     }
@@ -3587,7 +3589,7 @@
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
                     <span class="ident">state</span>: <span class="ident">state</span>.<span class="ident">clone</span>(),
                     <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
-                    <span class="ident">nonce</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+                    <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
                     <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>({
                         <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">events</span>.<span class="ident">clone</span>();
 
@@ -3653,7 +3655,7 @@
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
                     <span class="ident">state</span>,
                     <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                    <span class="ident">nonce</span>,
+                    <span class="ident">event_count</span>,
                     <span class="ident">logger</span>,
                 } <span class="op">=</span> <span class="ident">state</span>
                 {
@@ -3673,7 +3675,7 @@
                         <span class="ident">Context</span> {
                             <span class="ident">phase</span>: <span class="ident">phase</span>.<span class="ident">clone</span>(),
                             <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
-                            <span class="ident">nonce</span>,
+                            <span class="ident">event_count</span>,
                             <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">logger</span>.<span class="ident">clone</span>()),
                         },
                     );
@@ -3687,7 +3689,7 @@
                                 <span class="ident">state</span>,
                                 <span class="ident">Context</span> {
                                     <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                                    <span class="ident">nonce</span>,
+                                    <span class="ident">event_count</span>,
                                     <span class="ident">logger</span>,
                                     ..
                                 },
@@ -3704,7 +3706,7 @@
                                             <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
                                         }),
                                     ],
-                                    <span class="ident">nonce</span>,
+                                    <span class="ident">event_count</span>,
                                     <span class="ident">logger</span>: <span class="ident">logger</span>.<span class="number">1</span>,
                                 };
                             }
@@ -3810,7 +3812,7 @@
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">Ready</span> {
             <span class="ident">state</span>: <span class="ident">S</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>[..<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>()])<span class="question-mark">?</span>,
             <span class="ident">secrets</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">nonce</span>: {
+            <span class="ident">event_count</span>: {
                 <span class="ident">data</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">data</span>[<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>()..];
                 <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span>
             },
@@ -3820,17 +3822,19 @@
 
     <span class="kw">fn</span> <span class="ident">is_serializable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, <span class="ident">nonce</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">TryInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">try_into</span>(<span class="kw-2">*</span><span class="ident">nonce</span>).<span class="ident">is_ok</span>() <span class="op">&amp;&amp;</span> <span class="ident">state</span>.<span class="ident">is_serializable</span>()
-            }
+            <span class="self">Self</span>::<span class="ident">Ready</span> {
+                <span class="ident">state</span>, <span class="ident">event_count</span>, ..
+            } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TryInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">try_into</span>(<span class="kw-2">*</span><span class="ident">event_count</span>).<span class="ident">is_ok</span>() <span class="op">&amp;&amp;</span> <span class="ident">state</span>.<span class="ident">is_serializable</span>(),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
         }
     }
 
     <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, <span class="ident">nonce</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">State</span>::<span class="ident">serialize</span>(<span class="ident">state</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="kw-2">mut</span> <span class="ident">state</span><span class="op">|</span> {
-                <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">write_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="kw-2">*</span><span class="ident">nonce</span>)
+            <span class="self">Self</span>::<span class="ident">Ready</span> {
+                <span class="ident">state</span>, <span class="ident">event_count</span>, ..
+            } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">State</span>::<span class="ident">serialize</span>(<span class="ident">state</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="kw-2">mut</span> <span class="ident">state</span><span class="op">|</span> {
+                <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">write_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="kw-2">*</span><span class="ident">event_count</span>)
                     .<span class="ident">ok</span>()
                     .<span class="ident">and</span>(<span class="prelude-val">Some</span>(<span class="ident">state</span>))
             }),
@@ -3856,7 +3860,7 @@
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
                     <span class="ident">state</span>,
                     <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                    <span class="ident">nonce</span>,
+                    <span class="ident">event_count</span>,
                     <span class="ident">logger</span>,
                 } <span class="op">=</span> <span class="ident">state</span>
                 {
@@ -3879,7 +3883,7 @@
                             <span class="ident">Context</span> {
                                 <span class="ident">phase</span>: <span class="ident">phase</span>.<span class="ident">clone</span>(),
                                 <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
-                                <span class="ident">nonce</span>,
+                                <span class="ident">event_count</span>,
                                 <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">logger</span>.<span class="ident">clone</span>()),
                             },
                         ),
@@ -4037,7 +4041,7 @@
                             <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()),
                             <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()),
                         ],
-                        <span class="ident">nonce</span>: <span class="ident">context</span>.<span class="ident">nonce</span>,
+                        <span class="ident">event_count</span>: <span class="ident">context</span>.<span class="ident">event_count</span>,
                         <span class="ident">logger</span>,
                     }
                 } <span class="kw">else</span> {
@@ -4063,12 +4067,12 @@
             <span class="self">Self</span>::<span class="ident">Ready</span> {
                 <span class="ident">state</span>,
                 <span class="ident">secrets</span>,
-                <span class="ident">nonce</span>,
+                <span class="ident">event_count</span>,
                 <span class="ident">logger</span>,
             } <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
                 <span class="ident">state</span>: <span class="ident">state</span>.<span class="ident">clone</span>(),
                 <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
-                <span class="ident">nonce</span>: <span class="kw-2">*</span><span class="ident">nonce</span>,
+                <span class="ident">event_count</span>: <span class="kw-2">*</span><span class="ident">event_count</span>,
                 <span class="ident">logger</span>: <span class="ident">logger</span>.<span class="ident">clone</span>(),
             },
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="string">&quot;StoreState::Pending {{ .. }}.clone()&quot;</span>),
@@ -4265,7 +4269,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="ident">phase</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">2</span>],
-    <span class="ident">nonce</span>: <span class="ident">usize</span>,
+    <span class="ident">event_count</span>: <span class="ident">usize</span>,
     <span class="ident">logger</span>: (<span class="ident">bool</span>, <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>),
 }
 
@@ -4276,15 +4280,15 @@
         <span class="ident">player</span>: <span class="kw">crate</span>::<span class="ident">Player</span>,
         <span class="ident">mutate</span>: <span class="kw">impl</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">S</span>::<span class="ident">Secret</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">dyn</span> <span class="ident">rand</span>::<span class="ident">RngCore</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">dyn</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>)),
     ) {
-        <span class="self">self</span>.<span class="ident">nonce</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="self">self</span>.<span class="ident">event_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">secret</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">secrets</span>[<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>)] {
             <span class="kw">let</span> (<span class="ident">secret</span>, <span class="ident">random</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="ident">secret</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>();
 
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">logger</span>.<span class="number">0</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">logger</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">logger</span>.<span class="number">1</span>.<span class="ident">try_borrow_mut</span>() {
-                    <span class="kw">if</span> <span class="ident">logger</span>.<span class="ident">enabled</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">nonce</span> <span class="op">&gt;</span> <span class="ident">logger</span>.<span class="ident">nonce</span> {
-                        <span class="ident">logger</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">nonce</span>;
+                    <span class="kw">if</span> <span class="ident">logger</span>.<span class="ident">enabled</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">event_count</span> <span class="op">&gt;</span> <span class="ident">logger</span>.<span class="ident">event_count</span> {
+                        <span class="ident">logger</span>.<span class="ident">event_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">event_count</span>;
 
                         <span class="ident">mutate</span>(<span class="ident">secret</span>, <span class="ident">random</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">logger</span>.<span class="ident">log</span>);
                     } <span class="kw">else</span> {
@@ -4387,9 +4391,9 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event</span>: <span class="ident">S</span>::<span class="ident">Event</span>) {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">logger</span>.<span class="number">0</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">logger</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">logger</span>.<span class="number">1</span>.<span class="ident">try_borrow_mut</span>() {
-                <span class="self">self</span>.<span class="ident">nonce</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                <span class="self">self</span>.<span class="ident">event_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 
-                <span class="ident">logger</span>.<span class="ident">log</span>(<span class="self">self</span>.<span class="ident">nonce</span>, <span class="ident">event</span>);
+                <span class="ident">logger</span>.<span class="ident">log</span>(<span class="self">self</span>.<span class="ident">event_count</span>, <span class="ident">event</span>);
             }
         }
     }
@@ -4410,7 +4414,7 @@
         <span class="self">Self</span> {
             <span class="ident">phase</span>,
             <span class="ident">secrets</span>,
-            <span class="ident">nonce</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+            <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
             <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="ident">log</span>)))),
         }
     }
@@ -4419,7 +4423,7 @@
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
     <span class="ident">log</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>)<span class="op">&gt;</span>,
-    <span class="ident">nonce</span>: <span class="ident">usize</span>,
+    <span class="ident">event_count</span>: <span class="ident">usize</span>,
     <span class="ident">enabled</span>: <span class="ident">bool</span>,
 }
 
@@ -4427,14 +4431,14 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">log</span>: <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">log</span>),
-            <span class="ident">nonce</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+            <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
             <span class="ident">enabled</span>: <span class="bool-val">true</span>,
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">nonce</span>: <span class="ident">usize</span>, <span class="ident">event</span>: <span class="ident">S</span>::<span class="ident">Event</span>) {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">enabled</span> <span class="op">&amp;&amp;</span> <span class="ident">nonce</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">nonce</span> {
-            <span class="self">self</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
+    <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event_count</span>: <span class="ident">usize</span>, <span class="ident">event</span>: <span class="ident">S</span>::<span class="ident">Event</span>) {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">enabled</span> <span class="op">&amp;&amp;</span> <span class="ident">event_count</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">event_count</span> {
+            <span class="self">self</span>.<span class="ident">event_count</span> <span class="op">=</span> <span class="ident">event_count</span>;
 
             (<span class="self">self</span>.<span class="ident">log</span>)(<span class="ident">event</span>);
         }

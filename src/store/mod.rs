@@ -1240,7 +1240,7 @@ pub enum StoreState<S: State> {
     Ready {
         state: S,
         secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
-        nonce: usize,
+        event_count: usize,
         logger: Rc<RefCell<Logger<S>>>,
     },
     Pending {
@@ -1256,7 +1256,7 @@ impl<S: State> StoreState<S> {
         Self::Ready {
             state,
             secrets: Default::default(),
-            nonce: Default::default(),
+            event_count: Default::default(),
             logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
         }
     }
@@ -1307,7 +1307,7 @@ impl<S: State> StoreState<S> {
                 let mut state = Self::Ready {
                     state: state.clone(),
                     secrets: secrets.clone(),
-                    nonce: Default::default(),
+                    event_count: Default::default(),
                     logger: Rc::new(RefCell::new(Logger::new({
                         let events = events.clone();
 
@@ -1373,7 +1373,7 @@ impl<S: State> StoreState<S> {
                 if let Self::Ready {
                     state,
                     secrets: [secret1, secret2],
-                    nonce,
+                    event_count,
                     logger,
                 } = state
                 {
@@ -1393,7 +1393,7 @@ impl<S: State> StoreState<S> {
                         Context {
                             phase: phase.clone(),
                             secrets: secrets.clone(),
-                            nonce,
+                            event_count,
                             logger: (true, logger.clone()),
                         },
                     );
@@ -1407,7 +1407,7 @@ impl<S: State> StoreState<S> {
                                 state,
                                 Context {
                                     secrets: [secret1, secret2],
-                                    nonce,
+                                    event_count,
                                     logger,
                                     ..
                                 },
@@ -1424,7 +1424,7 @@ impl<S: State> StoreState<S> {
                                             Rc::try_unwrap(secret).ok().unwrap().into_inner()
                                         }),
                                     ],
-                                    nonce,
+                                    event_count,
                                     logger: logger.1,
                                 };
                             }
@@ -1530,7 +1530,7 @@ impl<S: State> crate::State for StoreState<S> {
         Ok(Self::Ready {
             state: S::deserialize(&data[..data.len() - size_of::<u32>()])?,
             secrets: Default::default(),
-            nonce: {
+            event_count: {
                 data = &data[data.len() - size_of::<u32>()..];
                 crate::utils::read_u32_usize(&mut data)?
             },
@@ -1540,17 +1540,19 @@ impl<S: State> crate::State for StoreState<S> {
 
     fn is_serializable(&self) -> bool {
         match self {
-            Self::Ready { state, nonce, .. } => {
-                TryInto::<u32>::try_into(*nonce).is_ok() && state.is_serializable()
-            }
+            Self::Ready {
+                state, event_count, ..
+            } => TryInto::<u32>::try_into(*event_count).is_ok() && state.is_serializable(),
             _ => false,
         }
     }
 
     fn serialize(&self) -> Option<Vec<u8>> {
         match self {
-            Self::Ready { state, nonce, .. } => State::serialize(state).and_then(|mut state| {
-                crate::utils::write_u32_usize(&mut state, *nonce)
+            Self::Ready {
+                state, event_count, ..
+            } => State::serialize(state).and_then(|mut state| {
+                crate::utils::write_u32_usize(&mut state, *event_count)
                     .ok()
                     .and(Some(state))
             }),
@@ -1576,7 +1578,7 @@ impl<S: State> crate::State for StoreState<S> {
                 if let Self::Ready {
                     state,
                     secrets: [secret1, secret2],
-                    nonce,
+                    event_count,
                     logger,
                 } = state
                 {
@@ -1599,7 +1601,7 @@ impl<S: State> crate::State for StoreState<S> {
                             Context {
                                 phase: phase.clone(),
                                 secrets: secrets.clone(),
-                                nonce,
+                                event_count,
                                 logger: (true, logger.clone()),
                             },
                         ),
@@ -1757,7 +1759,7 @@ impl<S: State> crate::State for StoreState<S> {
                             secret1.map(|secret| Rc::try_unwrap(secret).ok().unwrap().into_inner()),
                             secret2.map(|secret| Rc::try_unwrap(secret).ok().unwrap().into_inner()),
                         ],
-                        nonce: context.nonce,
+                        event_count: context.event_count,
                         logger,
                     }
                 } else {
@@ -1783,12 +1785,12 @@ impl<S: State> Clone for StoreState<S> {
             Self::Ready {
                 state,
                 secrets,
-                nonce,
+                event_count,
                 logger,
             } => Self::Ready {
                 state: state.clone(),
                 secrets: secrets.clone(),
-                nonce: *nonce,
+                event_count: *event_count,
                 logger: logger.clone(),
             },
             _ => panic!("{}", "StoreState::Pending {{ .. }}.clone()"),
@@ -1985,7 +1987,7 @@ impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone> Secret for T {
 pub struct Context<S: State> {
     phase: Rc<RefCell<Phase<S>>>,
     secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
-    nonce: usize,
+    event_count: usize,
     logger: (bool, Rc<RefCell<Logger<S>>>),
 }
 
@@ -1996,15 +1998,15 @@ impl<S: State> Context<S> {
         player: crate::Player,
         mutate: impl Fn(&mut S::Secret, &mut dyn rand::RngCore, &mut dyn FnMut(S::Event)),
     ) {
-        self.nonce += 1;
+        self.event_count += 1;
 
         if let Some(secret) = &self.secrets[usize::from(player)] {
             let (secret, random) = &mut *secret.try_borrow_mut().unwrap();
 
             if self.logger.0 {
                 if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
-                    if logger.enabled && self.nonce > logger.nonce {
-                        logger.nonce = self.nonce;
+                    if logger.enabled && self.event_count > logger.event_count {
+                        logger.event_count = self.event_count;
 
                         mutate(secret, random, &mut logger.log);
                     } else {
@@ -2107,9 +2109,9 @@ impl<S: State> Context<S> {
     pub fn log(&mut self, event: S::Event) {
         if self.logger.0 {
             if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
-                self.nonce += 1;
+                self.event_count += 1;
 
-                logger.log(self.nonce, event);
+                logger.log(self.event_count, event);
             }
         }
     }
@@ -2130,7 +2132,7 @@ impl<S: State> Context<S> {
         Self {
             phase,
             secrets,
-            nonce: Default::default(),
+            event_count: Default::default(),
             logger: (true, Rc::new(RefCell::new(Logger::new(log)))),
         }
     }
@@ -2139,7 +2141,7 @@ impl<S: State> Context<S> {
 #[doc(hidden)]
 pub struct Logger<S: State> {
     log: Box<dyn FnMut(S::Event)>,
-    nonce: usize,
+    event_count: usize,
     enabled: bool,
 }
 
@@ -2147,14 +2149,14 @@ impl<S: State> Logger<S> {
     pub fn new(log: impl FnMut(S::Event) + 'static) -> Self {
         Self {
             log: Box::new(log),
-            nonce: Default::default(),
+            event_count: Default::default(),
             enabled: true,
         }
     }
 
-    fn log(&mut self, nonce: usize, event: S::Event) {
-        if self.enabled && nonce > self.nonce {
-            self.nonce = nonce;
+    fn log(&mut self, event_count: usize, event: S::Event) {
+        if self.enabled && event_count > self.event_count {
+            self.event_count = event_count;
 
             (self.log)(event);
         }

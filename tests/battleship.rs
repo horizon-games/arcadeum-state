@@ -155,7 +155,7 @@ fn test_battleship() {
         crypto::MerkleTree::with_salt(
             {
                 let mut elements = [0; 100];
-                random.fill_bytes(&mut elements);
+                random.try_fill_bytes(&mut elements).unwrap();
                 elements.iter().map(|element| element % 2 != 0).collect()
             },
             16,
@@ -165,7 +165,7 @@ fn test_battleship() {
         crypto::MerkleTree::with_salt(
             {
                 let mut elements = [0; 100];
-                random.fill_bytes(&mut elements);
+                random.try_fill_bytes(&mut elements).unwrap();
                 elements.iter().map(|element| element % 2 != 0).collect()
             },
             16,

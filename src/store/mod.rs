@@ -984,7 +984,10 @@ impl<S: State> Store<S> {
                         let mut seed =
                             <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-                        self.random.fill_bytes(&mut seed);
+                        self.random
+                            .try_fill_bytes(&mut seed)
+                            .map_err(|error| error.to_string())?;
+
                         seed
                     };
 
@@ -1002,7 +1005,10 @@ impl<S: State> Store<S> {
                         let mut seed =
                             <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-                        self.random.fill_bytes(&mut seed);
+                        self.random
+                            .try_fill_bytes(&mut seed)
+                            .map_err(|error| error.to_string())?;
+
                         seed
                     };
 
@@ -1020,7 +1026,10 @@ impl<S: State> Store<S> {
                         let mut seed =
                             <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
 
-                        self.random.fill_bytes(&mut seed);
+                        self.random
+                            .try_fill_bytes(&mut seed)
+                            .map_err(|error| error.to_string())?;
+
                         seed
                     };
 
@@ -1119,7 +1128,11 @@ impl<S: State> Store<S> {
                         (Phase::RandomCommit, Some(0)) => {
                             let seed = {
                                 let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-                                self.random.fill_bytes(&mut seed);
+
+                                self.random
+                                    .try_fill_bytes(&mut seed)
+                                    .map_err(|error| error.to_string())?;
+
                                 seed
                             };
 
@@ -1132,7 +1145,11 @@ impl<S: State> Store<S> {
                         (Phase::RandomReply { .. }, Some(1)) => {
                             let seed = {
                                 let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-                                self.random.fill_bytes(&mut seed);
+
+                                self.random
+                                    .try_fill_bytes(&mut seed)
+                                    .map_err(|error| error.to_string())?;
+
                                 seed
                             };
 

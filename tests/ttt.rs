@@ -260,7 +260,7 @@ fn test_ttt() {
     let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms).unwrap();
 
     let mut id = <TTT as State>::ID::default();
-    randoms[0].fill_bytes(&mut id);
+    randoms[0].try_fill_bytes(&mut id).unwrap();
 
     let players = keys[1..]
         .iter()

@@ -2292,6 +2292,23 @@
 <span id="2289">2289</span>
 <span id="2290">2290</span>
 <span id="2291">2291</span>
+<span id="2292">2292</span>
+<span id="2293">2293</span>
+<span id="2294">2294</span>
+<span id="2295">2295</span>
+<span id="2296">2296</span>
+<span id="2297">2297</span>
+<span id="2298">2298</span>
+<span id="2299">2299</span>
+<span id="2300">2300</span>
+<span id="2301">2301</span>
+<span id="2302">2302</span>
+<span id="2303">2303</span>
+<span id="2304">2304</span>
+<span id="2305">2305</span>
+<span id="2306">2306</span>
+<span id="2307">2307</span>
+<span id="2308">2308</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -3279,7 +3296,10 @@
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span>
                             <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
 
-                        <span class="self">self</span>.<span class="ident">random</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>);
+                        <span class="self">self</span>.<span class="ident">random</span>
+                            .<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>)
+                            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
                         <span class="ident">seed</span>
                     };
 
@@ -3297,7 +3317,10 @@
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span>
                             <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
 
-                        <span class="self">self</span>.<span class="ident">random</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>);
+                        <span class="self">self</span>.<span class="ident">random</span>
+                            .<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>)
+                            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
                         <span class="ident">seed</span>
                     };
 
@@ -3315,7 +3338,10 @@
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span>
                             <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
 
-                        <span class="self">self</span>.<span class="ident">random</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>);
+                        <span class="self">self</span>.<span class="ident">random</span>
+                            .<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>)
+                            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
                         <span class="ident">seed</span>
                     };
 
@@ -3414,7 +3440,11 @@
                         (<span class="ident">Phase</span>::<span class="ident">RandomCommit</span>, <span class="prelude-val">Some</span>(<span class="number">0</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">let</span> <span class="ident">seed</span> <span class="op">=</span> {
                                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
-                                <span class="self">self</span>.<span class="ident">random</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>);
+
+                                <span class="self">self</span>.<span class="ident">random</span>
+                                    .<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>)
+                                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
                                 <span class="ident">seed</span>
                             };
 
@@ -3427,7 +3457,11 @@
                         (<span class="ident">Phase</span>::<span class="ident">RandomReply</span> { .. }, <span class="prelude-val">Some</span>(<span class="number">1</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">let</span> <span class="ident">seed</span> <span class="op">=</span> {
                                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
-                                <span class="self">self</span>.<span class="ident">random</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>);
+
+                                <span class="self">self</span>.<span class="ident">random</span>
+                                    .<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>)
+                                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
                                 <span class="ident">seed</span>
                             };
 

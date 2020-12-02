@@ -1334,13 +1334,7 @@ impl<S: State> StoreState<S> {
 
                 let mut complete = true;
 
-                while let Self::Pending {
-                    state: pending,
-                    secrets,
-                    phase,
-                    logger,
-                } = state
-                {
+                while let Self::Pending { secrets, phase, .. } = &state {
                     let (player, secret) = if let Phase::Reveal {
                         request: RevealRequest { player, reveal, .. },
                         ..
@@ -1360,13 +1354,6 @@ impl<S: State> StoreState<S> {
                         complete = false;
 
                         break;
-                    };
-
-                    state = Self::Pending {
-                        state: pending,
-                        secrets,
-                        phase,
-                        logger,
                     };
 
                     crate::State::apply(&mut state, Some(player), &StoreAction::Reveal(secret))?;

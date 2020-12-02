@@ -1367,8 +1367,6 @@ impl<S: State> StoreState<S> {
         if let Self::Ready { state, .. } = self {
             state.verify(player, action)?;
 
-            let random = rand::SeedableRng::from_rng(random).map_err(|error| error.to_string())?;
-
             replace_with::replace_with_or_abort(self, |state| {
                 if let Self::Ready {
                     state,
@@ -1378,7 +1376,7 @@ impl<S: State> StoreState<S> {
                 } = state
                 {
                     let phase = Rc::new(RefCell::new(Phase::Idle {
-                        random: Some(Rc::new(RefCell::new(random))),
+                        random: None,
                         secret: None,
                     }));
 
@@ -1432,6 +1430,22 @@ impl<S: State> StoreState<S> {
                                 let borrowed_phase = phase.try_borrow().unwrap();
 
                                 match &*borrowed_phase {
+                                    Phase::RandomCommit => {
+                                        drop(borrowed_phase);
+
+                                        phase.replace(Phase::Idle {
+                                            random: Some(Rc::new(RefCell::new(
+                                                rand::SeedableRng::from_seed({
+                                                    let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                                                    random.try_fill_bytes(&mut seed).unwrap();
+
+                                                    seed
+                                                }),
+                                            ))),
+                                            secret: None,
+                                        });
+                                    }
                                     Phase::Reveal {
                                         random,
                                         request:

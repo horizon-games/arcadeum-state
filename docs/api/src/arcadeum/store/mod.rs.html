@@ -2268,6 +2268,20 @@
 <span id="2265">2265</span>
 <span id="2266">2266</span>
 <span id="2267">2267</span>
+<span id="2268">2268</span>
+<span id="2269">2269</span>
+<span id="2270">2270</span>
+<span id="2271">2271</span>
+<span id="2272">2272</span>
+<span id="2273">2273</span>
+<span id="2274">2274</span>
+<span id="2275">2275</span>
+<span id="2276">2276</span>
+<span id="2277">2277</span>
+<span id="2278">2278</span>
+<span id="2279">2279</span>
+<span id="2280">2280</span>
+<span id="2281">2281</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -3638,8 +3652,6 @@
         <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span> <span class="self">self</span> {
             <span class="ident">state</span>.<span class="ident">verify</span>(<span class="ident">player</span>, <span class="ident">action</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">let</span> <span class="ident">random</span> <span class="op">=</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span>::<span class="ident">from_rng</span>(<span class="ident">random</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-
             <span class="ident">replace_with</span>::<span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
                     <span class="ident">state</span>,
@@ -3649,7 +3661,7 @@
                 } <span class="op">=</span> <span class="ident">state</span>
                 {
                     <span class="kw">let</span> <span class="ident">phase</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
-                        <span class="ident">random</span>: <span class="prelude-val">Some</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">random</span>))),
+                        <span class="ident">random</span>: <span class="prelude-val">None</span>,
                         <span class="ident">secret</span>: <span class="prelude-val">None</span>,
                     }));
 
@@ -3703,6 +3715,22 @@
                                 <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">unwrap</span>();
 
                                 <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">borrowed_phase</span> {
+                                    <span class="ident">Phase</span>::<span class="ident">RandomCommit</span> <span class="op">=</span><span class="op">&gt;</span> {
+                                        <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
+
+                                        <span class="ident">phase</span>.<span class="ident">replace</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
+                                            <span class="ident">random</span>: <span class="prelude-val">Some</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(
+                                                <span class="ident">rand</span>::<span class="ident">SeedableRng</span>::<span class="ident">from_seed</span>({
+                                                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
+
+                                                    <span class="ident">random</span>.<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>).<span class="ident">unwrap</span>();
+
+                                                    <span class="ident">seed</span>
+                                                }),
+                                            ))),
+                                            <span class="ident">secret</span>: <span class="prelude-val">None</span>,
+                                        });
+                                    }
                                     <span class="ident">Phase</span>::<span class="ident">Reveal</span> {
                                         <span class="ident">random</span>,
                                         <span class="ident">request</span>:

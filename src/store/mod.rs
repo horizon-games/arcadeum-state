@@ -1565,65 +1565,54 @@ impl<S: State> crate::State for StoreState<S> {
         player: Option<crate::Player>,
         action: &Self::Action,
     ) -> Result<(), String> {
-        let mut handled = false;
+        match action {
+            Self::Action::Action(action) => {
+                if let Self::Ready { state, .. } = self {
+                    state.verify(player, action)?;
 
-        if let Self::Action::Action(action) = action {
-            if let Self::Ready { state, .. } = self {
-                state.verify(player, action)?;
-            }
-        }
+                    replace_with::replace_with_or_abort(self, |state| {
+                        if let Self::Ready {
+                            state,
+                            secrets: [secret1, secret2],
+                            event_count,
+                            logger,
+                        } = state
+                        {
+                            let secrets = [
+                                secret1.map(|secret| Rc::new(RefCell::new(secret))),
+                                secret2.map(|secret| Rc::new(RefCell::new(secret))),
+                            ];
 
-        replace_with::replace_with_or_abort(self, |state| {
-            if let Self::Action::Action(action) = action {
-                if let Self::Ready {
-                    state,
-                    secrets: [secret1, secret2],
-                    event_count,
-                    logger,
-                } = state
-                {
-                    handled = true;
+                            let phase = Rc::new(RefCell::new(Phase::Idle {
+                                random: None,
+                                secret: None,
+                            }));
 
-                    let phase = Rc::new(RefCell::new(Phase::Idle {
-                        random: None,
-                        secret: None,
-                    }));
-
-                    let secrets = [
-                        secret1.map(|secret| Rc::new(RefCell::new(secret))),
-                        secret2.map(|secret| Rc::new(RefCell::new(secret))),
-                    ];
-
-                    Self::Pending {
-                        state: state.apply(
-                            player,
-                            action,
-                            Context {
-                                phase: phase.clone(),
-                                secrets: secrets.clone(),
-                                event_count,
-                                logger: (true, logger.clone()),
-                            },
-                        ),
-                        secrets,
-                        phase,
-                        logger,
-                    }
+                            Self::Pending {
+                                state: state.apply(
+                                    player,
+                                    action,
+                                    Context {
+                                        phase: phase.clone(),
+                                        secrets: secrets.clone(),
+                                        event_count,
+                                        logger: (true, logger.clone()),
+                                    },
+                                ),
+                                secrets,
+                                phase,
+                                logger,
+                            }
+                        } else {
+                            unreachable!("{}:{}:{}", file!(), line!(), column!());
+                        }
+                    });
                 } else {
-                    state
+                    return Err("self != StoreState::Ready { .. }".to_string());
                 }
-            } else {
-                state
             }
-        });
-
-        if !handled {
-            match (&self, action) {
-                (Self::Ready { .. }, Self::Action::Action(_)) => {
-                    unreachable!("{}:{}:{}", file!(), line!(), column!())
-                }
-
-                (Self::Pending { phase, .. }, Self::Action::RandomCommit(hash)) => {
+            Self::Action::RandomCommit(hash) => {
+                if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomCommit = *borrowed_phase {
@@ -1636,11 +1625,14 @@ impl<S: State> crate::State for StoreState<S> {
                             owner_hash: player.is_none(),
                         });
                     } else {
-                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::RandomCommit".to_string());
+                        return Err("borrowed_phase != Phase::RandomCommit".to_string());
                     }
+                } else {
+                    return Err("self != StoreState::Pending { .. }".to_string());
                 }
-
-                (Self::Pending { phase, .. }, Self::Action::RandomReply(seed)) => {
+            }
+            Self::Action::RandomReply(seed) => {
+                if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomReply { hash, owner_hash } = *borrowed_phase {
@@ -1654,11 +1646,14 @@ impl<S: State> crate::State for StoreState<S> {
                             reply: seed.to_vec(),
                         });
                     } else {
-                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReply { .. }".to_string());
+                        return Err("borrowed_phase != Phase::RandomReply { .. }".to_string());
                     }
+                } else {
+                    return Err("self != StoreState::Pending { .. }".to_string());
                 }
-
-                (Self::Pending { phase, .. }, Self::Action::RandomReveal(seed)) => {
+            }
+            Self::Action::RandomReveal(seed) => {
+                if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomReveal {
@@ -1693,11 +1688,14 @@ impl<S: State> crate::State for StoreState<S> {
                             secret: None,
                         });
                     } else {
-                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReveal { .. }".to_string());
+                        return Err("borrowed_phase != Phase::RandomReveal { .. }".to_string());
                     }
+                } else {
+                    return Err("self != StoreState::Pending { .. }".to_string());
                 }
-
-                (Self::Pending { phase, .. }, Self::Action::Reveal(secret)) => {
+            }
+            Self::Action::Reveal(secret) => {
+                if let Self::Pending { phase, .. } = self {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::Reveal {
@@ -1722,19 +1720,10 @@ impl<S: State> crate::State for StoreState<S> {
                             secret: Some(secret.clone()),
                         });
                     } else {
-                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::Reveal { .. }".to_string());
+                        return Err("borrowed_phase != Phase::Reveal { .. }".to_string());
                     }
-                }
-
-                (Self::Pending { .. }, Self::Action::Action(action)) => {
-                    return Err(format!(
-                        "StoreState::Pending can't apply StoreAction::Action({:?})",
-                        action
-                    ))
-                }
-
-                (Self::Ready { .. }, action) => {
-                    return Err(format!("StoreState::Pending can't apply {:?}", action))
+                } else {
+                    return Err("self != StoreState::Pending { .. }".to_string());
                 }
             }
         }

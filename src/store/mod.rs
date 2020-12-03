@@ -1250,6 +1250,16 @@ impl<S: State> StoreState<S> {
         self.0.secret(player)
     }
 
+    /// Gets the number of actions applied since construction.
+    pub fn action_count(&self) -> usize {
+        self.0.action_count()
+    }
+
+    /// Gets the number of secrets revealed since construction.
+    pub fn reveal_count(&self) -> usize {
+        self.0.reveal_count()
+    }
+
     /// Generates an event log resulting from applying an action to this state.
     pub fn simulate(
         &self,
@@ -1325,12 +1335,16 @@ enum _StoreState<S: State> {
     Ready {
         state: S,
         secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
+        action_count: usize,
+        reveal_count: usize,
         event_count: usize,
         logger: Rc<RefCell<Logger<S>>>,
     },
     Pending {
         state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
         secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
+        action_count: usize,
+        reveal_count: usize,
         phase: Rc<RefCell<Phase<S>>>,
         logger: Rc<RefCell<Logger<S>>>,
     },
@@ -1345,6 +1359,8 @@ impl<S: State> _StoreState<S> {
         Self::Ready {
             state,
             secrets,
+            action_count: Default::default(),
+            reveal_count: Default::default(),
             event_count: Default::default(),
             logger: Rc::new(RefCell::new(Logger::new(log))),
         }
@@ -1381,17 +1397,38 @@ impl<S: State> _StoreState<S> {
         }
     }
 
+    fn action_count(&self) -> usize {
+        match self {
+            Self::Ready { action_count, .. } | Self::Pending { action_count, .. } => *action_count,
+        }
+    }
+
+    fn reveal_count(&self) -> usize {
+        match self {
+            Self::Ready { reveal_count, .. } | Self::Pending { reveal_count, .. } => *reveal_count,
+        }
+    }
+
     fn simulate(&self, player: Option<crate::Player>, action: &S::Action) -> Result<Log<S>, String>
     where
         S::Event: serde::Serialize + 'static,
     {
-        if let Self::Ready { state, secrets, .. } = self {
+        if let Self::Ready {
+            state,
+            secrets,
+            action_count,
+            reveal_count,
+            ..
+        } = self
+        {
             let events = Rc::new(RefCell::new(Vec::new()));
 
             Ok({
                 let mut state = Self::Ready {
                     state: state.clone(),
                     secrets: secrets.clone(),
+                    action_count: *action_count,
+                    reveal_count: *reveal_count,
                     event_count: Default::default(),
                     logger: Rc::new(RefCell::new(Logger::new({
                         let events = events.clone();
@@ -1478,6 +1515,8 @@ impl<S: State> _StoreState<S> {
                         if let Self::Pending {
                             mut state,
                             secrets: [secret1, secret2],
+                            action_count,
+                            reveal_count,
                             phase,
                             logger,
                         } = state
@@ -1498,6 +1537,8 @@ impl<S: State> _StoreState<S> {
                                             Rc::try_unwrap(secret).ok().unwrap().into_inner()
                                         }),
                                     ],
+                                    action_count,
+                                    reveal_count: reveal_count + 3,
                                     event_count: context.event_count,
                                     logger,
                                 }
@@ -1505,6 +1546,8 @@ impl<S: State> _StoreState<S> {
                                 Self::Pending {
                                     state,
                                     secrets: [secret1, secret2],
+                                    action_count,
+                                    reveal_count: reveal_count + 3,
                                     phase,
                                     logger,
                                 }
@@ -1585,15 +1628,18 @@ impl<S: State> crate::State for _StoreState<S> {
     }
 
     fn deserialize(mut data: &[u8]) -> Result<Self, String> {
-        crate::forbid!(data.len() < size_of::<u32>());
+        crate::forbid!(data.len() < 3 * size_of::<u32>());
 
         Ok(Self::Ready {
-            state: S::deserialize(&data[..data.len() - size_of::<u32>()])?,
-            secrets: Default::default(),
-            event_count: {
-                data = &data[data.len() - size_of::<u32>()..];
-                crate::utils::read_u32_usize(&mut data)?
+            state: {
+                let state = S::deserialize(&data[..data.len() - 3 * size_of::<u32>()])?;
+                data = &data[data.len() - 3 * size_of::<u32>()..];
+                state
             },
+            secrets: Default::default(),
+            action_count: crate::utils::read_u32_usize(&mut data)?,
+            reveal_count: crate::utils::read_u32_usize(&mut data)?,
+            event_count: crate::utils::read_u32_usize(&mut data)?,
             logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
         })
     }
@@ -1601,8 +1647,17 @@ impl<S: State> crate::State for _StoreState<S> {
     fn is_serializable(&self) -> bool {
         match self {
             Self::Ready {
-                state, event_count, ..
-            } => TryInto::<u32>::try_into(*event_count).is_ok() && state.is_serializable(),
+                state,
+                action_count,
+                reveal_count,
+                event_count,
+                ..
+            } => {
+                TryInto::<u32>::try_into(*action_count).is_ok()
+                    && TryInto::<u32>::try_into(*reveal_count).is_ok()
+                    && TryInto::<u32>::try_into(*event_count).is_ok()
+                    && state.is_serializable()
+            }
             _ => false,
         }
     }
@@ -1610,12 +1665,20 @@ impl<S: State> crate::State for _StoreState<S> {
     fn serialize(&self) -> Option<Vec<u8>> {
         match self {
             Self::Ready {
-                state, event_count, ..
-            } => State::serialize(state).and_then(|mut state| {
-                crate::utils::write_u32_usize(&mut state, *event_count)
-                    .ok()
-                    .and(Some(state))
-            }),
+                state,
+                action_count,
+                reveal_count,
+                event_count,
+                ..
+            } => {
+                let mut data = State::serialize(state)?;
+
+                crate::utils::write_u32_usize(&mut data, *action_count).ok()?;
+                crate::utils::write_u32_usize(&mut data, *reveal_count).ok()?;
+                crate::utils::write_u32_usize(&mut data, *event_count).ok()?;
+
+                Some(data)
+            }
             _ => None,
         }
     }
@@ -1634,6 +1697,8 @@ impl<S: State> crate::State for _StoreState<S> {
                         if let Self::Ready {
                             state,
                             secrets: [secret1, secret2],
+                            action_count,
+                            reveal_count,
                             event_count,
                             logger,
                         } = state
@@ -1660,6 +1725,8 @@ impl<S: State> crate::State for _StoreState<S> {
                                     },
                                 ),
                                 secrets,
+                                action_count: action_count + 1,
+                                reveal_count,
                                 phase,
                                 logger,
                             }
@@ -1672,13 +1739,20 @@ impl<S: State> crate::State for _StoreState<S> {
                 }
             }
             _StoreAction::RandomCommit(hash) => {
-                if let Self::Pending { phase, .. } = self {
+                if let Self::Pending {
+                    phase,
+                    reveal_count,
+                    ..
+                } = self
+                {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomCommit = *borrowed_phase {
                         drop(borrowed_phase);
 
                         crate::forbid!(player != None && player != Some(0));
+
+                        *reveal_count += 1;
 
                         phase.replace(Phase::RandomReply {
                             hash: *hash,
@@ -1692,13 +1766,20 @@ impl<S: State> crate::State for _StoreState<S> {
                 }
             }
             _StoreAction::RandomReply(seed) => {
-                if let Self::Pending { phase, .. } = self {
+                if let Self::Pending {
+                    phase,
+                    reveal_count,
+                    ..
+                } = self
+                {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomReply { hash, owner_hash } = *borrowed_phase {
                         drop(borrowed_phase);
 
                         crate::forbid!(player != None && player != Some(1));
+
+                        *reveal_count += 1;
 
                         phase.replace(Phase::RandomReveal {
                             hash,
@@ -1713,7 +1794,12 @@ impl<S: State> crate::State for _StoreState<S> {
                 }
             }
             _StoreAction::RandomReveal(seed) => {
-                if let Self::Pending { phase, .. } = self {
+                if let Self::Pending {
+                    phase,
+                    reveal_count,
+                    ..
+                } = self
+                {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomReveal {
@@ -1743,6 +1829,8 @@ impl<S: State> crate::State for _StoreState<S> {
 
                         drop(borrowed_phase);
 
+                        *reveal_count += 1;
+
                         phase.replace(Phase::Idle {
                             random: Some(Rc::new(RefCell::new(rand::SeedableRng::from_seed(seed)))),
                             secret: None,
@@ -1755,7 +1843,12 @@ impl<S: State> crate::State for _StoreState<S> {
                 }
             }
             _StoreAction::Reveal(secret) => {
-                if let Self::Pending { phase, .. } = self {
+                if let Self::Pending {
+                    phase,
+                    reveal_count,
+                    ..
+                } = self
+                {
                     let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::Reveal {
@@ -1775,6 +1868,8 @@ impl<S: State> crate::State for _StoreState<S> {
 
                         drop(borrowed_phase);
 
+                        *reveal_count += 1;
+
                         phase.replace(Phase::Idle {
                             random,
                             secret: Some(secret.clone()),
@@ -1792,6 +1887,8 @@ impl<S: State> crate::State for _StoreState<S> {
             if let Self::Pending {
                 mut state,
                 secrets: [secret1, secret2],
+                action_count,
+                reveal_count,
                 phase,
                 logger,
             } = state
@@ -1808,6 +1905,8 @@ impl<S: State> crate::State for _StoreState<S> {
                             secret1.map(|secret| Rc::try_unwrap(secret).ok().unwrap().into_inner()),
                             secret2.map(|secret| Rc::try_unwrap(secret).ok().unwrap().into_inner()),
                         ],
+                        action_count,
+                        reveal_count,
                         event_count: context.event_count,
                         logger,
                     }
@@ -1815,6 +1914,8 @@ impl<S: State> crate::State for _StoreState<S> {
                     Self::Pending {
                         state,
                         secrets: [secret1, secret2],
+                        action_count,
+                        reveal_count,
                         phase,
                         logger,
                     }
@@ -1834,11 +1935,15 @@ impl<S: State> Clone for _StoreState<S> {
             Self::Ready {
                 state,
                 secrets,
+                action_count,
+                reveal_count,
                 event_count,
                 logger,
             } => Self::Ready {
                 state: state.clone(),
                 secrets: secrets.clone(),
+                action_count: *action_count,
+                reveal_count: *reveal_count,
                 event_count: *event_count,
                 logger: logger.clone(),
             },

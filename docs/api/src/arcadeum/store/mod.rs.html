@@ -2236,52 +2236,6 @@
 <span id="2233">2233</span>
 <span id="2234">2234</span>
 <span id="2235">2235</span>
-<span id="2236">2236</span>
-<span id="2237">2237</span>
-<span id="2238">2238</span>
-<span id="2239">2239</span>
-<span id="2240">2240</span>
-<span id="2241">2241</span>
-<span id="2242">2242</span>
-<span id="2243">2243</span>
-<span id="2244">2244</span>
-<span id="2245">2245</span>
-<span id="2246">2246</span>
-<span id="2247">2247</span>
-<span id="2248">2248</span>
-<span id="2249">2249</span>
-<span id="2250">2250</span>
-<span id="2251">2251</span>
-<span id="2252">2252</span>
-<span id="2253">2253</span>
-<span id="2254">2254</span>
-<span id="2255">2255</span>
-<span id="2256">2256</span>
-<span id="2257">2257</span>
-<span id="2258">2258</span>
-<span id="2259">2259</span>
-<span id="2260">2260</span>
-<span id="2261">2261</span>
-<span id="2262">2262</span>
-<span id="2263">2263</span>
-<span id="2264">2264</span>
-<span id="2265">2265</span>
-<span id="2266">2266</span>
-<span id="2267">2267</span>
-<span id="2268">2268</span>
-<span id="2269">2269</span>
-<span id="2270">2270</span>
-<span id="2271">2271</span>
-<span id="2272">2272</span>
-<span id="2273">2273</span>
-<span id="2274">2274</span>
-<span id="2275">2275</span>
-<span id="2276">2276</span>
-<span id="2277">2277</span>
-<span id="2278">2278</span>
-<span id="2279">2279</span>
-<span id="2280">2280</span>
-<span id="2281">2281</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -3646,58 +3600,46 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_with_random</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
-        <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Action</span>,
+        <span class="ident">action</span>: <span class="ident">S</span>::<span class="ident">Action</span>,
         <span class="ident">random</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">rand</span>::<span class="ident">RngCore</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span> <span class="self">self</span> {
-            <span class="ident">state</span>.<span class="ident">verify</span>(<span class="ident">player</span>, <span class="ident">action</span>)<span class="question-mark">?</span>;
+        <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">Action</span>(<span class="ident">action</span>))<span class="question-mark">?</span>;
 
-            <span class="ident">replace_with</span>::<span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
-                    <span class="ident">state</span>,
-                    <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                    <span class="ident">event_count</span>,
-                    <span class="ident">logger</span>,
-                } <span class="op">=</span> <span class="ident">state</span>
-                {
-                    <span class="kw">let</span> <span class="ident">phase</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
-                        <span class="ident">random</span>: <span class="prelude-val">None</span>,
+        <span class="kw">while</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span> {
+            <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
+            <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">borrowed_phase</span> {
+                <span class="ident">Phase</span>::<span class="ident">RandomCommit</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
+
+                    <span class="ident">phase</span>.<span class="ident">replace</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
+                        <span class="ident">random</span>: <span class="prelude-val">Some</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>({
+                            <span class="ident">rand</span>::<span class="ident">SeedableRng</span>::<span class="ident">from_seed</span>({
+                                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
+
+                                <span class="ident">random</span>.<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
+                                <span class="ident">seed</span>
+                            })
+                        }))),
                         <span class="ident">secret</span>: <span class="prelude-val">None</span>,
-                    }));
+                    });
 
-                    <span class="kw">let</span> <span class="ident">secrets</span> <span class="op">=</span> [
-                        <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">secret</span>))),
-                        <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">secret</span>))),
-                    ];
-
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">state</span>.<span class="ident">apply</span>(
-                        <span class="ident">player</span>,
-                        <span class="ident">action</span>,
-                        <span class="ident">Context</span> {
-                            <span class="ident">phase</span>: <span class="ident">phase</span>.<span class="ident">clone</span>(),
-                            <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
-                            <span class="ident">event_count</span>,
-                            <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">logger</span>.<span class="ident">clone</span>()),
-                        },
-                    );
-
-                    <span class="kw">loop</span> {
-                        <span class="kw">match</span> <span class="ident">state</span>
-                            .<span class="ident">as_mut</span>()
-                            .<span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">task</span>::<span class="ident">Context</span>::<span class="ident">from_waker</span>(<span class="kw-2">&amp;</span><span class="ident">phantom_waker</span>()))
+                    <span class="ident">replace_with</span>::<span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
+                            <span class="kw-2">mut</span> <span class="ident">state</span>,
+                            <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                            <span class="ident">phase</span>,
+                            <span class="ident">logger</span>,
+                        } <span class="op">=</span> <span class="ident">state</span>
                         {
-                            <span class="ident">Poll</span>::<span class="ident">Ready</span>((
-                                <span class="ident">state</span>,
-                                <span class="ident">Context</span> {
-                                    <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                                    <span class="ident">event_count</span>,
-                                    <span class="ident">logger</span>,
-                                    ..
-                                },
-                            )) <span class="op">=</span><span class="op">&gt;</span> {
-                                <span class="ident">drop</span>(<span class="ident">secrets</span>);
+                            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Poll</span>::<span class="ident">Ready</span>((<span class="ident">state</span>, <span class="ident">context</span>)) <span class="op">=</span> <span class="ident">state</span>
+                                .<span class="ident">as_mut</span>()
+                                .<span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">task</span>::<span class="ident">Context</span>::<span class="ident">from_waker</span>(<span class="kw-2">&amp;</span><span class="ident">phantom_waker</span>()))
+                            {
+                                <span class="ident">drop</span>(<span class="ident">context</span>.<span class="ident">secrets</span>);
 
-                                <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
+                                <span class="self">Self</span>::<span class="ident">Ready</span> {
                                     <span class="ident">state</span>,
                                     <span class="ident">secrets</span>: [
                                         <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
@@ -3707,83 +3649,49 @@
                                             <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
                                         }),
                                     ],
-                                    <span class="ident">event_count</span>,
-                                    <span class="ident">logger</span>: <span class="ident">logger</span>.<span class="number">1</span>,
-                                };
-                            }
-                            <span class="ident">Poll</span>::<span class="ident">Pending</span> <span class="op">=</span><span class="op">&gt;</span> {
-                                <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">unwrap</span>();
-
-                                <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">borrowed_phase</span> {
-                                    <span class="ident">Phase</span>::<span class="ident">RandomCommit</span> <span class="op">=</span><span class="op">&gt;</span> {
-                                        <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
-
-                                        <span class="ident">phase</span>.<span class="ident">replace</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
-                                            <span class="ident">random</span>: <span class="prelude-val">Some</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(
-                                                <span class="ident">rand</span>::<span class="ident">SeedableRng</span>::<span class="ident">from_seed</span>({
-                                                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
-
-                                                    <span class="ident">random</span>.<span class="ident">try_fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seed</span>).<span class="ident">unwrap</span>();
-
-                                                    <span class="ident">seed</span>
-                                                }),
-                                            ))),
-                                            <span class="ident">secret</span>: <span class="prelude-val">None</span>,
-                                        });
-                                    }
-                                    <span class="ident">Phase</span>::<span class="ident">Reveal</span> {
-                                        <span class="ident">random</span>,
-                                        <span class="ident">request</span>:
-                                            <span class="ident">RevealRequest</span> {
-                                                <span class="ident">player</span>,
-                                                <span class="ident">reveal</span>,
-                                                <span class="ident">verify</span>,
-                                            },
-                                    } <span class="op">=</span><span class="op">&gt;</span> {
-                                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">secret</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">secrets</span>[<span class="ident">usize</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">player</span>)] {
-                                            <span class="kw">let</span> <span class="ident">random</span> <span class="op">=</span> <span class="ident">random</span>.<span class="ident">clone</span>();
-                                            <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>.<span class="ident">try_borrow</span>().<span class="ident">unwrap</span>().<span class="number">0</span>);
-
-                                            <span class="kw">if</span> <span class="op">!</span><span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>) {
-                                                <span class="macro">unreachable</span><span class="macro">!</span>(
-                                                    <span class="string">&quot;{}:{}:{}&quot;</span>,
-                                                    <span class="macro">file</span><span class="macro">!</span>(),
-                                                    <span class="macro">line</span><span class="macro">!</span>(),
-                                                    <span class="macro">column</span><span class="macro">!</span>()
-                                                )
-                                            }
-
-                                            <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
-
-                                            <span class="ident">phase</span>.<span class="ident">replace</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
-                                                <span class="ident">random</span>,
-                                                <span class="ident">secret</span>: <span class="prelude-val">Some</span>(<span class="ident">secret</span>),
-                                            });
-                                        } <span class="kw">else</span> {
-                                            <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
-
-                                            <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
-                                                <span class="ident">state</span>,
-                                                <span class="ident">secrets</span>,
-                                                <span class="ident">phase</span>,
-                                                <span class="ident">logger</span>,
-                                            };
-                                        }
-                                    }
-                                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>()),
+                                    <span class="ident">event_count</span>: <span class="ident">context</span>.<span class="ident">event_count</span>,
+                                    <span class="ident">logger</span>,
+                                }
+                            } <span class="kw">else</span> {
+                                <span class="self">Self</span>::<span class="ident">Pending</span> {
+                                    <span class="ident">state</span>,
+                                    <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                                    <span class="ident">phase</span>,
+                                    <span class="ident">logger</span>,
                                 }
                             }
+                        } <span class="kw">else</span> {
+                            <span class="ident">state</span>
                         }
-                    }
-                } <span class="kw">else</span> {
-                    <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>())
+                    });
                 }
-            });
+                <span class="ident">Phase</span>::<span class="ident">Reveal</span> {
+                    <span class="ident">request</span>:
+                        <span class="ident">RevealRequest</span> {
+                            <span class="ident">player</span>,
+                            <span class="ident">reveal</span>,
+                            <span class="ident">verify</span>,
+                        },
+                    ..
+                } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">player</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">player</span>;
 
-            <span class="prelude-val">Ok</span>(())
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="string">&quot;self != StoreState::Ready { .. }&quot;</span>.<span class="ident">to_string</span>())
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">secret</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">secrets</span>[<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>)] {
+                        <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span>
+                            <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>.<span class="number">0</span>);
+
+                        <span class="kw">crate</span>::<span class="macro">forbid</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>));
+
+                        <span class="ident">drop</span>(<span class="ident">borrowed_phase</span>);
+
+                        <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="self">self</span>, <span class="prelude-val">Some</span>(<span class="ident">player</span>), <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>))<span class="question-mark">?</span>;
+                    }
+                }
+                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+            }
         }
+
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">fn</span> <span class="ident">logger</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {

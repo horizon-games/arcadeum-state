@@ -1361,58 +1361,46 @@ impl<S: State> StoreState<S> {
     pub fn apply_with_random(
         &mut self,
         player: Option<crate::Player>,
-        action: &S::Action,
+        action: S::Action,
         random: &mut impl rand::RngCore,
     ) -> Result<(), String> {
-        if let Self::Ready { state, .. } = self {
-            state.verify(player, action)?;
+        crate::State::apply(self, player, &StoreAction::Action(action))?;
 
-            replace_with::replace_with_or_abort(self, |state| {
-                if let Self::Ready {
-                    state,
-                    secrets: [secret1, secret2],
-                    event_count,
-                    logger,
-                } = state
-                {
-                    let phase = Rc::new(RefCell::new(Phase::Idle {
-                        random: None,
+        while let Self::Pending { secrets, phase, .. } = &self {
+            let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
+
+            match &*borrowed_phase {
+                Phase::RandomCommit => {
+                    drop(borrowed_phase);
+
+                    phase.replace(Phase::Idle {
+                        random: Some(Rc::new(RefCell::new({
+                            rand::SeedableRng::from_seed({
+                                let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
+
+                                random.try_fill_bytes(&mut seed).map_err(|error| error.to_string())?;
+
+                                seed
+                            })
+                        }))),
                         secret: None,
-                    }));
+                    });
 
-                    let secrets = [
-                        secret1.map(|secret| Rc::new(RefCell::new(secret))),
-                        secret2.map(|secret| Rc::new(RefCell::new(secret))),
-                    ];
-
-                    let mut state = state.apply(
-                        player,
-                        action,
-                        Context {
-                            phase: phase.clone(),
-                            secrets: secrets.clone(),
-                            event_count,
-                            logger: (true, logger.clone()),
-                        },
-                    );
-
-                    loop {
-                        match state
-                            .as_mut()
-                            .poll(&mut task::Context::from_waker(&phantom_waker()))
+                    replace_with::replace_with_or_abort(self, |state| {
+                        if let Self::Pending {
+                            mut state,
+                            secrets: [secret1, secret2],
+                            phase,
+                            logger,
+                        } = state
                         {
-                            Poll::Ready((
-                                state,
-                                Context {
-                                    secrets: [secret1, secret2],
-                                    event_count,
-                                    logger,
-                                    ..
-                                },
-                            )) => {
-                                drop(secrets);
+                            if let Poll::Ready((state, context)) = state
+                                .as_mut()
+                                .poll(&mut task::Context::from_waker(&phantom_waker()))
+                            {
+                                drop(context.secrets);
 
-                                return Self::Ready {
+                                Self::Ready {
                                     state,
                                     secrets: [
                                         secret1.map(|secret| {
@@ -1422,83 +1410,49 @@ impl<S: State> StoreState<S> {
                                             Rc::try_unwrap(secret).ok().unwrap().into_inner()
                                         }),
                                     ],
-                                    event_count,
-                                    logger: logger.1,
-                                };
-                            }
-                            Poll::Pending => {
-                                let borrowed_phase = phase.try_borrow().unwrap();
-
-                                match &*borrowed_phase {
-                                    Phase::RandomCommit => {
-                                        drop(borrowed_phase);
-
-                                        phase.replace(Phase::Idle {
-                                            random: Some(Rc::new(RefCell::new(
-                                                rand::SeedableRng::from_seed({
-                                                    let mut seed = <rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed::default();
-
-                                                    random.try_fill_bytes(&mut seed).unwrap();
-
-                                                    seed
-                                                }),
-                                            ))),
-                                            secret: None,
-                                        });
-                                    }
-                                    Phase::Reveal {
-                                        random,
-                                        request:
-                                            RevealRequest {
-                                                player,
-                                                reveal,
-                                                verify,
-                                            },
-                                    } => {
-                                        if let Some(secret) = &secrets[usize::from(*player)] {
-                                            let random = random.clone();
-                                            let secret = reveal(&secret.try_borrow().unwrap().0);
-
-                                            if !verify(&secret) {
-                                                unreachable!(
-                                                    "{}:{}:{}",
-                                                    file!(),
-                                                    line!(),
-                                                    column!()
-                                                )
-                                            }
-
-                                            drop(borrowed_phase);
-
-                                            phase.replace(Phase::Idle {
-                                                random,
-                                                secret: Some(secret),
-                                            });
-                                        } else {
-                                            drop(borrowed_phase);
-
-                                            return Self::Pending {
-                                                state,
-                                                secrets,
-                                                phase,
-                                                logger,
-                                            };
-                                        }
-                                    }
-                                    _ => unreachable!("{}:{}:{}", file!(), line!(), column!()),
+                                    event_count: context.event_count,
+                                    logger,
+                                }
+                            } else {
+                                Self::Pending {
+                                    state,
+                                    secrets: [secret1, secret2],
+                                    phase,
+                                    logger,
                                 }
                             }
+                        } else {
+                            state
                         }
-                    }
-                } else {
-                    unreachable!("{}:{}:{}", file!(), line!(), column!())
+                    });
                 }
-            });
+                Phase::Reveal {
+                    request:
+                        RevealRequest {
+                            player,
+                            reveal,
+                            verify,
+                        },
+                    ..
+                } => {
+                    let player = *player;
 
-            Ok(())
-        } else {
-            Err("self != StoreState::Ready { .. }".to_string())
+                    if let Some(secret) = &secrets[usize::from(player)] {
+                        let secret =
+                            reveal(&secret.try_borrow().map_err(|error| error.to_string())?.0);
+
+                        crate::forbid!(!verify(&secret));
+
+                        drop(borrowed_phase);
+
+                        crate::State::apply(self, Some(player), &StoreAction::Reveal(secret))?;
+                    }
+                }
+                _ => (),
+            }
         }
+
+        Ok(())
     }
 
     fn logger(&self) -> &Rc<RefCell<Logger<S>>> {

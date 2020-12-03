@@ -1623,49 +1623,49 @@ impl<S: State> crate::State for StoreState<S> {
                     unreachable!("{}:{}:{}", file!(), line!(), column!())
                 }
 
-                (Self::Pending { phase: context, .. }, Self::Action::RandomCommit(hash)) => {
-                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
+                (Self::Pending { phase, .. }, Self::Action::RandomCommit(hash)) => {
+                    let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
-                    if let Phase::RandomCommit = *phase {
-                        drop(phase);
+                    if let Phase::RandomCommit = *borrowed_phase {
+                        drop(borrowed_phase);
 
                         crate::forbid!(player != None && player != Some(0));
 
-                        context.replace(Phase::RandomReply {
+                        phase.replace(Phase::RandomReply {
                             hash: *hash,
                             owner_hash: player.is_none(),
                         });
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::RandomCommit".to_string());
+                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::RandomCommit".to_string());
                     }
                 }
 
-                (Self::Pending { phase: context, .. }, Self::Action::RandomReply(seed)) => {
-                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
+                (Self::Pending { phase, .. }, Self::Action::RandomReply(seed)) => {
+                    let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
-                    if let Phase::RandomReply { hash, owner_hash } = *phase {
-                        drop(phase);
+                    if let Phase::RandomReply { hash, owner_hash } = *borrowed_phase {
+                        drop(borrowed_phase);
 
                         crate::forbid!(player != None && player != Some(1));
 
-                        context.replace(Phase::RandomReveal {
+                        phase.replace(Phase::RandomReveal {
                             hash,
                             owner_hash,
                             reply: seed.to_vec(),
                         });
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReply { .. }".to_string());
+                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReply { .. }".to_string());
                     }
                 }
 
-                (Self::Pending { phase: context, .. }, Self::Action::RandomReveal(seed)) => {
-                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
+                (Self::Pending { phase, .. }, Self::Action::RandomReveal(seed)) => {
+                    let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::RandomReveal {
                         hash,
                         owner_hash,
                         reply,
-                    } = &*phase
+                    } = &*borrowed_phase
                     {
                         if *owner_hash {
                             crate::forbid!(player != None);
@@ -1686,19 +1686,19 @@ impl<S: State> crate::State for StoreState<S> {
                             .try_into()
                             .map_err(|error| format!("{}", error))?;
 
-                        drop(phase);
+                        drop(borrowed_phase);
 
-                        context.replace(Phase::Idle {
+                        phase.replace(Phase::Idle {
                             random: Some(Rc::new(RefCell::new(rand::SeedableRng::from_seed(seed)))),
                             secret: None,
                         });
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReveal { .. }".to_string());
+                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::RandomReveal { .. }".to_string());
                     }
                 }
 
-                (Self::Pending { phase: context, .. }, Self::Action::Reveal(secret)) => {
-                    let phase = context.try_borrow().map_err(|error| error.to_string())?;
+                (Self::Pending { phase, .. }, Self::Action::Reveal(secret)) => {
+                    let borrowed_phase = phase.try_borrow().map_err(|error| error.to_string())?;
 
                     if let Phase::Reveal {
                         random,
@@ -1708,21 +1708,21 @@ impl<S: State> crate::State for StoreState<S> {
                                 verify,
                                 ..
                             },
-                    } = &*phase
+                    } = &*borrowed_phase
                     {
                         crate::forbid!(player != None && player != Some(*revealer));
                         crate::forbid!(!verify(secret));
 
                         let random = random.clone();
 
-                        drop(phase);
+                        drop(borrowed_phase);
 
-                        context.replace(Phase::Idle {
+                        phase.replace(Phase::Idle {
                             random,
                             secret: Some(secret.clone()),
                         });
                     } else {
-                        return Err("context.try_borrow().map_err(|error| error.to_string())? != Phase::Reveal { .. }".to_string());
+                        return Err("phase.try_borrow().map_err(|error| error.to_string())? != Phase::Reveal { .. }".to_string());
                     }
                 }
 

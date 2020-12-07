@@ -87,8 +87,8 @@ impl State for Blank {
         self,
         _player: Option<crate::Player>,
         _action: &Self::Action,
-        context: Context<Self>,
-    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>> {
+        context: Context<Self::Secret, Self::Event>,
+    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self::Secret, Self::Event>)>>> {
         Box::pin(async move { (self, context) })
     }
 }

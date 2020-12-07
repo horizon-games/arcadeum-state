@@ -98,8 +98,8 @@ impl State for Coin {
         mut self,
         player: Option<crate::Player>,
         action: &Self::Action,
-        mut context: Context<Self>,
-    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>> {
+        mut context: Context<Self::Secret, Self::Event>,
+    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self::Secret, Self::Event>)>>> {
         Box::pin({
             let action = *action;
 

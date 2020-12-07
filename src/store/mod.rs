@@ -1284,11 +1284,11 @@ impl<S: State> StoreState<S> {
         self.0.apply_with_random(player, action, random)
     }
 
-    fn logger(&self) -> &Rc<RefCell<Logger<S>>> {
+    fn logger(&self) -> &Rc<RefCell<Logger<S::Event>>> {
         self.0.logger()
     }
 
-    fn set_logger(&mut self, logger: Rc<RefCell<Logger<S>>>) {
+    fn set_logger(&mut self, logger: Rc<RefCell<Logger<S::Event>>>) {
         self.0.set_logger(logger)
     }
 }
@@ -1338,15 +1338,15 @@ enum _StoreState<S: State> {
         action_count: usize,
         reveal_count: usize,
         event_count: usize,
-        logger: Rc<RefCell<Logger<S>>>,
+        logger: Rc<RefCell<Logger<S::Event>>>,
     },
     Pending {
-        state: Pin<Box<dyn Future<Output = (S, Context<S>)>>>,
+        state: Pin<Box<dyn Future<Output = (S, Context<S::Secret, S::Event>)>>>,
         secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
         action_count: usize,
         reveal_count: usize,
-        phase: Rc<RefCell<Phase<S>>>,
-        logger: Rc<RefCell<Logger<S>>>,
+        phase: Rc<RefCell<Phase<S::Secret>>>,
+        logger: Rc<RefCell<Logger<S::Event>>>,
     },
 }
 
@@ -1590,13 +1590,13 @@ impl<S: State> _StoreState<S> {
         Ok(())
     }
 
-    fn logger(&self) -> &Rc<RefCell<Logger<S>>> {
+    fn logger(&self) -> &Rc<RefCell<Logger<S::Event>>> {
         match self {
             Self::Ready { logger, .. } | Self::Pending { logger, .. } => logger,
         }
     }
 
-    fn set_logger(&mut self, logger: Rc<RefCell<Logger<S>>>) {
+    fn set_logger(&mut self, logger: Rc<RefCell<Logger<S::Event>>>) {
         match self {
             Self::Ready {
                 logger: state_logger,
@@ -2109,8 +2109,8 @@ pub trait State: Clone {
         self,
         player: Option<crate::Player>,
         action: &Self::Action,
-        context: Context<Self>,
-    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self>)>>>;
+        context: Context<Self::Secret, Self::Event>,
+    ) -> Pin<Box<dyn Future<Output = (Self, Context<Self::Secret, Self::Event>)>>>;
 }
 
 /// Domain-specific store state secret trait
@@ -2137,16 +2137,20 @@ impl<T: serde::Serialize + serde::de::DeserializeOwned + Clone> Secret for T {
 }
 
 /// [State::apply] utilities
-pub struct Context<S: State> {
+pub struct Context<S: Secret, E> {
     phase: Rc<RefCell<Phase<S>>>,
-    secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
+    secrets: [Option<Rc<RefCell<(S, rand_xorshift::XorShiftRng)>>>; 2],
     event_count: usize,
-    logger: (bool, Rc<RefCell<Logger<S>>>),
+    logger: (bool, Rc<RefCell<Logger<E>>>),
 }
 
-impl<S: State> Context<S> {
+impl<S: Secret, E> Context<S, E> {
     /// Mutates a player's secret information.
-    pub fn mutate_secret(&mut self, player: crate::Player, mutate: impl Fn(MutateSecretInfo<S>)) {
+    pub fn mutate_secret(
+        &mut self,
+        player: crate::Player,
+        mutate: impl Fn(MutateSecretInfo<S, E>),
+    ) {
         self.event_count += 1;
 
         if let Some(secret) = &self.secrets[usize::from(player)] {
@@ -2194,7 +2198,7 @@ impl<S: State> Context<S> {
     pub async fn reveal<T: Secret>(
         &mut self,
         player: crate::Player,
-        reveal: impl Fn(&S::Secret) -> T + 'static,
+        reveal: impl Fn(&S) -> T + 'static,
         verify: impl Fn(&T) -> bool + 'static,
     ) -> T {
         self.phase.replace(Phase::Reveal {
@@ -2226,7 +2230,7 @@ impl<S: State> Context<S> {
     pub async fn reveal_unique<T: Secret>(
         &mut self,
         player: crate::Player,
-        reveal: impl Fn(&S::Secret) -> T + 'static,
+        reveal: impl Fn(&S) -> T + 'static,
         verify: impl Fn(&T) -> bool + 'static,
     ) -> T {
         let random = if let Phase::Idle { random, .. } = &*self.phase.try_borrow().unwrap() {
@@ -2271,7 +2275,7 @@ impl<S: State> Context<S> {
     /// Logs an event if logging is enabled.
     ///
     /// See [Context::enable_logs].
-    pub fn log(&mut self, event: S::Event) {
+    pub fn log(&mut self, event: E) {
         if self.logger.0 {
             if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
                 self.event_count += 1;
@@ -2291,8 +2295,8 @@ impl<S: State> Context<S> {
     #[doc(hidden)]
     pub fn new(
         phase: Rc<RefCell<Phase<S>>>,
-        secrets: [Option<Rc<RefCell<(S::Secret, rand_xorshift::XorShiftRng)>>>; 2],
-        log: impl FnMut(S::Event) + 'static,
+        secrets: [Option<Rc<RefCell<(S, rand_xorshift::XorShiftRng)>>>; 2],
+        log: impl FnMut(E) + 'static,
     ) -> Self {
         Self {
             phase,
@@ -2304,41 +2308,41 @@ impl<S: State> Context<S> {
 }
 
 /// [Context::mutate_secret] callback data
-pub struct MutateSecretInfo<'a, S: State> {
+pub struct MutateSecretInfo<'a, S: Secret, E> {
     /// The secret.
-    pub secret: &'a mut S::Secret,
+    pub secret: &'a mut S,
 
     /// A source of entropy.
     pub random: &'a mut dyn rand::RngCore,
 
     /// An event logger.
-    pub log: &'a mut dyn FnMut(S::Event),
+    pub log: &'a mut dyn FnMut(E),
 }
 
-impl<S: State> Deref for MutateSecretInfo<'_, S> {
-    type Target = S::Secret;
+impl<S: Secret, E> Deref for MutateSecretInfo<'_, S, E> {
+    type Target = S;
 
     fn deref(&self) -> &Self::Target {
         self.secret
     }
 }
 
-impl<S: State> DerefMut for MutateSecretInfo<'_, S> {
+impl<S: Secret, E> DerefMut for MutateSecretInfo<'_, S, E> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.secret
     }
 }
 
-impl<S: State> MutateSecretInfo<'_, S> {
+impl<S: Secret, E> MutateSecretInfo<'_, S, E> {
     /// Logs an event.
-    pub fn log(&mut self, event: S::Event) {
+    pub fn log(&mut self, event: E) {
         (self.log)(event)
     }
 }
 
 #[doc(hidden)]
 #[derive(Debug)]
-pub enum Phase<S: State> {
+pub enum Phase<S: Secret> {
     Idle {
         random: Option<Rc<RefCell<rand_xorshift::XorShiftRng>>>,
         secret: Option<Vec<u8>>,
@@ -2362,22 +2366,22 @@ pub enum Phase<S: State> {
 #[doc(hidden)]
 #[derive(derivative::Derivative)]
 #[derivative(Debug)]
-pub struct RevealRequest<S: State> {
+pub struct RevealRequest<S: Secret> {
     pub player: crate::Player,
     #[derivative(Debug = "ignore")]
-    pub reveal: Box<dyn Fn(&S::Secret) -> Vec<u8>>,
+    pub reveal: Box<dyn Fn(&S) -> Vec<u8>>,
     #[derivative(Debug = "ignore")]
     pub verify: Box<dyn Fn(&[u8]) -> bool>,
 }
 
-struct Logger<S: State> {
-    log: Box<dyn FnMut(S::Event)>,
+struct Logger<E> {
+    log: Box<dyn FnMut(E)>,
     event_count: usize,
     enabled: bool,
 }
 
-impl<S: State> Logger<S> {
-    fn new(log: impl FnMut(S::Event) + 'static) -> Self {
+impl<E> Logger<E> {
+    fn new(log: impl FnMut(E) + 'static) -> Self {
         Self {
             log: Box::new(log),
             event_count: Default::default(),
@@ -2385,7 +2389,7 @@ impl<S: State> Logger<S> {
         }
     }
 
-    fn log(&mut self, event_count: usize, event: S::Event) {
+    fn log(&mut self, event_count: usize, event: E) {
         if self.enabled && event_count > self.event_count {
             self.event_count = event_count;
 
@@ -2394,9 +2398,9 @@ impl<S: State> Logger<S> {
     }
 }
 
-struct SharedXorShiftRngFuture<S: State>(Rc<RefCell<Phase<S>>>);
+struct SharedXorShiftRngFuture<S: Secret>(Rc<RefCell<Phase<S>>>);
 
-impl<S: State> Future for SharedXorShiftRngFuture<S> {
+impl<S: Secret> Future for SharedXorShiftRngFuture<S> {
     type Output = SharedXorShiftRng;
 
     fn poll(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Self::Output> {
@@ -2436,9 +2440,9 @@ impl rand::RngCore for SharedXorShiftRng {
     }
 }
 
-struct RevealFuture<S: State>(Rc<RefCell<Phase<S>>>);
+struct RevealFuture<S: Secret>(Rc<RefCell<Phase<S>>>);
 
-impl<S: State> Future for RevealFuture<S> {
+impl<S: Secret> Future for RevealFuture<S> {
     type Output = Vec<u8>;
 
     fn poll(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Self::Output> {

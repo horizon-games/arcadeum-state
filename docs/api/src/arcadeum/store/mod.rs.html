@@ -2236,6 +2236,8 @@
 <span id="2233">2233</span>
 <span id="2234">2234</span>
 <span id="2235">2235</span>
+<span id="2236">2236</span>
+<span id="2237">2237</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -3597,6 +3599,8 @@
     }
 
     <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
+    <span class="doccomment">/// Applies an action by a given player to the state using the provided random number generator</span>
+    <span class="doccomment">/// instead of doing a commit-reveal for randomness.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_with_random</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,

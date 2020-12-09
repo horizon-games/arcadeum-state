@@ -1358,6 +1358,8 @@ impl<S: State> StoreState<S> {
     }
 
     #[doc(hidden)]
+    /// Applies an action by a given player to the state using the provided random number generator
+    /// instead of doing a commit-reveal for randomness.
     pub fn apply_with_random(
         &mut self,
         player: Option<crate::Player>,

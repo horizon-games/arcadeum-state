@@ -2462,6 +2462,7 @@
 <span id="2459">2459</span>
 <span id="2460">2460</span>
 <span id="2461">2461</span>
+<span id="2462">2462</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -4759,6 +4760,7 @@
 }
 
 <span class="doccomment">/// [Context::mutate_secret] callback data</span>
+<span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MutateSecretInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span>: <span class="ident">Secret</span>, <span class="ident">E</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The secret.</span>
     <span class="kw">pub</span> <span class="ident">secret</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">S</span>,

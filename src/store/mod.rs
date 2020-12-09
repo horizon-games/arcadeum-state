@@ -2294,6 +2294,7 @@ impl<S: Secret, E> Context<S, E> {
 }
 
 /// [Context::mutate_secret] callback data
+#[non_exhaustive]
 pub struct MutateSecretInfo<'a, S: Secret, E> {
     /// The secret.
     pub secret: &'a mut S,

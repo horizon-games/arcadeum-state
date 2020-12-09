@@ -1302,6 +1302,7 @@ impl<S: State> ProofAction<S> {
 }
 
 /// State transition
+#[non_exhaustive]
 #[derive(derivative::Derivative, Clone)]
 #[derivative(Debug(bound = "S::Action: Debug"))]
 pub enum PlayerAction<S: State> {

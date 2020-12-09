@@ -1531,6 +1531,7 @@
 <span id="1528">1528</span>
 <span id="1529">1529</span>
 <span id="1530">1530</span>
+<span id="1531">1531</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -2836,6 +2837,7 @@
 }
 
 <span class="doccomment">/// State transition</span>
+<span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>, <span class="ident">Clone</span>)]</span>
 <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>(<span class="ident">bound</span> <span class="op">=</span> <span class="string">&quot;S::Action: Debug&quot;</span>))]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PlayerAction</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {

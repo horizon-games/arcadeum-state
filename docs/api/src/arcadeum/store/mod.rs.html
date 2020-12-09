@@ -2462,22 +2462,6 @@
 <span id="2459">2459</span>
 <span id="2460">2460</span>
 <span id="2461">2461</span>
-<span id="2462">2462</span>
-<span id="2463">2463</span>
-<span id="2464">2464</span>
-<span id="2465">2465</span>
-<span id="2466">2466</span>
-<span id="2467">2467</span>
-<span id="2468">2468</span>
-<span id="2469">2469</span>
-<span id="2470">2470</span>
-<span id="2471">2471</span>
-<span id="2472">2472</span>
-<span id="2473">2473</span>
-<span id="2474">2474</span>
-<span id="2475">2475</span>
-<span id="2476">2476</span>
-<span id="2477">2477</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -4772,20 +4756,6 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enable_logs</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">enabled</span>: <span class="ident">bool</span>) {
         <span class="self">self</span>.<span class="ident">logger</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">enabled</span>;
     }
-
-    <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">phase</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span>(<span class="ident">S</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">E</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">phase</span>,
-            <span class="ident">secrets</span>,
-            <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="ident">log</span>)))),
-        }
-    }
 }
 
 <span class="doccomment">/// [Context::mutate_secret] callback data</span>
@@ -4821,9 +4791,8 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Secret</span><span class="op">&gt;</span> {
+<span class="kw">enum</span> <span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Secret</span><span class="op">&gt;</span> {
     <span class="ident">Idle</span> {
         <span class="ident">random</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">secret</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
@@ -4844,15 +4813,14 @@
     },
 }
 
-<span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">derivative</span>::<span class="ident">Derivative</span>)]</span>
 <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RevealRequest</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Secret</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="ident">player</span>: <span class="kw">crate</span>::<span class="ident">Player</span>,
+<span class="kw">struct</span> <span class="ident">RevealRequest</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Secret</span><span class="op">&gt;</span> {
+    <span class="ident">player</span>: <span class="kw">crate</span>::<span class="ident">Player</span>,
     <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span> <span class="op">=</span> <span class="string">&quot;ignore&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">reveal</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">reveal</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Debug</span> <span class="op">=</span> <span class="string">&quot;ignore&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">verify</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span><span class="op">&gt;</span>,
+    <span class="ident">verify</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">struct</span> <span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {

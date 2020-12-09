@@ -2291,20 +2291,6 @@ impl<S: Secret, E> Context<S, E> {
     pub fn enable_logs(&mut self, enabled: bool) {
         self.logger.0 = enabled;
     }
-
-    #[doc(hidden)]
-    pub fn new(
-        phase: Rc<RefCell<Phase<S>>>,
-        secrets: [Option<Rc<RefCell<(S, rand_xorshift::XorShiftRng)>>>; 2],
-        log: impl FnMut(E) + 'static,
-    ) -> Self {
-        Self {
-            phase,
-            secrets,
-            event_count: Default::default(),
-            logger: (true, Rc::new(RefCell::new(Logger::new(log)))),
-        }
-    }
 }
 
 /// [Context::mutate_secret] callback data
@@ -2340,9 +2326,8 @@ impl<S: Secret, E> MutateSecretInfo<'_, S, E> {
     }
 }
 
-#[doc(hidden)]
 #[derive(Debug)]
-pub enum Phase<S: Secret> {
+enum Phase<S: Secret> {
     Idle {
         random: Option<Rc<RefCell<rand_xorshift::XorShiftRng>>>,
         secret: Option<Vec<u8>>,
@@ -2363,15 +2348,14 @@ pub enum Phase<S: Secret> {
     },
 }
 
-#[doc(hidden)]
 #[derive(derivative::Derivative)]
 #[derivative(Debug)]
-pub struct RevealRequest<S: Secret> {
-    pub player: crate::Player,
+struct RevealRequest<S: Secret> {
+    player: crate::Player,
     #[derivative(Debug = "ignore")]
-    pub reveal: Box<dyn Fn(&S) -> Vec<u8>>,
+    reveal: Box<dyn Fn(&S) -> Vec<u8>>,
     #[derivative(Debug = "ignore")]
-    pub verify: Box<dyn Fn(&[u8]) -> bool>,
+    verify: Box<dyn Fn(&[u8]) -> bool>,
 }
 
 struct Logger<E> {

@@ -13,7 +13,6 @@ std = ["cached", "replace_with/std", "serde_cbor/std"]
 tester = ["tester-certify"]
 tester-approve = []
 tester-certify = []
-version = ["std"]
 
 [dependencies]
 cached = { version = "0.11.0", optional = true }

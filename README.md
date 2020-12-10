@@ -43,7 +43,7 @@ $ cargo test --features tester --features bindings -- --nocapture
 ## Documentation
 
 ```bash
-$ cargo doc --release --no-deps --features 'version bindings tester debug' && rm -rf docs/api && mv target/doc docs/api
+$ cargo doc --release --no-deps --features 'bindings tester debug' && rm -rf docs/api && mv target/doc docs/api
 ```
 
 ## Licence

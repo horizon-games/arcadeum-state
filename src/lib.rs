@@ -48,9 +48,9 @@ pub mod utils;
 #[doc(hidden)]
 pub mod debug;
 
-#[cfg(feature = "version")]
+#[cfg(feature = "std")]
 pub mod version;
-#[cfg(feature = "version")]
+#[cfg(feature = "std")]
 pub use version::tag;
 
 mod error;

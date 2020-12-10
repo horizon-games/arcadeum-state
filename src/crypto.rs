@@ -16,14 +16,6 @@
 
 //! Cryptographic utilities
 
-#[cfg(feature = "std")]
-use std::{
-    convert::TryInto,
-    fmt::{Error, Formatter},
-    mem::size_of,
-};
-
-#[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*, vec},
     core::{
@@ -35,9 +27,6 @@ use {
         mem::size_of,
     },
 };
-
-#[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-use cached::cached;
 
 #[cfg(not(feature = "no-crypto"))]
 pub use secp256k1::SecretKey;
@@ -155,7 +144,7 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
 }
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]
-cached! {
+cached::cached! {
     RECOVER_CACHE: cached::SizedCache<(Hash, Signature), Result<Address, String>> = cached::SizedCache::with_size(256);
 
     fn _cached_recover(digest: Hash, signature: Signature) -> Result<Address, String> = {

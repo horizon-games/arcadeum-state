@@ -16,22 +16,6 @@
 
 //! Client store
 
-#[cfg(feature = "std")]
-use std::{
-    cell::{Ref, RefCell},
-    convert::TryInto,
-    fmt::Debug,
-    future::Future,
-    mem::size_of,
-    ops::{Deref, DerefMut},
-    pin::Pin,
-    ptr,
-    rc::Rc,
-    task,
-    task::{Poll, RawWaker, RawWakerVTable, Waker},
-};
-
-#[cfg(not(feature = "std"))]
 use {
     alloc::{fmt::Debug, format, prelude::v1::*, rc::Rc, vec},
     core::{

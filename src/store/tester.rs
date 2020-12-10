@@ -16,10 +16,6 @@
 
 //! Store tester
 
-#[cfg(feature = "std")]
-use std::{cell::RefCell, collections::VecDeque, mem::size_of, ops::Deref, rc::Rc};
-
-#[cfg(not(feature = "std"))]
 use {
     alloc::{collections::VecDeque, format, prelude::v1::*, rc::Rc, vec},
     core::{cell::RefCell, column, file, line, mem::size_of, ops::Deref},

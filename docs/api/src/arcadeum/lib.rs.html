@@ -1521,17 +1521,6 @@
 <span id="1518">1518</span>
 <span id="1519">1519</span>
 <span id="1520">1520</span>
-<span id="1521">1521</span>
-<span id="1522">1522</span>
-<span id="1523">1523</span>
-<span id="1524">1524</span>
-<span id="1525">1525</span>
-<span id="1526">1526</span>
-<span id="1527">1527</span>
-<span id="1528">1528</span>
-<span id="1529">1529</span>
-<span id="1530">1530</span>
-<span id="1531">1531</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -1550,21 +1539,10 @@
  */</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">feature</span>(<span class="ident">alloc_prelude</span>))]</span>
+<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">alloc_prelude</span>)]</span>
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">collections</span>::<span class="ident">BTreeMap</span>,
-    <span class="ident">convert</span>::<span class="ident">TryInto</span>,
-    <span class="ident">fmt</span>::<span class="ident">Debug</span>,
-    <span class="ident">mem</span>::<span class="ident">size_of</span>,
-    <span class="ident">ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>, <span class="ident">Range</span>},
-};
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
 <span class="kw">use</span> {
     <span class="ident">alloc</span>::{<span class="ident">collections</span>::<span class="ident">BTreeMap</span>, <span class="ident">format</span>, <span class="ident">prelude</span>::<span class="ident">v1</span>::<span class="kw-2">*</span>, <span class="ident">vec</span>},
     <span class="ident">core</span>::{

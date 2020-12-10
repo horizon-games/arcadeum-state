@@ -15,7 +15,7 @@
  */
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
+#![feature(alloc_prelude)]
 
 use arcadeum::{
     crypto::{sign, Addressable, SecretKey},
@@ -27,13 +27,8 @@ use arcadeum::utils::hex;
 
 use rand::RngCore;
 
-#[cfg(feature = "std")]
-use std::{convert::TryInto, mem::size_of};
-
-#[cfg(not(feature = "std"))]
 extern crate alloc;
 
-#[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*, vec},
     core::{convert::TryInto, mem::size_of},

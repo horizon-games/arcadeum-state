@@ -16,10 +16,6 @@
 
 //! Error utilities
 
-#[cfg(feature = "std")]
-use std::fmt::Debug;
-
-#[cfg(not(feature = "std"))]
 use {alloc::prelude::v1::*, core::fmt::Debug};
 
 #[derive(Debug)]

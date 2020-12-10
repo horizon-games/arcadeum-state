@@ -15,21 +15,10 @@
  */
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
+#![feature(alloc_prelude)]
 
-#[cfg(feature = "std")]
-use std::{
-    collections::BTreeMap,
-    convert::TryInto,
-    fmt::Debug,
-    mem::size_of,
-    ops::{Deref, DerefMut, Range},
-};
-
-#[cfg(not(feature = "std"))]
 extern crate alloc;
 
-#[cfg(not(feature = "std"))]
 use {
     alloc::{collections::BTreeMap, format, prelude::v1::*, vec},
     core::{

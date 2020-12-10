@@ -16,7 +16,10 @@
 
 //! WebAssembly-specific utilities
 
-use std::convert::TryInto;
+use {
+    alloc::prelude::v1::*,
+    core::{convert::TryInto, num::NonZeroU32},
+};
 
 /// Generates WebAssembly bindings for a [super::State].
 #[macro_export]
@@ -521,34 +524,26 @@ impl rand::RngCore for JsRng {
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-        let length: u32 = dest.len().try_into().map_err(rand::Error::new)?;
+        let length: u32 = dest
+            .len()
+            .try_into()
+            .map_err(|_| NonZeroU32::new(rand::Error::CUSTOM_START).unwrap())?;
 
         let random: Vec<u8> = crate::utils::from_js(
             self.0
                 .call1(&wasm_bindgen::JsValue::UNDEFINED, &length.into())
-                .map_err(|error| rand::Error::new(JsRngError(format!("{:?}", error))))?,
+                .map_err(|_| NonZeroU32::new(rand::Error::CUSTOM_START + 1).unwrap())?,
         )
-        .map_err(rand::Error::new)?;
+        .map_err(|_| NonZeroU32::new(rand::Error::CUSTOM_START + 2).unwrap())?;
 
         if random.len() != dest.len() {
-            return Err(rand::Error::new(JsRngError(
-                "random.len() != dest.len()".to_string(),
-            )));
+            return Err(NonZeroU32::new(rand::Error::CUSTOM_START + 3)
+                .unwrap()
+                .into());
         }
 
         dest.copy_from_slice(&random);
 
         Ok(())
-    }
-}
-
-#[derive(Debug)]
-struct JsRngError(String);
-
-impl std::error::Error for JsRngError {}
-
-impl std::fmt::Display for JsRngError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        std::fmt::Display::fmt(&self.0, f)
     }
 }

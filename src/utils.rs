@@ -16,14 +16,6 @@
 
 //! Utilities
 
-#[cfg(feature = "std")]
-use std::{
-    convert::TryInto,
-    fmt::{Error, Formatter},
-    mem::size_of,
-};
-
-#[cfg(not(feature = "std"))]
 use {
     alloc::{format, prelude::v1::*},
     core::{

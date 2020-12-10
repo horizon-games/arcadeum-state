@@ -15,7 +15,7 @@
  */
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
+#![feature(alloc_prelude)]
 
 use arcadeum::{
     store::{Context, State, Tester},
@@ -25,16 +25,11 @@ use arcadeum::{
 use rand::RngCore;
 use serde::Serialize;
 
-#[cfg(feature = "std")]
-use std::{future::Future, pin::Pin};
-
-#[cfg(not(feature = "std"))]
 extern crate alloc;
 
-#[cfg(not(feature = "std"))]
 use {
-    alloc::{collections::VecDeque, format, prelude::v1::*, rc::Rc, vec},
-    core::{cell::RefCell, convert::TryInto, future::Future, pin::Pin},
+    alloc::{format, prelude::v1::*, vec},
+    core::{future::Future, pin::Pin},
 };
 
 #[cfg(not(feature = "std"))]

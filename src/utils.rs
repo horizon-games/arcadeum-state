@@ -110,7 +110,7 @@ pub fn unhex(mut hex: &str) -> Result<Vec<u8>, String> {
     Ok(data)
 }
 
-#[cfg(any(feature = "bindings", feature = "debug"))]
+#[cfg(feature = "std")]
 #[doc(hidden)]
 pub fn from_js<T: for<'a> serde::Deserialize<'a>>(
     value: wasm_bindgen::JsValue,
@@ -118,7 +118,7 @@ pub fn from_js<T: for<'a> serde::Deserialize<'a>>(
     serde_wasm_bindgen::from_value(value).map_err(|error| error.to_string())
 }
 
-#[cfg(any(feature = "bindings", feature = "debug"))]
+#[cfg(feature = "std")]
 #[doc(hidden)]
 pub fn to_js<T: serde::Serialize + ?Sized>(value: &T) -> Result<wasm_bindgen::JsValue, String> {
     serde_wasm_bindgen::to_value(&value).map_err(|error| error.to_string())

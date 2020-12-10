@@ -47,7 +47,7 @@ macro_rules! println {
     };
 }
 
-#[cfg(feature = "bindings")]
+#[cfg(feature = "std")]
 arcadeum::bind!(Coin);
 
 #[derive(Serialize, Clone, Debug, Default)]

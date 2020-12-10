@@ -48,7 +48,7 @@ macro_rules! println {
     };
 }
 
-#[cfg(feature = "bindings")]
+#[cfg(feature = "std")]
 arcadeum::bind!(Battleship);
 
 #[derive(Serialize, Clone, Debug, Default)]

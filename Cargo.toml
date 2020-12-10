@@ -6,10 +6,8 @@ edition = "2018"
 
 [features]
 default = ["std"]
-bindings = ["js-sys", "rand_core", "serde-wasm-bindgen", "std", "wasm-bindgen"]
-debug = ["serde-wasm-bindgen", "wasm-bindgen", "web-sys"]
 no-crypto = []
-std = ["cached", "replace_with/std", "serde_cbor/std"]
+std = ["cached", "js-sys", "rand_core", "replace_with/std", "serde-wasm-bindgen", "serde_cbor/std", "wasm-bindgen", "web-sys"]
 test-approvals = []
 
 [dependencies]

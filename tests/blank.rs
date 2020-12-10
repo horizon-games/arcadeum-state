@@ -46,7 +46,7 @@ macro_rules! println {
     };
 }
 
-#[cfg(feature = "bindings")]
+#[cfg(feature = "std")]
 arcadeum::bind!(Blank);
 
 #[derive(Serialize, Clone, Debug, Default)]

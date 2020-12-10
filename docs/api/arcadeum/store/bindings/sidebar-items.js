@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["JsRng","Random number generator using an external JavaScript function for entropy"]]});
+initSidebarItems({});

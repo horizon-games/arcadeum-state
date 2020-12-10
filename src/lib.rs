@@ -44,7 +44,7 @@ pub mod crypto;
 pub mod store;
 pub mod utils;
 
-#[cfg(feature = "debug")]
+#[cfg(feature = "std")]
 #[doc(hidden)]
 pub mod debug;
 

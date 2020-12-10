@@ -450,7 +450,7 @@ impl<S: State> Store<S> {
                     Some(crate::ProofAction {
                         player: None,
                         action: crate::PlayerAction::Play(StoreAction(_StoreAction::RandomCommit(
-                            tiny_keccak::keccak256(&seed),
+                            crate::crypto::keccak256(&seed),
                         ))),
                     })
                 }
@@ -589,7 +589,7 @@ impl<S: State> Store<S> {
 
                             self.seed = Some(seed.to_vec());
 
-                            Some(_StoreAction::RandomCommit(tiny_keccak::keccak256(&seed)))
+                            Some(_StoreAction::RandomCommit(crate::crypto::keccak256(&seed)))
                         }
                         (Phase::RandomReply { .. }, Some(1)) => {
                             let seed = {
@@ -621,7 +621,7 @@ impl<S: State> Store<S> {
                             None,
                         ) => {
                             if let Some(seed) = &self.seed {
-                                crate::forbid!(&tiny_keccak::keccak256(seed) != hash);
+                                crate::forbid!(&crate::crypto::keccak256(seed) != hash);
 
                                 Some(_StoreAction::RandomReveal(seed.to_vec()))
                             } else {
@@ -1310,7 +1310,7 @@ impl<S: State> crate::State for _StoreState<S> {
                         }
 
                         if player.is_some() || *owner_hash {
-                            crate::forbid!(tiny_keccak::keccak256(seed) != *hash);
+                            crate::forbid!(crate::crypto::keccak256(seed) != *hash);
                         }
 
                         let seed = reply

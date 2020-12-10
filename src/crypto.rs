@@ -68,7 +68,7 @@ pub fn sign(message: &[u8], secret: &SecretKey) -> Signature {
     ]
     .concat();
 
-    let message = secp256k1::Message::parse(&tiny_keccak::keccak256(&message));
+    let message = secp256k1::Message::parse(&keccak256(&message));
 
     let (mut signature, recovery) = secp256k1::sign(&message, secret);
     signature.normalize_s();
@@ -137,10 +137,7 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
     ]
     .concat();
 
-    _cached_recover(
-        tiny_keccak::keccak256(&message),
-        signature.try_into().unwrap(),
-    )
+    _cached_recover(keccak256(&message), signature.try_into().unwrap())
 }
 
 #[cfg(all(not(feature = "no-crypto"), feature = "std"))]
@@ -200,7 +197,7 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
     ]
     .concat();
 
-    let message = secp256k1::Message::parse(&tiny_keccak::keccak256(&message));
+    let message = secp256k1::Message::parse(&keccak256(&message));
 
     let recovery = secp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
         0 | 27 => 0,
@@ -297,7 +294,7 @@ impl Addressable for &Address {
 
 /// Computes the address of a secp256k1 ECDSA public key.
 pub fn address(public: &secp256k1::PublicKey) -> Address {
-    tiny_keccak::keccak256(&public.serialize()[1..])[size_of::<Hash>() - size_of::<Address>()..]
+    keccak256(&public.serialize()[1..])[size_of::<Hash>() - size_of::<Address>()..]
         .try_into()
         .unwrap()
 }
@@ -393,7 +390,7 @@ pub fn address(public: &secp256k1::PublicKey) -> Address {
 /// ```
 pub fn eip55(address: &Address) -> String {
     let mut address = crate::utils::hex(address).into_bytes();
-    let hash = tiny_keccak::keccak256(&address["0x".len()..]);
+    let hash = keccak256(&address["0x".len()..]);
 
     for i in 0..size_of::<Address>() {
         if hash[i] & 0x80 != 0 {
@@ -410,6 +407,19 @@ pub fn eip55(address: &Address) -> String {
 
 pub(crate) fn fmt_address(address: &impl Addressable, f: &mut Formatter<'_>) -> Result<(), Error> {
     write!(f, "{}", address.eip55())
+}
+
+/// Computes the hash specified by the Keccak SHA-3 submission.
+///
+/// ```
+/// assert_eq!(arcadeum::crypto::keccak256(b"quod erat demonstrandum"), *b"\xa6\x25\x38\x1a\x8d\x94\xc4\xe8\x5a\x98\xb5\x2d\xd4\x44\xc8\xb6\x32\x68\x28\x96\x96\x7c\x04\x1f\xc3\x28\x2f\x1c\xc3\x84\xfb\x48");
+/// ```
+pub fn keccak256(data: &[u8]) -> Hash {
+    let mut hash = Hash::default();
+    let mut keccak = tiny_keccak::Keccak::v256();
+    tiny_keccak::Hasher::update(&mut keccak, data);
+    tiny_keccak::Hasher::finalize(keccak, &mut hash);
+    hash
 }
 
 /// Balanced Merkle tree
@@ -634,7 +644,7 @@ impl<T: MerkleLeaf> MerkleTree<T> {
     }
 
     fn compute_root(&self, path: &MerklePath) -> Hash {
-        tiny_keccak::keccak256(&match path.index(self.len()) {
+        keccak256(&match path.index(self.len()) {
             Some(index) => match &self.salts {
                 Some(salts) => {
                     [self.elements[index].serialize().as_slice(), &salts[index]].concat()
@@ -759,7 +769,7 @@ impl<T: MerkleLeaf> MerkleProof<T> {
     }
 
     fn compute_root(&self) -> Result<Hash, String> {
-        let mut root = tiny_keccak::keccak256(&match &self.salt {
+        let mut root = keccak256(&match &self.salt {
             Some(salt) => [self.element.serialize().as_slice(), salt].concat(),
             None => self.element.serialize(),
         });
@@ -769,7 +779,7 @@ impl<T: MerkleLeaf> MerkleProof<T> {
         for hash in &self.hashes {
             crate::forbid!(path.mask == 0);
 
-            root = tiny_keccak::keccak256(
+            root = keccak256(
                 &match path.path % 2 {
                     0 => [&root[..], &hash[..]],
                     1 => [&hash[..], &root[..]],

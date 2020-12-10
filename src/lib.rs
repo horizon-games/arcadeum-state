@@ -389,7 +389,7 @@ impl<S: State> Proof<S> {
                     + size_of::<crypto::Signature>()
         );
 
-        let hash = tiny_keccak::keccak256(data);
+        let hash = crypto::keccak256(data);
 
         let mut state = {
             let size = utils::read_u32_usize(&mut data)?;
@@ -559,7 +559,7 @@ impl<S: State> Proof<S> {
     }
 
     fn compute_hash(&self) -> crypto::Hash {
-        tiny_keccak::keccak256(&self.serialize())
+        crypto::keccak256(&self.serialize())
     }
 
     fn compute_state(&self) -> ProofState<S> {
@@ -640,7 +640,7 @@ impl<S: State> RootProof<S> {
             latest,
         };
 
-        proof.hash = tiny_keccak::keccak256(&proof.serialize());
+        proof.hash = crypto::keccak256(&proof.serialize());
 
         Ok(proof)
     }
@@ -703,7 +703,7 @@ impl<S: State> RootProof<S> {
     fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {
         forbid!(data.len() < size_of::<u32>() + size_of::<u32>() + size_of::<crypto::Signature>());
 
-        let hash = tiny_keccak::keccak256(data);
+        let hash = crypto::keccak256(data);
 
         let size = utils::read_u32_usize(&mut data)?;
 

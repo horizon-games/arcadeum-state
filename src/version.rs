@@ -82,12 +82,12 @@ pub fn tag<P: AsRef<std::path::Path>>(
 pub fn version<P: AsRef<std::path::Path>>(
     paths: impl Iterator<Item = P>,
 ) -> std::io::Result<Vec<u8>> {
-    let mut keccak = tiny_keccak::Keccak::new_keccak256();
+    let mut keccak = tiny_keccak::Keccak::v256();
 
     scan(&mut keccak, paths)?;
 
     let mut version = [0; 32];
-    keccak.finalize(&mut version);
+    tiny_keccak::Hasher::finalize(keccak, &mut version);
     Ok(version.to_vec())
 }
 
@@ -102,7 +102,7 @@ fn scan<P: AsRef<std::path::Path>>(
         let metadata = std::fs::metadata(path)?;
 
         if metadata.is_file() {
-            keccak.update(&std::fs::read(path)?);
+            tiny_keccak::Hasher::update(keccak, &std::fs::read(path)?);
         } else if metadata.is_dir() {
             scan(
                 keccak,

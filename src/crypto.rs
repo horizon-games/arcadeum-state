@@ -60,9 +60,10 @@ pub type Hash = [u8; 32];
 /// # Examples
 ///
 /// ```
-/// use arcadeum::crypto::Addressable;
+/// use {arcadeum::crypto::Addressable, rand::SeedableRng};
 ///
-/// let secret = secp256k1::SecretKey::random(&mut rand::thread_rng());
+/// let mut random = rand::rngs::StdRng::from_seed([1; 32]);
+/// let secret = secp256k1::SecretKey::random(&mut random);
 /// let message = b"quod erat demonstrandum";
 /// let signature = arcadeum::crypto::sign(message, &secret);
 ///
@@ -95,12 +96,12 @@ pub fn sign(message: &[u8], secret: &SecretKey) -> Signature {
 /// # Examples
 ///
 /// ```
-/// use arcadeum::crypto::Addressable;
-/// use rand::RngCore;
+/// use {arcadeum::crypto::Addressable, rand::{RngCore, SeedableRng}};
 ///
 /// let secret = {
 ///     let mut key = arcadeum::crypto::SecretKey::default();
-///     rand::thread_rng().try_fill_bytes(&mut key).unwrap();
+///     let mut random = rand::rngs::StdRng::from_seed([1; 32]);
+///     random.try_fill_bytes(&mut key).unwrap();
 ///     key
 /// };
 ///
@@ -430,6 +431,10 @@ pub(crate) fn fmt_address(address: &impl Addressable, f: &mut Formatter<'_>) -> 
 /// # Examples
 ///
 /// ```
+/// use rand::SeedableRng;
+///
+/// let mut random = rand::rngs::StdRng::from_seed([1; 32]);
+///
 /// let tree = arcadeum::crypto::MerkleTree::with_salt(
 ///     vec![
 ///         vec![0; 0],
@@ -444,7 +449,7 @@ pub(crate) fn fmt_address(address: &impl Addressable, f: &mut Formatter<'_>) -> 
 ///         vec![9; 9],
 ///     ],
 ///     16,
-///     &mut rand::thread_rng(),
+///     &mut random,
 /// )
 /// .unwrap();
 ///

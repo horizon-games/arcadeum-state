@@ -37,13 +37,13 @@ $ rustup default nightly
 ## Build and test
 
 ```bash
-$ cargo test --features tester --features bindings -- --nocapture
+$ cargo test --features bindings -- --nocapture
 ```
 
 ## Documentation
 
 ```bash
-$ cargo doc --release --no-deps --features 'bindings tester debug' && rm -rf docs/api && mv target/doc docs/api
+$ cargo doc --release --no-deps --features 'bindings debug' && rm -rf docs/api && mv target/doc docs/api
 ```
 
 ## Licence

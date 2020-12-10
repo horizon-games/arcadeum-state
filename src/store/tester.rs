@@ -60,40 +60,7 @@ where
 
         let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms)?;
 
-        let certificates = if cfg!(feature = "tester-certify") {
-            [
-                {
-                    let address = crate::crypto::Addressable::address(&subkeys[0]);
-
-                    crate::ProofAction {
-                        player: Some(0),
-                        action: crate::PlayerAction::Certify {
-                            address,
-                            signature: crate::crypto::sign(
-                                <crate::store::StoreState<S> as crate::State>::challenge(&address)
-                                    .as_bytes(),
-                                &keys[1],
-                            ),
-                        },
-                    }
-                },
-                {
-                    let address = crate::crypto::Addressable::address(&subkeys[1]);
-
-                    crate::ProofAction {
-                        player: Some(1),
-                        action: crate::PlayerAction::Certify {
-                            address,
-                            signature: crate::crypto::sign(
-                                <crate::store::StoreState<S> as crate::State>::challenge(&address)
-                                    .as_bytes(),
-                                &keys[2],
-                            ),
-                        },
-                    }
-                },
-            ]
-        } else {
+        let certificates = if cfg!(feature = "test-approvals") {
             [
                 {
                     let player = crate::crypto::Addressable::address(&keys[1]);
@@ -129,6 +96,39 @@ where
                                 )
                                 .as_bytes(),
                                 &keys[0],
+                            ),
+                        },
+                    }
+                },
+            ]
+        } else {
+            [
+                {
+                    let address = crate::crypto::Addressable::address(&subkeys[0]);
+
+                    crate::ProofAction {
+                        player: Some(0),
+                        action: crate::PlayerAction::Certify {
+                            address,
+                            signature: crate::crypto::sign(
+                                <crate::store::StoreState<S> as crate::State>::challenge(&address)
+                                    .as_bytes(),
+                                &keys[1],
+                            ),
+                        },
+                    }
+                },
+                {
+                    let address = crate::crypto::Addressable::address(&subkeys[1]);
+
+                    crate::ProofAction {
+                        player: Some(1),
+                        action: crate::PlayerAction::Certify {
+                            address,
+                            signature: crate::crypto::sign(
+                                <crate::store::StoreState<S> as crate::State>::challenge(&address)
+                                    .as_bytes(),
+                                &keys[2],
                             ),
                         },
                     }

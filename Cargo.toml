@@ -10,9 +10,7 @@ bindings = ["js-sys", "rand_core", "serde-wasm-bindgen", "std", "wasm-bindgen"]
 debug = ["serde-wasm-bindgen", "wasm-bindgen", "web-sys"]
 no-crypto = []
 std = ["cached", "replace_with/std", "serde_cbor/std"]
-tester = ["tester-certify"]
-tester-approve = []
-tester-certify = []
+test-approvals = []
 
 [dependencies]
 cached = { version = "0.11.0", optional = true }

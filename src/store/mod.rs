@@ -49,11 +49,7 @@ use {
     },
 };
 
-#[cfg(any(feature = "tester-certify", feature = "tester-approve"))]
 mod tester;
-
-#[cfg(any(feature = "tester-certify", feature = "tester-approve"))]
-pub use tester::Tester;
 
 /// Generates WebAssembly bindings for a [State].
 #[macro_export]
@@ -2326,6 +2322,8 @@ impl<S: Secret, E> MutateSecretInfo<'_, S, E> {
         (self.log)(event)
     }
 }
+
+pub use tester::Tester;
 
 #[derive(Debug)]
 enum Phase<S: Secret> {

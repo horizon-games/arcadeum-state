@@ -95,7 +95,7 @@ fn test_blank_game() {
         Default::default(),
         Vec::new(),
         |player, _, _| println!("[{:?}: ready]", player),
-        |player, event| println!("[{:?}: log] {:?}", player, event),
+        |player, target, event| println!("[{:?} (target {:?}): log] {:?}", player, target, event),
     )
     .unwrap();
 

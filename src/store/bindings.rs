@@ -112,9 +112,15 @@ macro_rules! bind {
                                     }
                                 }
                             },
-                            move |event| {
-                                if let Ok(event) = $crate::utils::to_js(&event) {
-                                    drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
+                            move |target, event| {
+                                if let (Ok(target), Ok(event)) =
+                                    ($crate::utils::to_js(&target), $crate::utils::to_js(&event))
+                                {
+                                    drop(log.call2(
+                                        &wasm_bindgen::JsValue::UNDEFINED,
+                                        &target,
+                                        &event,
+                                    ));
                                 }
                             },
                             $crate::store::bindings::JsRng(random),
@@ -195,9 +201,15 @@ macro_rules! bind {
                                     }
                                 }
                             },
-                            move |event| {
-                                if let Ok(event) = $crate::utils::to_js(&event) {
-                                    drop(log.call1(&wasm_bindgen::JsValue::UNDEFINED, &event));
+                            move |target, event| {
+                                if let (Ok(target), Ok(event)) =
+                                    ($crate::utils::to_js(&target), $crate::utils::to_js(&event))
+                                {
+                                    drop(log.call2(
+                                        &wasm_bindgen::JsValue::UNDEFINED,
+                                        &target,
+                                        &event,
+                                    ));
                                 }
                             },
                             $crate::store::bindings::JsRng(random),

@@ -41,7 +41,7 @@ where
         [secret1, secret2]: [S::Secret; 2],
         actions: Vec<crate::ProofAction<crate::store::StoreState<S>>>,
         ready: impl FnMut(Option<crate::Player>, &S, [Option<&S::Secret>; 2]) + 'static,
-        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
+        log: impl FnMut(Option<crate::Player>, Option<crate::Player>, S::Event) + 'static,
     ) -> Result<Self, String> {
         let mut randoms = {
             const SIZE: usize =
@@ -139,7 +139,7 @@ where
                     crate::crypto::Addressable::address(&keys[1]),
                     crate::crypto::Addressable::address(&keys[2]),
                 ],
-                crate::store::StoreState::new(state, Default::default(), |_| ()),
+                crate::store::StoreState::new(state, Default::default(), |_, _| ()),
             )?,
             [&certificates[..], &actions].concat(),
             &mut |message| Ok(crate::crypto::sign(message, &keys[0])),
@@ -185,7 +185,9 @@ where
                         {
                             let log = log.clone();
 
-                            move |event| (log.try_borrow_mut().unwrap())(None, event)
+                            move |target, event| {
+                                (log.try_borrow_mut().unwrap())(None, target, event)
+                            }
                         },
                         random0,
                     )?;
@@ -216,7 +218,9 @@ where
                         {
                             let log = log.clone();
 
-                            move |event| (log.try_borrow_mut().unwrap())(Some(0), event)
+                            move |target, event| {
+                                (log.try_borrow_mut().unwrap())(Some(0), target, event)
+                            }
                         },
                         random1,
                     )?;
@@ -240,7 +244,9 @@ where
 
                             move |diff| queue.try_borrow_mut().unwrap().push_back(diff.serialize())
                         },
-                        move |event| (log.try_borrow_mut().unwrap())(Some(1), event),
+                        move |target, event| {
+                            (log.try_borrow_mut().unwrap())(Some(1), target, event)
+                        },
                         random2,
                     )?;
 
@@ -515,7 +521,7 @@ fn deserialize_store<S: crate::store::State>(
         |_, _| (),
         |_| unreachable!("{}:{}:{}", file!(), line!(), column!()),
         |_| (),
-        |_| (),
+        |_, _| (),
         UnreachableRng,
     )?;
 

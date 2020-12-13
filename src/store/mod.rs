@@ -64,7 +64,7 @@ impl<S: State> Store<S> {
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(S::Event) + 'static,
+        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
         random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
         Ok(Self {
@@ -106,7 +106,7 @@ impl<S: State> Store<S> {
         ready: impl FnMut(&S, [Option<&S::Secret>; 2]) + 'static,
         sign: impl FnMut(&[u8]) -> Result<crate::crypto::Signature, String> + 'static,
         send: impl FnMut(&StoreDiff<S>) + 'static,
-        log: impl FnMut(S::Event) + 'static,
+        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
         random: impl rand::RngCore + 'static,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
@@ -727,7 +727,7 @@ impl<S: State> StoreState<S> {
     pub fn new(
         state: S,
         secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
-        log: impl FnMut(S::Event) + 'static,
+        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
     ) -> Self {
         Self(_StoreState::new(state, secrets, log))
     }
@@ -849,7 +849,7 @@ impl<S: State> _StoreState<S> {
     fn new(
         state: S,
         secrets: [Option<(S::Secret, rand_xorshift::XorShiftRng)>; 2],
-        log: impl FnMut(S::Event) + 'static,
+        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
     ) -> Self {
         Self::Ready {
             state,
@@ -928,7 +928,11 @@ impl<S: State> _StoreState<S> {
                     logger: Rc::new(RefCell::new(Logger::new({
                         let events = events.clone();
 
-                        move |event| events.try_borrow_mut().unwrap().push(event)
+                        move |target, event| {
+                            if target.is_none() || target == player {
+                                events.try_borrow_mut().unwrap().push(event);
+                            }
+                        }
                     }))),
                 };
 
@@ -1135,7 +1139,7 @@ impl<S: State> crate::State for _StoreState<S> {
             action_count: crate::utils::read_u32_usize(&mut data)?,
             reveal_count: crate::utils::read_u32_usize(&mut data)?,
             event_count: crate::utils::read_u32_usize(&mut data)?,
-            logger: Rc::new(RefCell::new(Logger::new(|_| ()))),
+            logger: Rc::new(RefCell::new(Logger::new(|_, _| ()))),
         })
     }
 
@@ -1659,7 +1663,7 @@ impl<S: Secret, E> Context<S, E> {
                         mutate(MutateSecretInfo {
                             secret,
                             random,
-                            log: &mut logger.log,
+                            log: &mut |event| (logger.log)(Some(player), event),
                         });
                     } else {
                         mutate(MutateSecretInfo {
@@ -1775,7 +1779,7 @@ impl<S: Secret, E> Context<S, E> {
             if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
                 self.event_count += 1;
 
-                logger.log(self.event_count, event);
+                logger.log(self.event_count, None, event);
             }
         }
     }
@@ -1857,13 +1861,13 @@ struct RevealRequest<S: Secret> {
 }
 
 struct Logger<E> {
-    log: Box<dyn FnMut(E)>,
+    log: Box<dyn FnMut(Option<crate::Player>, E)>,
     event_count: usize,
     enabled: bool,
 }
 
 impl<E> Logger<E> {
-    fn new(log: impl FnMut(E) + 'static) -> Self {
+    fn new(log: impl FnMut(Option<crate::Player>, E) + 'static) -> Self {
         Self {
             log: Box::new(log),
             event_count: Default::default(),
@@ -1871,11 +1875,11 @@ impl<E> Logger<E> {
         }
     }
 
-    fn log(&mut self, event_count: usize, event: E) {
+    fn log(&mut self, event_count: usize, target: Option<crate::Player>, event: E) {
         if self.enabled && event_count > self.event_count {
             self.event_count = event_count;
 
-            (self.log)(event);
+            (self.log)(target, event);
         }
     }
 }

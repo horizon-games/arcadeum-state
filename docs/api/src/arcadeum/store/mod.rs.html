@@ -1960,6 +1960,10 @@
 <span id="1957">1957</span>
 <span id="1958">1958</span>
 <span id="1959">1959</span>
+<span id="1960">1960</span>
+<span id="1961">1961</span>
+<span id="1962">1962</span>
+<span id="1963">1963</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -2027,7 +2031,7 @@
         <span class="ident">ready</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">S</span>, [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span>; <span class="number">2</span>]) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">sign</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Signature</span>, <span class="ident">String</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">send</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">StoreDiff</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">random</span>: <span class="kw">impl</span> <span class="ident">rand</span>::<span class="ident">RngCore</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
@@ -2069,7 +2073,7 @@
         <span class="ident">ready</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">S</span>, [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span>; <span class="number">2</span>]) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">sign</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Signature</span>, <span class="ident">String</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">send</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">StoreDiff</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">random</span>: <span class="kw">impl</span> <span class="ident">rand</span>::<span class="ident">RngCore</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">crate</span>::<span class="macro">forbid</span><span class="macro">!</span>(<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">1</span> <span class="op">+</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>() <span class="op">+</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>() <span class="op">+</span> <span class="number">1</span>);
@@ -2690,7 +2694,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">state</span>: <span class="ident">S</span>,
         <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>(<span class="ident">_StoreState</span>::<span class="ident">new</span>(<span class="ident">state</span>, <span class="ident">secrets</span>, <span class="ident">log</span>))
     }
@@ -2812,7 +2816,7 @@
     <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">state</span>: <span class="ident">S</span>,
         <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">Ready</span> {
             <span class="ident">state</span>,
@@ -2891,7 +2895,11 @@
                     <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>({
                         <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">events</span>.<span class="ident">clone</span>();
 
-                        <span class="kw">move</span> <span class="op">|</span><span class="ident">event</span><span class="op">|</span> <span class="ident">events</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>().<span class="ident">push</span>(<span class="ident">event</span>)
+                        <span class="kw">move</span> <span class="op">|</span><span class="ident">target</span>, <span class="ident">event</span><span class="op">|</span> {
+                            <span class="kw">if</span> <span class="ident">target</span>.<span class="ident">is_none</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">target</span> <span class="op">=</span><span class="op">=</span> <span class="ident">player</span> {
+                                <span class="ident">events</span>.<span class="ident">try_borrow_mut</span>().<span class="ident">unwrap</span>().<span class="ident">push</span>(<span class="ident">event</span>);
+                            }
+                        }
                     }))),
                 };
 
@@ -3098,7 +3106,7 @@
             <span class="ident">action_count</span>: <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span>,
             <span class="ident">reveal_count</span>: <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span>,
             <span class="ident">event_count</span>: <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span>,
-            <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()))),
+            <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> ()))),
         })
     }
 
@@ -3622,7 +3630,7 @@
                         <span class="ident">mutate</span>(<span class="ident">MutateSecretInfo</span> {
                             <span class="ident">secret</span>,
                             <span class="ident">random</span>,
-                            <span class="ident">log</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">logger</span>.<span class="ident">log</span>,
+                            <span class="ident">log</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="op">|</span><span class="ident">event</span><span class="op">|</span> (<span class="ident">logger</span>.<span class="ident">log</span>)(<span class="prelude-val">Some</span>(<span class="ident">player</span>), <span class="ident">event</span>),
                         });
                     } <span class="kw">else</span> {
                         <span class="ident">mutate</span>(<span class="ident">MutateSecretInfo</span> {
@@ -3738,7 +3746,7 @@
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">logger</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">logger</span>.<span class="number">1</span>.<span class="ident">try_borrow_mut</span>() {
                 <span class="self">self</span>.<span class="ident">event_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 
-                <span class="ident">logger</span>.<span class="ident">log</span>(<span class="self">self</span>.<span class="ident">event_count</span>, <span class="ident">event</span>);
+                <span class="ident">logger</span>.<span class="ident">log</span>(<span class="self">self</span>.<span class="ident">event_count</span>, <span class="prelude-val">None</span>, <span class="ident">event</span>);
             }
         }
     }
@@ -3820,13 +3828,13 @@
 }
 
 <span class="kw">struct</span> <span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {
-    <span class="ident">log</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">FnMut</span>(<span class="ident">E</span>)<span class="op">&gt;</span>,
+    <span class="ident">log</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">E</span>)<span class="op">&gt;</span>,
     <span class="ident">event_count</span>: <span class="ident">usize</span>,
     <span class="ident">enabled</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">E</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">E</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">log</span>: <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">log</span>),
             <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
@@ -3834,11 +3842,11 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event_count</span>: <span class="ident">usize</span>, <span class="ident">event</span>: <span class="ident">E</span>) {
+    <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event_count</span>: <span class="ident">usize</span>, <span class="ident">target</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">event</span>: <span class="ident">E</span>) {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">enabled</span> <span class="op">&amp;&amp;</span> <span class="ident">event_count</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">event_count</span> {
             <span class="self">self</span>.<span class="ident">event_count</span> <span class="op">=</span> <span class="ident">event_count</span>;
 
-            (<span class="self">self</span>.<span class="ident">log</span>)(<span class="ident">event</span>);
+            (<span class="self">self</span>.<span class="ident">log</span>)(<span class="ident">target</span>, <span class="ident">event</span>);
         }
     }
 }

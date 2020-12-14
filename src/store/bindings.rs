@@ -124,8 +124,7 @@ macro_rules! bind {
                                 }
                             },
                             $crate::store::bindings::JsRng(random),
-                        )
-                        .map_err(wasm_bindgen::JsValue::from)?
+                        )?
                     },
                     send,
                 })
@@ -213,8 +212,7 @@ macro_rules! bind {
                                 }
                             },
                             $crate::store::bindings::JsRng(random),
-                        )
-                        .map_err(wasm_bindgen::JsValue::from)?
+                        )?
                     },
                     send,
                 })
@@ -260,9 +258,7 @@ macro_rules! bind {
                         .state()
                         .state()
                         .state()
-                        .ok_or(wasm_bindgen::JsValue::from(
-                            "self.store.state().state().state().is_none()",
-                        ))?,
+                        .ok_or("self.store.state().state().state().is_none()")?,
                 )?)
             }
 
@@ -304,11 +300,12 @@ macro_rules! bind {
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action =
-                    $crate::utils::from_js(action)?;
-
                 Ok($crate::utils::to_js(
-                    &self.store.state().state().simulate(player, &action)?,
+                    &self
+                        .store
+                        .state()
+                        .state()
+                        .simulate(player, &$crate::utils::from_js(action)?)?,
                 )?)
             }
 
@@ -322,12 +319,11 @@ macro_rules! bind {
                 &mut self,
                 action: wasm_bindgen::JsValue,
             ) -> Result<(), wasm_bindgen::JsValue> {
-                let action: <$type as $crate::store::State>::Action =
-                    $crate::utils::from_js(action)?;
-
                 let diff = self.store.diff(vec![$crate::ProofAction {
                     player: self.store.player(),
-                    action: $crate::PlayerAction::Play($crate::store::StoreAction::new(action)),
+                    action: $crate::PlayerAction::Play($crate::store::StoreAction::new(
+                        $crate::utils::from_js(action)?,
+                    )),
                 }])?;
 
                 self.send.call1(
@@ -431,6 +427,121 @@ macro_rules! bind {
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
                 Ok(self.store.apply(&$crate::Diff::deserialize(diff)?)?)
+            }
+        }
+
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        pub struct WasmState {
+            state: $crate::store::StoreState<$type>,
+            random: $crate::store::bindings::JsRng,
+        }
+
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        impl WasmState {
+            #[wasm_bindgen::prelude::wasm_bindgen(constructor)]
+            pub fn new(
+                state: wasm_bindgen::JsValue,
+                secrets: wasm_bindgen::JsValue,
+                log: js_sys::Function,
+                random: js_sys::Function,
+            ) -> Result<WasmState, wasm_bindgen::JsValue> {
+                let [secret1, secret2]: [Option<_>; 2] = $crate::utils::from_js(secrets)?;
+
+                let secrets = [
+                    secret1.map(|(secret, seed)| (secret, rand::SeedableRng::from_seed(seed))),
+                    secret2.map(|(secret, seed)| (secret, rand::SeedableRng::from_seed(seed))),
+                ];
+
+                Ok(Self {
+                    state: $crate::store::StoreState::new(
+                        $crate::utils::from_js(state)?,
+                        secrets,
+                        move |target, event| {
+                            drop(
+                                log.call2(
+                                    &wasm_bindgen::JsValue::UNDEFINED,
+                                    &$crate::utils::to_js(&target)
+                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                    &$crate::utils::to_js(&event)
+                                        .unwrap_or(wasm_bindgen::JsValue::NULL),
+                                ),
+                            );
+                        },
+                    ),
+                    random: $crate::store::bindings::JsRng(random),
+                })
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn deserialize(
+                data: &[u8],
+                log: js_sys::Function,
+                random: js_sys::Function,
+            ) -> Result<WasmState, wasm_bindgen::JsValue> {
+                Ok(WasmState {
+                    state: arcadeum::store::StoreState::deserialize(data, move |target, event| {
+                        if let (Ok(target), Ok(event)) = (
+                            arcadeum::utils::to_js(&target),
+                            arcadeum::utils::to_js(&event),
+                        ) {
+                            drop(log.call2(&wasm_bindgen::JsValue::UNDEFINED, &target, &event))
+                        }
+                    })?,
+                    random: arcadeum::store::bindings::JsRng(random),
+                })
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn serialize(&self) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
+                arcadeum::State::serialize(&self.state).ok_or(wasm_bindgen::JsValue::from(
+                    "self.state.serialize().is_none()",
+                ))
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(getter)]
+            pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+                Ok($crate::utils::to_js(
+                    self.state.state().ok_or("self.state.state().is_none()")?,
+                )?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn secret(
+                &self,
+                player: $crate::Player,
+            ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+                Ok($crate::utils::to_js(
+                    &**self
+                        .state
+                        .secret(player)
+                        .ok_or("self.state.secret(player).is_none()")?,
+                )?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn simulate(
+                &self,
+                player: Option<$crate::Player>,
+                action: wasm_bindgen::JsValue,
+            ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+                Ok($crate::utils::to_js(
+                    &self
+                        .state
+                        .simulate(player, &$crate::utils::from_js(action)?)?,
+                )?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn apply(
+                &mut self,
+                player: Option<$crate::Player>,
+                action: wasm_bindgen::JsValue,
+            ) -> Result<(), wasm_bindgen::JsValue> {
+                Ok(self.state.apply_with_random(
+                    player,
+                    $crate::utils::from_js(action)?,
+                    &mut self.random,
+                )?)
             }
         }
 

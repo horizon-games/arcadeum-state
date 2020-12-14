@@ -732,6 +732,20 @@ impl<S: State> StoreState<S> {
         Self(_StoreState::new(state, secrets, log))
     }
 
+    /// Constructs a state from its binary representation and a log function.
+    ///
+    /// `data` must have been constructed using [crate::State::serialize].
+    pub fn deserialize(
+        data: &[u8],
+        log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
+    ) -> Result<Self, String> {
+        let mut state: Self = crate::State::deserialize(data)?;
+
+        state.0.set_logger(Rc::new(RefCell::new(Logger::new(log))));
+
+        Ok(state)
+    }
+
     /// Gets the state of the store state.
     pub fn state(&self) -> Option<&S> {
         self.0.state()

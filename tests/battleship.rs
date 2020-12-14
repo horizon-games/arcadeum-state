@@ -24,7 +24,7 @@ use arcadeum::{
 };
 
 use rand::{RngCore, SeedableRng};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 extern crate alloc;
 
@@ -46,7 +46,7 @@ macro_rules! println {
 #[cfg(feature = "std")]
 arcadeum::bind!(Battleship);
 
-#[derive(Serialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 struct Battleship {
     nonce: u8,
     score: [u8; 2],

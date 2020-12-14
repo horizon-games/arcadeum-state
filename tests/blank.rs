@@ -22,7 +22,7 @@ use arcadeum::{
     Player,
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 extern crate alloc;
 
@@ -44,7 +44,7 @@ macro_rules! println {
 #[cfg(feature = "std")]
 arcadeum::bind!(Blank);
 
-#[derive(Serialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 struct Blank;
 
 impl State for Blank {

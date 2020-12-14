@@ -23,7 +23,7 @@ use arcadeum::{
 };
 
 use rand::RngCore;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 extern crate alloc;
 
@@ -45,7 +45,7 @@ macro_rules! println {
 #[cfg(feature = "std")]
 arcadeum::bind!(Coin);
 
-#[derive(Serialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 struct Coin {
     nonce: u8,
     score: [u8; 2],

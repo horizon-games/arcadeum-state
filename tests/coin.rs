@@ -139,7 +139,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomCommit(
-                0x5a925a41304569c6f4a7b42288395db96fc0c0a0f7ddc874e8142218eee97ee9,
+                0xa60607651e32731051080ee2dcaae8aa8659d9873e43051a7321187f5376404d,
             ),
         ),
     },
@@ -149,7 +149,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReply(
-                0x0624278306003680d4b0951350801092,
+                0x05b6344215102dc0ae78df9a78c018db,
             ),
         ),
     },
@@ -159,7 +159,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReveal(
-                0x039213c113101b407ac84a8928400849,
+                0x0624278306003680d4b0951350801092,
             ),
         ),
     },
@@ -172,7 +172,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomCommit(
-                0x325ff735cad243cfae119dfa01cb7d8368b2c5409a0bcb8c60e01e249da55e3a,
+                0x860a0200922d64b449bd06a748449f4b7e3730539e72eb37474dc5d851b66cbf,
             ),
         ),
     },
@@ -182,7 +182,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReply(
-                0xc2801080c2801092c62630124236a002,
+                0xa3c018c0a3c018dba535281b632df003,
             ),
         ),
     },
@@ -192,7 +192,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReveal(
-                0x614008406140084963131809211b5001,
+                0xc2801080c2801092c62630124236a002,
             ),
         ),
     },

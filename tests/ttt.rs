@@ -246,9 +246,9 @@ fn test_ttt() {
         const SIZE: usize = size_of::<<rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed>();
 
         [
-            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([0; SIZE]),
             <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([1; SIZE]),
             <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([2; SIZE]),
+            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([3; SIZE]),
         ]
     };
 

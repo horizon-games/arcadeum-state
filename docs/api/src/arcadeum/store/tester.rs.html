@@ -569,6 +569,7 @@
 <span id="566">566</span>
 <span id="567">567</span>
 <span id="568">568</span>
+<span id="569">569</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -1011,6 +1012,7 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;no-crypto&quot;</span>))]</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">unnecessary_wraps</span>)]</span>
 <span class="kw">fn</span> <span class="ident">generate_keys_and_subkeys</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">rand</span>::<span class="ident">RngCore</span><span class="op">&gt;</span>(
     <span class="ident">randoms</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">R</span>; <span class="number">3</span>],
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>([<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">SecretKey</span>; <span class="number">3</span>], [<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">SecretKey</span>; <span class="number">2</span>]), <span class="ident">String</span><span class="op">&gt;</span> {

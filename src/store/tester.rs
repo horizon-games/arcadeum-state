@@ -439,6 +439,7 @@ where
 }
 
 #[cfg(not(feature = "no-crypto"))]
+#[allow(clippy::unnecessary_wraps)]
 fn generate_keys_and_subkeys<R: rand::RngCore>(
     randoms: &mut [R; 3],
 ) -> Result<([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]), String> {

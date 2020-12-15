@@ -1934,50 +1934,6 @@
 <span id="1931">1931</span>
 <span id="1932">1932</span>
 <span id="1933">1933</span>
-<span id="1934">1934</span>
-<span id="1935">1935</span>
-<span id="1936">1936</span>
-<span id="1937">1937</span>
-<span id="1938">1938</span>
-<span id="1939">1939</span>
-<span id="1940">1940</span>
-<span id="1941">1941</span>
-<span id="1942">1942</span>
-<span id="1943">1943</span>
-<span id="1944">1944</span>
-<span id="1945">1945</span>
-<span id="1946">1946</span>
-<span id="1947">1947</span>
-<span id="1948">1948</span>
-<span id="1949">1949</span>
-<span id="1950">1950</span>
-<span id="1951">1951</span>
-<span id="1952">1952</span>
-<span id="1953">1953</span>
-<span id="1954">1954</span>
-<span id="1955">1955</span>
-<span id="1956">1956</span>
-<span id="1957">1957</span>
-<span id="1958">1958</span>
-<span id="1959">1959</span>
-<span id="1960">1960</span>
-<span id="1961">1961</span>
-<span id="1962">1962</span>
-<span id="1963">1963</span>
-<span id="1964">1964</span>
-<span id="1965">1965</span>
-<span id="1966">1966</span>
-<span id="1967">1967</span>
-<span id="1968">1968</span>
-<span id="1969">1969</span>
-<span id="1970">1970</span>
-<span id="1971">1971</span>
-<span id="1972">1972</span>
-<span id="1973">1973</span>
-<span id="1974">1974</span>
-<span id="1975">1975</span>
-<span id="1976">1976</span>
-<span id="1977">1977</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -2053,7 +2009,7 @@
             <span class="ident">proof</span>: <span class="kw">crate</span>::<span class="ident">Proof</span>::<span class="ident">new</span>(<span class="kw">crate</span>::<span class="ident">RootProof</span>::<span class="op">&lt;</span><span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">deserialize_and_init</span>(
                 <span class="ident">root</span>,
                 <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>.<span class="number">0</span> {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. }) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>.<span class="number">0</span> {
                         <span class="kw-2">*</span><span class="ident">secrets</span> <span class="op">=</span> [
                             <span class="ident">secret1</span>
                                 .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">secret</span>, <span class="ident">seed</span>)<span class="op">|</span> (<span class="ident">secret</span>, <span class="ident">rand</span>::<span class="ident">SeedableRng</span>::<span class="ident">from_seed</span>(<span class="ident">seed</span>))),
@@ -2147,10 +2103,10 @@
 
         <span class="kw">let</span> <span class="ident">root</span> <span class="op">=</span>
             <span class="kw">crate</span>::<span class="ident">RootProof</span>::<span class="op">&lt;</span><span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">deserialize_and_init</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>[..<span class="ident">size</span>], <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
                     <span class="ident">secrets</span>: <span class="ident">state_secrets</span>,
                     ..
-                } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>.<span class="number">0</span>
+                }) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>.<span class="number">0</span>
                 {
                     <span class="kw-2">*</span><span class="ident">state_secrets</span> <span class="op">=</span> <span class="ident">secrets</span>;
                 } <span class="kw">else</span> {
@@ -2212,10 +2168,10 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">proof</span> <span class="op">=</span> <span class="kw">crate</span>::<span class="ident">Proof</span>::<span class="ident">new</span>(<span class="ident">root</span>);
 
         <span class="ident">proof</span>.<span class="ident">deserialize_and_init</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>[..<span class="ident">size</span>], <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
                 <span class="ident">secrets</span>: <span class="ident">state_secrets</span>,
                 ..
-            } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>.<span class="number">0</span>
+            }) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>.<span class="number">0</span>
             {
                 <span class="kw-2">*</span><span class="ident">state_secrets</span> <span class="op">=</span> <span class="ident">secrets</span>;
             } <span class="kw">else</span> {
@@ -2277,7 +2233,7 @@
             },
         );
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proof</span>.<span class="ident">root</span>.<span class="ident">state</span>.<span class="ident">state</span>.<span class="number">0</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. }) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proof</span>.<span class="ident">root</span>.<span class="ident">state</span>.<span class="ident">state</span>.<span class="number">0</span> {
             <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">secret</span>) <span class="kw">in</span> <span class="ident">secrets</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
                 <span class="kw">if</span> <span class="ident">player</span>.<span class="ident">is_none</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">player</span> <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>()) {
                     <span class="kw">match</span> <span class="ident">secret</span> {
@@ -2305,7 +2261,7 @@
         <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">write_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>, <span class="ident">root</span>.<span class="ident">len</span>()).<span class="ident">unwrap</span>();
         <span class="ident">data</span>.<span class="ident">extend</span>(<span class="ident">root</span>);
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. }) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>
             .<span class="ident">proof</span>
             .<span class="ident">proofs</span>
             .<span class="ident">iter</span>()
@@ -2384,7 +2340,14 @@
 
     <span class="doccomment">/// Gets the player who must act if in a pending state.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pending_player</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state</span>().<span class="ident">state</span>().<span class="number">0</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">proof</span>
+            .<span class="ident">state</span>
+            .<span class="ident">state</span>
+            .<span class="number">0</span>
+            .<span class="ident">as_ref</span>()
+            .<span class="ident">ok_or</span>(<span class="string">&quot;self.proof.state.state.0.is_none()&quot;</span>)<span class="question-mark">?</span>
+        {
             <span class="kw">match</span> <span class="kw-2">*</span><span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span> {
                 <span class="ident">Phase</span>::<span class="ident">RandomCommit</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>)),
                 <span class="ident">Phase</span>::<span class="ident">RandomReply</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="number">1</span>)),
@@ -2401,7 +2364,7 @@
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>()),
             }
         } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="string">&quot;self.state().state().0 != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>())
+            <span class="prelude-val">Err</span>(<span class="string">&quot;self.proof.state.state.0 != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>())
         }
     }
 
@@ -2412,7 +2375,14 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dispatch_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">crate</span>::<span class="macro">forbid</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">player</span>.<span class="ident">is_some</span>());
 
-        <span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proof</span>.<span class="ident">state</span>.<span class="ident">state</span>.<span class="number">0</span> {
+        <span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>
+            .<span class="ident">proof</span>
+            .<span class="ident">state</span>
+            .<span class="ident">state</span>
+            .<span class="number">0</span>
+            .<span class="ident">as_ref</span>()
+            .<span class="ident">ok_or</span>(<span class="string">&quot;self.proof.state.state.0.is_none()&quot;</span>)<span class="question-mark">?</span>
+        {
             <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">unwrap</span>() {
                 <span class="ident">Phase</span>::<span class="ident">RandomCommit</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">seed</span> <span class="op">=</span> {
@@ -2521,7 +2491,14 @@
             (<span class="self">self</span>.<span class="ident">send</span>)(<span class="kw-2">&amp;</span><span class="ident">diff</span>);
 
             <span class="self">self</span>.<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="ident">diff</span>)<span class="question-mark">?</span>;
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, <span class="ident">secrets</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proof</span>.<span class="ident">state</span>.<span class="ident">state</span>.<span class="number">0</span> {
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, <span class="ident">secrets</span>, .. } <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">proof</span>
+            .<span class="ident">state</span>
+            .<span class="ident">state</span>
+            .<span class="number">0</span>
+            .<span class="ident">as_ref</span>()
+            .<span class="ident">ok_or</span>(<span class="string">&quot;self.proof.state.state.0.is_none()&quot;</span>)<span class="question-mark">?</span>
+        {
             <span class="self">self</span>.<span class="ident">seed</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
             (<span class="self">self</span>.<span class="ident">ready</span>)(
@@ -2554,7 +2531,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">actions</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
         <span class="kw">loop</span> {
-            <span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">state</span>.<span class="number">0</span> {
+            <span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">state</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or</span>(<span class="string">&quot;state.0.is_none()&quot;</span>)<span class="question-mark">?</span> {
                 <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">phase</span>, <span class="ident">secrets</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">match</span> (<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">unwrap</span>(), <span class="self">self</span>.<span class="ident">player</span>) {
                         (<span class="ident">Phase</span>::<span class="ident">RandomCommit</span>, <span class="prelude-val">Some</span>(<span class="number">0</span>)) <span class="op">=</span><span class="op">&gt;</span> {
@@ -2701,7 +2678,7 @@
 
 <span class="doccomment">/// Client store state</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span>(<span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span>);
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Constructs a new store state.</span>
@@ -2710,7 +2687,14 @@
         <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
         <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span>(<span class="ident">_StoreState</span>::<span class="ident">new</span>(<span class="ident">state</span>, <span class="ident">secrets</span>, <span class="ident">log</span>))
+        <span class="self">Self</span>(<span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
+            <span class="ident">state</span>,
+            <span class="ident">secrets</span>,
+            <span class="ident">action_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+            <span class="ident">reveal_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+            <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+            <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="ident">log</span>))),
+        }))
     }
 
     <span class="doccomment">/// Constructs a state from its binary representation and a log function.</span>
@@ -2722,14 +2706,18 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span>: <span class="self">Self</span> <span class="op">=</span> <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">state</span>.<span class="number">0</span>.<span class="ident">set_logger</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="ident">log</span>))));
+        <span class="ident">state</span>.<span class="ident">set_logger</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="ident">log</span>))));
 
         <span class="prelude-val">Ok</span>(<span class="ident">state</span>)
     }
 
     <span class="doccomment">/// Gets the state of the store state.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">S</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">state</span>()
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">state</span>)
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        }
     }
 
     <span class="doccomment">/// Gets a player&#39;s secret state, if available.</span>
@@ -2737,143 +2725,12 @@
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>,
         <span class="ident">player</span>: <span class="kw">crate</span>::<span class="ident">Player</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Deref</span><span class="op">&lt;</span><span class="ident">Target</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">secret</span>(<span class="ident">player</span>)
-    }
-
-    <span class="doccomment">/// Gets the number of actions applied since construction.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">action_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">action_count</span>()
-    }
-
-    <span class="doccomment">/// Gets the number of secrets revealed since construction.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">reveal_count</span>()
-    }
-
-    <span class="doccomment">/// Generates an event log resulting from applying an action to this state.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simulate</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
-        <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Action</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">S</span>::<span class="ident">Event</span>: <span class="ident">serde</span>::<span class="ident">Serialize</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">simulate</span>(<span class="ident">player</span>, <span class="ident">action</span>)
-    }
-
-    <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
-    <span class="doccomment">/// Applies an action by a given player to the state using the provided random number generator</span>
-    <span class="doccomment">/// instead of doing a commit-reveal for randomness.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_with_random</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
-        <span class="ident">action</span>: <span class="ident">S</span>::<span class="ident">Action</span>,
-        <span class="ident">random</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">rand</span>::<span class="ident">RngCore</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">apply_with_random</span>(<span class="ident">player</span>, <span class="ident">action</span>, <span class="ident">random</span>)
-    }
-
-    <span class="kw">fn</span> <span class="ident">logger</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">logger</span>()
-    }
-
-    <span class="kw">fn</span> <span class="ident">set_logger</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>) {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">set_logger</span>(<span class="ident">logger</span>)
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">State</span> <span class="kw">for</span> <span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
-    <span class="kw">type</span> <span class="ident">ID</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">ID</span>;
-    <span class="kw">type</span> <span class="ident">Nonce</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">Nonce</span>;
-    <span class="kw">type</span> <span class="ident">Action</span> <span class="op">=</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>;
-
-    <span class="kw">fn</span> <span class="ident">version</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">u8</span>] {
-        <span class="ident">_StoreState</span>::<span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>::<span class="ident">version</span>()
-    }
-
-    <span class="kw">fn</span> <span class="ident">challenge</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Address</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-        <span class="ident">_StoreState</span>::<span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>::<span class="ident">challenge</span>(<span class="ident">address</span>)
-    }
-
-    <span class="kw">fn</span> <span class="ident">approval</span>(<span class="ident">player</span>: <span class="kw-2">&amp;</span><span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Address</span>, <span class="ident">subkey</span>: <span class="kw-2">&amp;</span><span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">Address</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-        <span class="ident">_StoreState</span>::<span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>::<span class="ident">approval</span>(<span class="ident">player</span>, <span class="ident">subkey</span>)
-    }
-
-    <span class="kw">fn</span> <span class="ident">deserialize</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(<span class="ident">_StoreState</span>::<span class="ident">deserialize</span>(<span class="ident">data</span>)<span class="question-mark">?</span>))
-    }
-
-    <span class="kw">fn</span> <span class="ident">is_serializable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">is_serializable</span>()
-    }
-
-    <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">serialize</span>()
-    }
-
-    <span class="kw">fn</span> <span class="ident">apply</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
-        <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Action</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">apply</span>(<span class="ident">player</span>, <span class="ident">action</span>)
-    }
-}
-
-<span class="kw">enum</span> <span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
-    <span class="ident">Ready</span> {
-        <span class="ident">state</span>: <span class="ident">S</span>,
-        <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">action_count</span>: <span class="ident">usize</span>,
-        <span class="ident">reveal_count</span>: <span class="ident">usize</span>,
-        <span class="ident">event_count</span>: <span class="ident">usize</span>,
-        <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    },
-    <span class="ident">Pending</span> {
-        <span class="ident">state</span>: <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> (<span class="ident">S</span>, <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">action_count</span>: <span class="ident">usize</span>,
-        <span class="ident">reveal_count</span>: <span class="ident">usize</span>,
-        <span class="ident">phase</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    },
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">state</span>: <span class="ident">S</span>,
-        <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
-        <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span>::<span class="ident">Ready</span> {
-            <span class="ident">state</span>,
-            <span class="ident">secrets</span>,
-            <span class="ident">action_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">reveal_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">event_count</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="ident">log</span>))),
-        }
-    }
-
-    <span class="kw">fn</span> <span class="ident">state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">S</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span> <span class="self">self</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">state</span>)
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        }
-    }
-
-    <span class="kw">fn</span> <span class="ident">secret</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>,
-        <span class="ident">player</span>: <span class="kw">crate</span>::<span class="ident">Player</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Deref</span><span class="op">&lt;</span><span class="ident">Target</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">secrets</span>[<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>)]
+        <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span> {
+            <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">secrets</span>[<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>)]
                 .<span class="ident">as_ref</span>()
                 .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">secret</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">secret</span>) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Deref</span><span class="op">&lt;</span><span class="ident">Target</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span><span class="op">&gt;</span>),
 
-            <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">secrets</span>[<span class="ident">usize</span>::<span class="ident">from</span>(<span class="ident">player</span>)].<span class="ident">as_ref</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
                     <span class="ident">secret</span>
                         .<span class="ident">try_borrow</span>()
@@ -2887,34 +2744,45 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">action_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">action_count</span>, .. } <span class="op">|</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">action_count</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">action_count</span>,
+    <span class="doccomment">/// Gets the number of actions applied since construction.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">action_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>() {
+            <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">action_count</span>, .. } <span class="op">|</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">action_count</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw-2">*</span><span class="ident">action_count</span>
+            }
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">reveal_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">reveal_count</span>, .. } <span class="op">|</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">reveal_count</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">reveal_count</span>,
+    <span class="doccomment">/// Gets the number of secrets revealed since construction.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>() {
+            <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">reveal_count</span>, .. } <span class="op">|</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">reveal_count</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw-2">*</span><span class="ident">reveal_count</span>
+            }
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">simulate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Action</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
+    <span class="doccomment">/// Generates an event log resulting from applying an action to this state.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simulate</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
+        <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>::<span class="ident">Action</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">S</span>::<span class="ident">Event</span>: <span class="ident">serde</span>::<span class="ident">Serialize</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
             <span class="ident">state</span>,
             <span class="ident">secrets</span>,
             <span class="ident">action_count</span>,
             <span class="ident">reveal_count</span>,
             ..
-        } <span class="op">=</span> <span class="self">self</span>
+        } <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
         {
             <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Vec</span>::<span class="ident">new</span>()));
 
             <span class="prelude-val">Ok</span>({
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span> <span class="op">=</span> <span class="self">Self</span>(<span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
                     <span class="ident">state</span>: <span class="ident">state</span>.<span class="ident">clone</span>(),
                     <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
                     <span class="ident">action_count</span>: <span class="kw-2">*</span><span class="ident">action_count</span>,
@@ -2929,13 +2797,15 @@
                             }
                         }
                     }))),
-                };
+                }));
 
                 <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">new</span>(<span class="ident">action</span>.<span class="ident">clone</span>()))<span class="question-mark">?</span>;
 
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">complete</span> <span class="op">=</span> <span class="bool-val">true</span>;
 
-                <span class="kw">while</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">state</span> {
+                <span class="kw">while</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, <span class="ident">phase</span>, .. } <span class="op">=</span>
+                    <span class="ident">state</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or</span>(<span class="string">&quot;state.0.is_none()&quot;</span>)<span class="question-mark">?</span>
+                {
                     <span class="kw">let</span> (<span class="ident">player</span>, <span class="ident">secret</span>) <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Phase</span>::<span class="ident">Reveal</span> {
                         <span class="ident">request</span>: <span class="ident">RevealRequest</span> { <span class="ident">player</span>, <span class="ident">reveal</span>, .. },
                         ..
@@ -2973,11 +2843,14 @@
                 <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">events</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
             ))
         } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Ready { .. }&quot;</span>.<span class="ident">to_string</span>())
+            <span class="prelude-val">Err</span>(<span class="string">&quot;self.0 != _StoreState::Ready { .. }&quot;</span>.<span class="ident">to_string</span>())
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">apply_with_random</span>(
+    <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
+    <span class="doccomment">/// Applies an action by a given player to the state using the provided random number generator</span>
+    <span class="doccomment">/// instead of doing a commit-reveal for randomness.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_with_random</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">player</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>,
         <span class="ident">action</span>: <span class="ident">S</span>::<span class="ident">Action</span>,
@@ -2985,7 +2858,9 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">crate</span>::<span class="ident">State</span>::<span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">player</span>, <span class="kw-2">&amp;</span><span class="ident">StoreAction</span>::<span class="ident">new</span>(<span class="ident">action</span>))<span class="question-mark">?</span>;
 
-        <span class="kw">while</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, <span class="ident">phase</span>, .. } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span> {
+        <span class="kw">while</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">secrets</span>, <span class="ident">phase</span>, .. } <span class="op">=</span>
+            <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
+        {
             <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">borrowed_phase</span> {
@@ -3005,51 +2880,55 @@
                         <span class="ident">secret</span>: <span class="prelude-val">None</span>,
                     });
 
-                    <span class="ident">replace_with</span>::<span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
-                            <span class="kw-2">mut</span> <span class="ident">state</span>,
-                            <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                            <span class="ident">action_count</span>,
-                            <span class="ident">reveal_count</span>,
-                            <span class="ident">phase</span>,
-                            <span class="ident">logger</span>,
-                        } <span class="op">=</span> <span class="ident">state</span>
-                        {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Poll</span>::<span class="ident">Ready</span>((<span class="ident">state</span>, <span class="ident">context</span>)) <span class="op">=</span> <span class="ident">state</span>
-                                .<span class="ident">as_mut</span>()
-                                .<span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">task</span>::<span class="ident">Context</span>::<span class="ident">from_waker</span>(<span class="kw-2">&amp;</span><span class="ident">phantom_waker</span>()))
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">take</span>() {
+                        <span class="ident">drop</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">replace</span>(
+                            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
+                                <span class="kw-2">mut</span> <span class="ident">state</span>,
+                                <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                                <span class="ident">action_count</span>,
+                                <span class="ident">reveal_count</span>,
+                                <span class="ident">phase</span>,
+                                <span class="ident">logger</span>,
+                            } <span class="op">=</span> <span class="ident">state</span>
                             {
-                                <span class="ident">drop</span>(<span class="ident">context</span>.<span class="ident">secrets</span>);
+                                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Poll</span>::<span class="ident">Ready</span>((<span class="ident">state</span>, <span class="ident">context</span>)) <span class="op">=</span> <span class="ident">state</span>
+                                    .<span class="ident">as_mut</span>()
+                                    .<span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">task</span>::<span class="ident">Context</span>::<span class="ident">from_waker</span>(<span class="kw-2">&amp;</span><span class="ident">phantom_waker</span>()))
+                                {
+                                    <span class="ident">drop</span>(<span class="ident">context</span>.<span class="ident">secrets</span>);
 
-                                <span class="self">Self</span>::<span class="ident">Ready</span> {
-                                    <span class="ident">state</span>,
-                                    <span class="ident">secrets</span>: [
-                                        <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
-                                            <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
-                                        }),
-                                        <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
-                                            <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
-                                        }),
-                                    ],
-                                    <span class="ident">action_count</span>,
-                                    <span class="ident">reveal_count</span>: <span class="ident">reveal_count</span> <span class="op">+</span> <span class="number">3</span>,
-                                    <span class="ident">event_count</span>: <span class="ident">context</span>.<span class="ident">event_count</span>,
-                                    <span class="ident">logger</span>,
+                                    <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
+                                        <span class="ident">state</span>,
+                                        <span class="ident">secrets</span>: [
+                                            <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
+                                                <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
+                                            }),
+                                            <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
+                                                <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
+                                            }),
+                                        ],
+                                        <span class="ident">action_count</span>,
+                                        <span class="ident">reveal_count</span>: <span class="ident">reveal_count</span> <span class="op">+</span> <span class="number">3</span>,
+                                        <span class="ident">event_count</span>: <span class="ident">context</span>.<span class="ident">event_count</span>,
+                                        <span class="ident">logger</span>,
+                                    }
+                                } <span class="kw">else</span> {
+                                    <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
+                                        <span class="ident">state</span>,
+                                        <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                                        <span class="ident">action_count</span>,
+                                        <span class="ident">reveal_count</span>: <span class="ident">reveal_count</span> <span class="op">+</span> <span class="number">3</span>,
+                                        <span class="ident">phase</span>,
+                                        <span class="ident">logger</span>,
+                                    }
                                 }
                             } <span class="kw">else</span> {
-                                <span class="self">Self</span>::<span class="ident">Pending</span> {
-                                    <span class="ident">state</span>,
-                                    <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                                    <span class="ident">action_count</span>,
-                                    <span class="ident">reveal_count</span>: <span class="ident">reveal_count</span> <span class="op">+</span> <span class="number">3</span>,
-                                    <span class="ident">phase</span>,
-                                    <span class="ident">logger</span>,
-                                }
-                            }
-                        } <span class="kw">else</span> {
-                            <span class="ident">state</span>
-                        }
-                    });
+                                <span class="ident">state</span>
+                            },
+                        ));
+                    } <span class="kw">else</span> {
+                        <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>());
+                    }
                 }
                 <span class="ident">Phase</span>::<span class="ident">Reveal</span> {
                     <span class="ident">request</span>:
@@ -3085,18 +2964,18 @@
     }
 
     <span class="kw">fn</span> <span class="ident">logger</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">logger</span>, .. } <span class="op">|</span> <span class="self">Self</span>::<span class="ident">Pending</span> { <span class="ident">logger</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">logger</span>,
+        <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>() {
+            <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">logger</span>, .. } <span class="op">|</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> { <span class="ident">logger</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">logger</span>,
         }
     }
 
     <span class="kw">fn</span> <span class="ident">set_logger</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>) {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>() {
+            <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
                 <span class="ident">logger</span>: <span class="ident">state_logger</span>,
                 ..
             }
-            <span class="op">|</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
+            <span class="op">|</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
                 <span class="ident">logger</span>: <span class="ident">state_logger</span>,
                 ..
             } <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">state_logger</span> <span class="op">=</span> <span class="ident">logger</span>,
@@ -3104,7 +2983,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">State</span> <span class="kw">for</span> <span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="kw">crate</span>::<span class="ident">State</span> <span class="kw">for</span> <span class="ident">StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">ID</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">ID</span>;
     <span class="kw">type</span> <span class="ident">Nonce</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">Nonce</span>;
     <span class="kw">type</span> <span class="ident">Action</span> <span class="op">=</span> <span class="ident">StoreAction</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>;
@@ -3124,7 +3003,7 @@
     <span class="kw">fn</span> <span class="ident">deserialize</span>(<span class="kw-2">mut</span> <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">crate</span>::<span class="macro">forbid</span><span class="macro">!</span>(<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">3</span> <span class="op">*</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>());
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">Ready</span> {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(<span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
             <span class="ident">state</span>: {
                 <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">S</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>[..<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">3</span> <span class="op">*</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>()])<span class="question-mark">?</span>;
                 <span class="ident">data</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">data</span>[<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">3</span> <span class="op">*</span> <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>()..];
@@ -3135,18 +3014,18 @@
             <span class="ident">reveal_count</span>: <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span>,
             <span class="ident">event_count</span>: <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">read_u32_usize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)<span class="question-mark">?</span>,
             <span class="ident">logger</span>: <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Logger</span>::<span class="ident">new</span>(<span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> ()))),
-        })
+        })))
     }
 
     <span class="kw">fn</span> <span class="ident">is_serializable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> {
+        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
                 <span class="ident">state</span>,
                 <span class="ident">action_count</span>,
                 <span class="ident">reveal_count</span>,
                 <span class="ident">event_count</span>,
                 ..
-            } <span class="op">=</span><span class="op">&gt;</span> {
+            }) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">TryInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">try_into</span>(<span class="kw-2">*</span><span class="ident">action_count</span>).<span class="ident">is_ok</span>()
                     <span class="op">&amp;&amp;</span> <span class="ident">TryInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">try_into</span>(<span class="kw-2">*</span><span class="ident">reveal_count</span>).<span class="ident">is_ok</span>()
                     <span class="op">&amp;&amp;</span> <span class="ident">TryInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">try_into</span>(<span class="kw-2">*</span><span class="ident">event_count</span>).<span class="ident">is_ok</span>()
@@ -3157,8 +3036,8 @@
     }
 
     <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="self">Self</span>::<span class="ident">Ready</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span> {
+            <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
                 <span class="ident">state</span>,
                 <span class="ident">action_count</span>,
                 <span class="ident">reveal_count</span>,
@@ -3184,60 +3063,66 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">action</span>.<span class="number">0</span> {
             <span class="ident">_StoreAction</span>::<span class="ident">Play</span>(<span class="ident">action</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span> <span class="self">self</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> { <span class="ident">state</span>, .. } <span class="op">=</span>
+                    <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
+                {
                     <span class="ident">state</span>.<span class="ident">verify</span>(<span class="ident">player</span>, <span class="ident">action</span>)<span class="question-mark">?</span>;
 
-                    <span class="ident">replace_with</span>::<span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Ready</span> {
-                            <span class="ident">state</span>,
-                            <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                            <span class="ident">action_count</span>,
-                            <span class="ident">reveal_count</span>,
-                            <span class="ident">event_count</span>,
-                            <span class="ident">logger</span>,
-                        } <span class="op">=</span> <span class="ident">state</span>
-                        {
-                            <span class="kw">let</span> <span class="ident">secrets</span> <span class="op">=</span> [
-                                <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">secret</span>))),
-                                <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">secret</span>))),
-                            ];
-
-                            <span class="kw">let</span> <span class="ident">phase</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
-                                <span class="ident">random</span>: <span class="prelude-val">None</span>,
-                                <span class="ident">secret</span>: <span class="prelude-val">None</span>,
-                            }));
-
-                            <span class="self">Self</span>::<span class="ident">Pending</span> {
-                                <span class="ident">state</span>: <span class="ident">state</span>.<span class="ident">apply</span>(
-                                    <span class="ident">player</span>,
-                                    <span class="ident">action</span>,
-                                    <span class="ident">Context</span> {
-                                        <span class="ident">phase</span>: <span class="ident">phase</span>.<span class="ident">clone</span>(),
-                                        <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
-                                        <span class="ident">event_count</span>,
-                                        <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">logger</span>.<span class="ident">clone</span>()),
-                                    },
-                                ),
-                                <span class="ident">secrets</span>,
-                                <span class="ident">action_count</span>: <span class="ident">action_count</span> <span class="op">+</span> <span class="number">1</span>,
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">take</span>() {
+                        <span class="ident">drop</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">replace</span>(
+                            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
+                                <span class="ident">state</span>,
+                                <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                                <span class="ident">action_count</span>,
                                 <span class="ident">reveal_count</span>,
-                                <span class="ident">phase</span>,
+                                <span class="ident">event_count</span>,
                                 <span class="ident">logger</span>,
-                            }
-                        } <span class="kw">else</span> {
-                            <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>());
-                        }
-                    });
+                            } <span class="op">=</span> <span class="ident">state</span>
+                            {
+                                <span class="kw">let</span> <span class="ident">secrets</span> <span class="op">=</span> [
+                                    <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">secret</span>))),
+                                    <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">secret</span>))),
+                                ];
+
+                                <span class="kw">let</span> <span class="ident">phase</span> <span class="op">=</span> <span class="ident">Rc</span>::<span class="ident">new</span>(<span class="ident">RefCell</span>::<span class="ident">new</span>(<span class="ident">Phase</span>::<span class="ident">Idle</span> {
+                                    <span class="ident">random</span>: <span class="prelude-val">None</span>,
+                                    <span class="ident">secret</span>: <span class="prelude-val">None</span>,
+                                }));
+
+                                <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
+                                    <span class="ident">state</span>: <span class="ident">state</span>.<span class="ident">apply</span>(
+                                        <span class="ident">player</span>,
+                                        <span class="ident">action</span>,
+                                        <span class="ident">Context</span> {
+                                            <span class="ident">phase</span>: <span class="ident">phase</span>.<span class="ident">clone</span>(),
+                                            <span class="ident">secrets</span>: <span class="ident">secrets</span>.<span class="ident">clone</span>(),
+                                            <span class="ident">event_count</span>,
+                                            <span class="ident">logger</span>: (<span class="bool-val">true</span>, <span class="ident">logger</span>.<span class="ident">clone</span>()),
+                                        },
+                                    ),
+                                    <span class="ident">secrets</span>,
+                                    <span class="ident">action_count</span>: <span class="ident">action_count</span> <span class="op">+</span> <span class="number">1</span>,
+                                    <span class="ident">reveal_count</span>,
+                                    <span class="ident">phase</span>,
+                                    <span class="ident">logger</span>,
+                                }
+                            } <span class="kw">else</span> {
+                                <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>());
+                            },
+                        ));
+                    } <span class="kw">else</span> {
+                        <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>());
+                    }
                 } <span class="kw">else</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Ready { .. }&quot;</span>.<span class="ident">to_string</span>());
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self.0 != _StoreState::Ready { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
             <span class="ident">_StoreAction</span>::<span class="ident">RandomCommit</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
                     <span class="ident">phase</span>,
                     <span class="ident">reveal_count</span>,
                     ..
-                } <span class="op">=</span> <span class="self">self</span>
+                } <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_mut</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
                 {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -3256,15 +3141,15 @@
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;borrowed_phase != Phase::RandomCommit&quot;</span>.<span class="ident">to_string</span>());
                     }
                 } <span class="kw">else</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self.0 != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
             <span class="ident">_StoreAction</span>::<span class="ident">RandomReply</span>(<span class="ident">seed</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
                     <span class="ident">phase</span>,
                     <span class="ident">reveal_count</span>,
                     ..
-                } <span class="op">=</span> <span class="self">self</span>
+                } <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_mut</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
                 {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -3284,15 +3169,15 @@
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;borrowed_phase != Phase::RandomReply { .. }&quot;</span>.<span class="ident">to_string</span>());
                     }
                 } <span class="kw">else</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self.0 != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
             <span class="ident">_StoreAction</span>::<span class="ident">RandomReveal</span>(<span class="ident">seed</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
                     <span class="ident">phase</span>,
                     <span class="ident">reveal_count</span>,
                     ..
-                } <span class="op">=</span> <span class="self">self</span>
+                } <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_mut</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
                 {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -3333,15 +3218,15 @@
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;borrowed_phase != Phase::RandomReveal { .. }&quot;</span>.<span class="ident">to_string</span>());
                     }
                 } <span class="kw">else</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self.0 != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
             <span class="ident">_StoreAction</span>::<span class="ident">Reveal</span>(<span class="ident">secret</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
                     <span class="ident">phase</span>,
                     <span class="ident">reveal_count</span>,
                     ..
-                } <span class="op">=</span> <span class="self">self</span>
+                } <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_mut</span>().<span class="ident">ok_or</span>(<span class="string">&quot;self.0.is_none()&quot;</span>)<span class="question-mark">?</span>
                 {
                     <span class="kw">let</span> <span class="ident">borrowed_phase</span> <span class="op">=</span> <span class="ident">phase</span>.<span class="ident">try_borrow</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">error</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 
@@ -3372,55 +3257,82 @@
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;borrowed_phase != Phase::Reveal { .. }&quot;</span>.<span class="ident">to_string</span>());
                     }
                 } <span class="kw">else</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;self.0 != _StoreState::Pending { .. }&quot;</span>.<span class="ident">to_string</span>());
                 }
             }
         }
 
-        <span class="ident">replace_with</span>::<span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">state</span><span class="op">|</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="self">Self</span>::<span class="ident">Pending</span> {
-                <span class="kw-2">mut</span> <span class="ident">state</span>,
-                <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                <span class="ident">action_count</span>,
-                <span class="ident">reveal_count</span>,
-                <span class="ident">phase</span>,
-                <span class="ident">logger</span>,
-            } <span class="op">=</span> <span class="ident">state</span>
-            {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Poll</span>::<span class="ident">Ready</span>((<span class="ident">state</span>, <span class="ident">context</span>)) <span class="op">=</span> <span class="ident">state</span>
-                    .<span class="ident">as_mut</span>()
-                    .<span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">task</span>::<span class="ident">Context</span>::<span class="ident">from_waker</span>(<span class="kw-2">&amp;</span><span class="ident">phantom_waker</span>()))
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">take</span>() {
+            <span class="ident">drop</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">replace</span>(
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
+                    <span class="kw-2">mut</span> <span class="ident">state</span>,
+                    <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                    <span class="ident">action_count</span>,
+                    <span class="ident">reveal_count</span>,
+                    <span class="ident">phase</span>,
+                    <span class="ident">logger</span>,
+                } <span class="op">=</span> <span class="ident">state</span>
                 {
-                    <span class="ident">drop</span>(<span class="ident">context</span>.<span class="ident">secrets</span>);
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Poll</span>::<span class="ident">Ready</span>((<span class="ident">state</span>, <span class="ident">context</span>)) <span class="op">=</span> <span class="ident">state</span>
+                        .<span class="ident">as_mut</span>()
+                        .<span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">task</span>::<span class="ident">Context</span>::<span class="ident">from_waker</span>(<span class="kw-2">&amp;</span><span class="ident">phantom_waker</span>()))
+                    {
+                        <span class="ident">drop</span>(<span class="ident">context</span>.<span class="ident">secrets</span>);
 
-                    <span class="self">Self</span>::<span class="ident">Ready</span> {
-                        <span class="ident">state</span>,
-                        <span class="ident">secrets</span>: [
-                            <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()),
-                            <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()),
-                        ],
-                        <span class="ident">action_count</span>,
-                        <span class="ident">reveal_count</span>,
-                        <span class="ident">event_count</span>: <span class="ident">context</span>.<span class="ident">event_count</span>,
-                        <span class="ident">logger</span>,
+                        <span class="ident">_StoreState</span>::<span class="ident">Ready</span> {
+                            <span class="ident">state</span>,
+                            <span class="ident">secrets</span>: [
+                                <span class="ident">secret1</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
+                                    <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
+                                }),
+                                <span class="ident">secret2</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
+                                    <span class="ident">Rc</span>::<span class="ident">try_unwrap</span>(<span class="ident">secret</span>).<span class="ident">ok</span>().<span class="ident">unwrap</span>().<span class="ident">into_inner</span>()
+                                }),
+                            ],
+                            <span class="ident">action_count</span>,
+                            <span class="ident">reveal_count</span>,
+                            <span class="ident">event_count</span>: <span class="ident">context</span>.<span class="ident">event_count</span>,
+                            <span class="ident">logger</span>,
+                        }
+                    } <span class="kw">else</span> {
+                        <span class="ident">_StoreState</span>::<span class="ident">Pending</span> {
+                            <span class="ident">state</span>,
+                            <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
+                            <span class="ident">action_count</span>,
+                            <span class="ident">reveal_count</span>,
+                            <span class="ident">phase</span>,
+                            <span class="ident">logger</span>,
+                        }
                     }
                 } <span class="kw">else</span> {
-                    <span class="self">Self</span>::<span class="ident">Pending</span> {
-                        <span class="ident">state</span>,
-                        <span class="ident">secrets</span>: [<span class="ident">secret1</span>, <span class="ident">secret2</span>],
-                        <span class="ident">action_count</span>,
-                        <span class="ident">reveal_count</span>,
-                        <span class="ident">phase</span>,
-                        <span class="ident">logger</span>,
-                    }
-                }
-            } <span class="kw">else</span> {
-                <span class="ident">state</span>
-            }
-        });
+                    <span class="ident">state</span>
+                },
+            ));
+        } <span class="kw">else</span> {
+            <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;{}:{}:{}&quot;</span>, <span class="macro">file</span><span class="macro">!</span>(), <span class="macro">line</span><span class="macro">!</span>(), <span class="macro">column</span><span class="macro">!</span>());
+        }
 
         <span class="prelude-val">Ok</span>(())
     }
+}
+
+<span class="kw">enum</span> <span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> {
+    <span class="ident">Ready</span> {
+        <span class="ident">state</span>: <span class="ident">S</span>,
+        <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span>; <span class="number">2</span>],
+        <span class="ident">action_count</span>: <span class="ident">usize</span>,
+        <span class="ident">reveal_count</span>: <span class="ident">usize</span>,
+        <span class="ident">event_count</span>: <span class="ident">usize</span>,
+        <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    },
+    <span class="ident">Pending</span> {
+        <span class="ident">state</span>: <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> (<span class="ident">S</span>, <span class="ident">Context</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">secrets</span>: [<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span>(<span class="ident">S</span>::<span class="ident">Secret</span>, <span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">2</span>],
+        <span class="ident">action_count</span>: <span class="ident">usize</span>,
+        <span class="ident">reveal_count</span>: <span class="ident">usize</span>,
+        <span class="ident">phase</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Phase</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Secret</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">logger</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Logger</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    },
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">State</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">_StoreState</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {

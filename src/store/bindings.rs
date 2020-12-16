@@ -16,10 +16,7 @@
 
 //! WebAssembly-specific utilities
 
-use {
-    alloc::prelude::v1::*,
-    core::{convert::TryInto, num::NonZeroU32},
-};
+use core::{convert::TryInto, num::NonZeroU32};
 
 /// Generates WebAssembly bindings for a [super::State].
 #[macro_export]

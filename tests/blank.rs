@@ -15,7 +15,6 @@
  */
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(alloc_prelude)]
 
 use arcadeum::{
     store::{Context, State, Tester},
@@ -27,7 +26,12 @@ use serde::{Deserialize, Serialize};
 extern crate alloc;
 
 use {
-    alloc::{prelude::v1::*, vec},
+    alloc::{
+        boxed::Box,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{future::Future, pin::Pin},
 };
 

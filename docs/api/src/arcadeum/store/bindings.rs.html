@@ -670,9 +670,6 @@
 <span id="667">667</span>
 <span id="668">668</span>
 <span id="669">669</span>
-<span id="670">670</span>
-<span id="671">671</span>
-<span id="672">672</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -692,10 +689,7 @@
 
 <span class="doccomment">//! WebAssembly-specific utilities</span>
 
-<span class="kw">use</span> {
-    <span class="ident">alloc</span>::<span class="ident">prelude</span>::<span class="ident">v1</span>::<span class="kw-2">*</span>,
-    <span class="ident">core</span>::{<span class="ident">convert</span>::<span class="ident">TryInto</span>, <span class="ident">num</span>::<span class="ident">NonZeroU32</span>},
-};
+<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">convert</span>::<span class="ident">TryInto</span>, <span class="ident">num</span>::<span class="ident">NonZeroU32</span>};
 
 <span class="doccomment">/// Generates WebAssembly bindings for a [super::State].</span>
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>

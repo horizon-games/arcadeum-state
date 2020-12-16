@@ -16,7 +16,7 @@
 
 //! Error utilities
 
-use {alloc::prelude::v1::*, core::fmt::Debug};
+use {alloc::string::String, core::fmt::Debug};
 
 #[derive(Debug)]
 pub enum Error {

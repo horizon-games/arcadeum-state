@@ -17,7 +17,15 @@
 //! Store tester
 
 use {
-    alloc::{collections::VecDeque, format, prelude::v1::*, rc::Rc, vec},
+    alloc::{
+        boxed::Box,
+        collections::VecDeque,
+        format,
+        rc::Rc,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{cell::RefCell, column, file, line, mem::size_of, ops::Deref},
 };
 

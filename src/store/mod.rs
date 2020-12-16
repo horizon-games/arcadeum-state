@@ -17,7 +17,15 @@
 //! Client store
 
 use {
-    alloc::{fmt::Debug, format, prelude::v1::*, rc::Rc, vec},
+    alloc::{
+        boxed::Box,
+        fmt::Debug,
+        format,
+        rc::Rc,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{
         cell::{Ref, RefCell},
         column,

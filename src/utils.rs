@@ -17,7 +17,7 @@
 //! Utilities
 
 use {
-    alloc::{format, prelude::v1::*},
+    alloc::{format, string::String, vec::Vec},
     core::{
         convert::TryInto,
         fmt::{Error, Formatter},

@@ -15,12 +15,18 @@
  */
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(alloc_prelude)]
 
 extern crate alloc;
 
 use {
-    alloc::{collections::BTreeMap, format, prelude::v1::*, vec},
+    alloc::{
+        boxed::Box,
+        collections::BTreeMap,
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{
         convert::TryInto,
         fmt::Debug,

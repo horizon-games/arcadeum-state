@@ -570,6 +570,14 @@
 <span id="567">567</span>
 <span id="568">568</span>
 <span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -590,7 +598,15 @@
 <span class="doccomment">//! Store tester</span>
 
 <span class="kw">use</span> {
-    <span class="ident">alloc</span>::{<span class="ident">collections</span>::<span class="ident">VecDeque</span>, <span class="ident">format</span>, <span class="ident">prelude</span>::<span class="ident">v1</span>::<span class="kw-2">*</span>, <span class="ident">rc</span>::<span class="ident">Rc</span>, <span class="ident">vec</span>},
+    <span class="ident">alloc</span>::{
+        <span class="ident">boxed</span>::<span class="ident">Box</span>,
+        <span class="ident">collections</span>::<span class="ident">VecDeque</span>,
+        <span class="ident">format</span>,
+        <span class="ident">rc</span>::<span class="ident">Rc</span>,
+        <span class="ident">string</span>::{<span class="ident">String</span>, <span class="ident">ToString</span>},
+        <span class="ident">vec</span>,
+        <span class="ident">vec</span>::<span class="ident">Vec</span>,
+    },
     <span class="ident">core</span>::{<span class="ident">cell</span>::<span class="ident">RefCell</span>, <span class="ident">column</span>, <span class="ident">file</span>, <span class="ident">line</span>, <span class="ident">mem</span>::<span class="ident">size_of</span>, <span class="ident">ops</span>::<span class="ident">Deref</span>},
 };
 

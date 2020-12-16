@@ -17,7 +17,12 @@
 //! Cryptographic utilities
 
 use {
-    alloc::{format, prelude::v1::*, vec},
+    alloc::{
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{
         column,
         convert::TryInto,

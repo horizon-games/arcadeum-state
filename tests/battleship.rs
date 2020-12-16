@@ -15,7 +15,6 @@
  */
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(alloc_prelude)]
 
 use arcadeum::{
     crypto,
@@ -29,7 +28,13 @@ use serde::{Deserialize, Serialize};
 extern crate alloc;
 
 use {
-    alloc::{format, prelude::v1::*, vec},
+    alloc::{
+        boxed::Box,
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{convert::TryInto, future::Future, mem::size_of, pin::Pin},
 };
 

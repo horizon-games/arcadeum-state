@@ -52,6 +52,26 @@ where
         log: impl FnMut(Option<crate::Player>, Option<crate::Player>, S::Event) + 'static,
     ) -> Result<Self, String> {
         let mut randoms = {
+            const SIZE: usize = size_of::<
+                <libsecp256k1_rand::rngs::StdRng as libsecp256k1_rand::SeedableRng>::Seed,
+            >();
+
+            [
+                <libsecp256k1_rand::rngs::StdRng as libsecp256k1_rand::SeedableRng>::from_seed(
+                    [1; SIZE],
+                ),
+                <libsecp256k1_rand::rngs::StdRng as libsecp256k1_rand::SeedableRng>::from_seed(
+                    [2; SIZE],
+                ),
+                <libsecp256k1_rand::rngs::StdRng as libsecp256k1_rand::SeedableRng>::from_seed(
+                    [3; SIZE],
+                ),
+            ]
+        };
+
+        let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms)?;
+
+        let randoms = {
             const SIZE: usize =
                 size_of::<<rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed>();
 
@@ -61,8 +81,6 @@ where
                 <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([3; SIZE]),
             ]
         };
-
-        let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms)?;
 
         let certificates = if cfg!(feature = "test-approvals") {
             [
@@ -448,7 +466,7 @@ where
 
 #[cfg(not(feature = "no-crypto"))]
 #[allow(clippy::unnecessary_wraps)]
-fn generate_keys_and_subkeys<R: rand::RngCore>(
+fn generate_keys_and_subkeys<R: libsecp256k1_rand::RngCore>(
     randoms: &mut [R; 3],
 ) -> Result<([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]), String> {
     Ok((
@@ -465,7 +483,7 @@ fn generate_keys_and_subkeys<R: rand::RngCore>(
 }
 
 #[cfg(feature = "no-crypto")]
-fn generate_keys_and_subkeys<R: rand::RngCore>(
+fn generate_keys_and_subkeys<R: libsecp256k1_rand::RngCore>(
     randoms: &mut [R; 3],
 ) -> Result<([crate::crypto::SecretKey; 3], [crate::crypto::SecretKey; 2]), String> {
     Ok((

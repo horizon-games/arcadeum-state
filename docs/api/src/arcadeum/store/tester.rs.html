@@ -578,6 +578,24 @@
 <span id="575">575</span>
 <span id="576">576</span>
 <span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">/*
  * Copyright 2019 Horizon Blockchain Games Inc.
@@ -633,6 +651,26 @@
         <span class="ident">log</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">Player</span><span class="op">&gt;</span>, <span class="ident">S</span>::<span class="ident">Event</span>) <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">randoms</span> <span class="op">=</span> {
+            <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">size_of</span>::<span class="op">&lt;</span>
+                <span class="op">&lt;</span><span class="ident">libsecp256k1_rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span> <span class="kw">as</span> <span class="ident">libsecp256k1_rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span>,
+            <span class="op">&gt;</span>();
+
+            [
+                <span class="op">&lt;</span><span class="ident">libsecp256k1_rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span> <span class="kw">as</span> <span class="ident">libsecp256k1_rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">from_seed</span>(
+                    [<span class="number">1</span>; <span class="ident">SIZE</span>],
+                ),
+                <span class="op">&lt;</span><span class="ident">libsecp256k1_rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span> <span class="kw">as</span> <span class="ident">libsecp256k1_rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">from_seed</span>(
+                    [<span class="number">2</span>; <span class="ident">SIZE</span>],
+                ),
+                <span class="op">&lt;</span><span class="ident">libsecp256k1_rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span> <span class="kw">as</span> <span class="ident">libsecp256k1_rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">from_seed</span>(
+                    [<span class="number">3</span>; <span class="ident">SIZE</span>],
+                ),
+            ]
+        };
+
+        <span class="kw">let</span> (<span class="ident">keys</span>, <span class="ident">subkeys</span>) <span class="op">=</span> <span class="ident">generate_keys_and_subkeys</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">randoms</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">randoms</span> <span class="op">=</span> {
             <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span> <span class="op">=</span>
                 <span class="ident">size_of</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">Seed</span><span class="op">&gt;</span>();
 
@@ -642,8 +680,6 @@
                 <span class="op">&lt;</span><span class="ident">rand_xorshift</span>::<span class="ident">XorShiftRng</span> <span class="kw">as</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span><span class="op">&gt;</span>::<span class="ident">from_seed</span>([<span class="number">3</span>; <span class="ident">SIZE</span>]),
             ]
         };
-
-        <span class="kw">let</span> (<span class="ident">keys</span>, <span class="ident">subkeys</span>) <span class="op">=</span> <span class="ident">generate_keys_and_subkeys</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">randoms</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">certificates</span> <span class="op">=</span> <span class="kw">if</span> <span class="macro">cfg</span><span class="macro">!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;test-approvals&quot;</span>) {
             [
@@ -1029,7 +1065,7 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;no-crypto&quot;</span>))]</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">unnecessary_wraps</span>)]</span>
-<span class="kw">fn</span> <span class="ident">generate_keys_and_subkeys</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">rand</span>::<span class="ident">RngCore</span><span class="op">&gt;</span>(
+<span class="kw">fn</span> <span class="ident">generate_keys_and_subkeys</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">libsecp256k1_rand</span>::<span class="ident">RngCore</span><span class="op">&gt;</span>(
     <span class="ident">randoms</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">R</span>; <span class="number">3</span>],
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>([<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">SecretKey</span>; <span class="number">3</span>], [<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">SecretKey</span>; <span class="number">2</span>]), <span class="ident">String</span><span class="op">&gt;</span> {
     <span class="prelude-val">Ok</span>((
@@ -1046,7 +1082,7 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;no-crypto&quot;</span>)]</span>
-<span class="kw">fn</span> <span class="ident">generate_keys_and_subkeys</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">rand</span>::<span class="ident">RngCore</span><span class="op">&gt;</span>(
+<span class="kw">fn</span> <span class="ident">generate_keys_and_subkeys</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">libsecp256k1_rand</span>::<span class="ident">RngCore</span><span class="op">&gt;</span>(
     <span class="ident">randoms</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">R</span>; <span class="number">3</span>],
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>([<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">SecretKey</span>; <span class="number">3</span>], [<span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">SecretKey</span>; <span class="number">2</span>]), <span class="ident">String</span><span class="op">&gt;</span> {
     <span class="prelude-val">Ok</span>((

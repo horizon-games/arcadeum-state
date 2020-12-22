@@ -22,7 +22,7 @@
 
 extern crate libc;
 
-#[allow(unused_imports)]
+#[allow(unused_imports, clippy::single_component_path_imports)]
 use arcadeum;
 
 #[start]

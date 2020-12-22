@@ -16,13 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use arcadeum::{
-    store::{Context, State, Tester},
-    Player,
-};
-
-use serde::{Deserialize, Serialize};
-
 extern crate alloc;
 
 use {
@@ -32,7 +25,12 @@ use {
         vec,
         vec::Vec,
     },
+    arcadeum::{
+        store::{Context, State, Tester},
+        Player,
+    },
     core::{future::Future, pin::Pin},
+    serde::{Deserialize, Serialize},
 };
 
 #[cfg(not(feature = "std"))]
@@ -40,8 +38,10 @@ macro_rules! println {
     () => {
         ()
     };
-    ($($arg:tt)*) => {
-        ()
+    ($($arg:tt),*) => {
+        {
+            $(drop($arg);)*
+        }
     };
 }
 

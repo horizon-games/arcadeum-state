@@ -948,9 +948,9 @@
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">/// use {arcadeum::crypto::Addressable, rand::SeedableRng};</span>
+<span class="doccomment">/// use {arcadeum::crypto::Addressable, libsecp256k1_rand::SeedableRng};</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// let mut random = rand::rngs::StdRng::from_seed([1; 32]);</span>
+<span class="doccomment">/// let mut random = libsecp256k1_rand::rngs::StdRng::from_seed([1; 32]);</span>
 <span class="doccomment">/// let secret = secp256k1::SecretKey::random(&amp;mut random);</span>
 <span class="doccomment">/// let message = b&quot;quod erat demonstrandum&quot;;</span>
 <span class="doccomment">/// let signature = arcadeum::crypto::sign(message, &amp;secret);</span>

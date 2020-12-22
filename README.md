@@ -36,8 +36,22 @@ $ rustup default nightly
 
 ## Build and test
 
+### Quick test
+
 ```bash
 $ cargo test -- --nocapture
+```
+
+### Thorough test
+
+```bash
+$ cargo test && cargo test --no-default-features && cargo test --features 'no-crypto' && cargo test --no-default-features --features 'no-crypto' && cargo test --features 'test-approvals' && cargo test --no-default-features --features 'test-approvals' && cargo test --features 'no-crypto, test-approvals' && cargo test --no-default-features --features 'no-crypto, test-approvals'
+```
+
+### Test no-std
+
+```bash
+$ cd std-tester && cargo run
 ```
 
 ## Documentation

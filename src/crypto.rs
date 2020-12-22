@@ -54,9 +54,9 @@ pub type Hash = [u8; 32];
 /// # Examples
 ///
 /// ```
-/// use {arcadeum::crypto::Addressable, rand::SeedableRng};
+/// use {arcadeum::crypto::Addressable, libsecp256k1_rand::SeedableRng};
 ///
-/// let mut random = rand::rngs::StdRng::from_seed([1; 32]);
+/// let mut random = libsecp256k1_rand::rngs::StdRng::from_seed([1; 32]);
 /// let secret = secp256k1::SecretKey::random(&mut random);
 /// let message = b"quod erat demonstrandum";
 /// let signature = arcadeum::crypto::sign(message, &secret);

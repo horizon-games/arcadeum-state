@@ -16,16 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use arcadeum::{
-    crypto::{sign, Addressable, SecretKey},
-    Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
-};
-
-#[cfg(feature = "std")]
-use arcadeum::utils::hex;
-
-use rand::RngCore;
-
 extern crate alloc;
 
 use {
@@ -36,8 +26,16 @@ use {
         vec,
         vec::Vec,
     },
-    core::{convert::TryInto, mem::size_of},
+    arcadeum::{
+        crypto::{sign, Addressable, SecretKey},
+        Player, PlayerAction, Proof, ProofAction, ProofState, RootProof, State,
+    },
+    core::convert::TryInto,
+    libsecp256k1_rand::{rngs::StdRng, RngCore, SeedableRng},
 };
+
+#[cfg(feature = "std")]
+use arcadeum::utils::hex;
 
 #[cfg(not(feature = "std"))]
 macro_rules! println {
@@ -172,7 +170,7 @@ impl arcadeum::Action for Action {
 }
 
 #[cfg(not(feature = "no-crypto"))]
-fn generate_keys_and_subkeys<R: rand::Rng>(
+fn generate_keys_and_subkeys<R: libsecp256k1_rand::Rng>(
     randoms: &mut [R; 3],
 ) -> Result<([SecretKey; 3], [SecretKey; 2]), String> {
     Ok((
@@ -189,7 +187,7 @@ fn generate_keys_and_subkeys<R: rand::Rng>(
 }
 
 #[cfg(feature = "no-crypto")]
-fn generate_keys_and_subkeys<R: rand::Rng>(
+fn generate_keys_and_subkeys<R: libsecp256k1_rand::Rng>(
     randoms: &mut [R; 3],
 ) -> Result<([SecretKey; 3], [SecretKey; 2]), String> {
     Ok((
@@ -247,15 +245,11 @@ fn generate_keys_and_subkeys<R: rand::Rng>(
 
 #[test]
 fn test_ttt() {
-    let mut randoms = {
-        const SIZE: usize = size_of::<<rand_xorshift::XorShiftRng as rand::SeedableRng>::Seed>();
-
-        [
-            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([1; SIZE]),
-            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([2; SIZE]),
-            <rand_xorshift::XorShiftRng as rand::SeedableRng>::from_seed([3; SIZE]),
-        ]
-    };
+    let mut randoms = [
+        StdRng::from_seed([1; 32]),
+        StdRng::from_seed([2; 32]),
+        StdRng::from_seed([3; 32]),
+    ];
 
     let (keys, subkeys) = generate_keys_and_subkeys(&mut randoms).unwrap();
 
@@ -277,20 +271,21 @@ fn test_ttt() {
     })
     .unwrap();
 
-    println!("root = {}\n", hex(&root.serialize()));
+    let data = root.serialize();
+
+    println!("root = {}\n", hex(&data));
 
     assert_eq!(
-        root.serialize(),
+        data,
         RootProof::<Box<TTT>>::deserialize(&root.serialize())
             .unwrap()
             .serialize()
     );
 
     let mut proof = Proof::new(root.clone());
-
-    println!("proof = {}\n", hex(&proof.serialize()));
-
     let data = proof.serialize();
+
+    println!("proof = {}\n", hex(&data));
 
     assert_eq!(data, {
         let mut proof = Proof::new(root.clone());
@@ -315,9 +310,9 @@ fn test_ttt() {
 
         proof.apply(&diff).unwrap();
 
-        println!("diff = {:?}\nproof = {}\n", diff, hex(&proof.serialize()));
-
         let data = proof.serialize();
+
+        println!("diff = {:?}\nproof = {}\n", diff, hex(&data));
 
         assert_eq!(data, {
             let mut proof = Proof::new(root.clone());
@@ -340,9 +335,9 @@ fn test_ttt() {
 
         proof.apply(&diff).unwrap();
 
-        println!("diff = {:?}\nproof = {}\n", diff, hex(&proof.serialize()));
-
         let data = proof.serialize();
+
+        println!("diff = {:?}\nproof = {}\n", diff, hex(&data));
 
         assert_eq!(data, {
             let mut proof = Proof::new(root.clone());

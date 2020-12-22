@@ -16,14 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use arcadeum::{
-    store::{Context, State, Tester},
-    Player,
-};
-
-use rand::RngCore;
-use serde::{Deserialize, Serialize};
-
 extern crate alloc;
 
 use {
@@ -34,7 +26,13 @@ use {
         vec,
         vec::Vec,
     },
+    arcadeum::{
+        store::{Context, State, Tester},
+        Player,
+    },
     core::{future::Future, pin::Pin},
+    rand::RngCore,
+    serde::{Deserialize, Serialize},
 };
 
 #[cfg(not(feature = "std"))]
@@ -42,8 +40,10 @@ macro_rules! println {
     () => {
         ()
     };
-    ($($arg:tt)*) => {
-        ()
+    ($($arg:tt),*) => {
+        {
+            $(drop($arg);)*
+        }
     };
 }
 
@@ -144,7 +144,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomCommit(
-                0xa60607651e32731051080ee2dcaae8aa8659d9873e43051a7321187f5376404d,
+                0xd211e399fbd1a96478e752bccabc5438c98939b547493a0132d92f270163b249,
             ),
         ),
     },
@@ -154,7 +154,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReply(
-                0x05b6344215102dc0ae78df9a78c018db,
+                0x7b030318630003031b00031803030303,
             ),
         ),
     },
@@ -164,7 +164,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReveal(
-                0x0624278306003680d4b0951350801092,
+                0x52020210420002021200021002020202,
             ),
         ),
     },
@@ -177,7 +177,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomCommit(
-                0x860a0200922d64b449bd06a748449f4b7e3730539e72eb37474dc5d851b66cbf,
+                0xd211e399fbd1a96478e752bccabc5438c98939b547493a0132d92f270163b249,
             ),
         ),
     },
@@ -187,7 +187,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReply(
-                0xa3c018c0a3c018dba535281b632df003,
+                0x7b030318630003031b00031803030303,
             ),
         ),
     },
@@ -197,7 +197,7 @@ fn test_coin() {
         ),
         action: Play(
             RandomReveal(
-                0xc2801080c2801092c62630124236a002,
+                0x52020210420002021200021002020202,
             ),
         ),
     },

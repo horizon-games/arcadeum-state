@@ -838,6 +838,7 @@ impl<S: State> StoreState<S> {
         &self,
         player: Option<crate::Player>,
         action: &S::Action,
+        using_secrets: [bool; 2],
     ) -> Result<Log<S>, String>
     where
         S::Event: serde::Serialize + 'static,
@@ -855,7 +856,7 @@ impl<S: State> StoreState<S> {
             Ok({
                 let mut state = Self(Some(_StoreState::Ready {
                     state: state.clone(),
-                    secrets: secrets.clone(),
+                    secrets: crate::utils::keep_by_array(secrets.clone(), using_secrets),
                     action_count: *action_count,
                     reveal_count: *reveal_count,
                     event_count: Default::default(),

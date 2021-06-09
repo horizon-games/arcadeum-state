@@ -170,3 +170,16 @@ pub(crate) fn read_u8_bool(data: &mut &[u8]) -> Result<bool, String> {
 pub(crate) fn write_u8_bool(data: &mut Vec<u8>, value: bool) {
     write_u8(data, value.into());
 }
+
+/// Set Option::None in an array at positions where a boolean array is false.
+pub(crate) fn keep_by_array<T, const N: usize>(
+    mut opts_arr: [Option<T>; N],
+    keep_arr: [bool; N],
+) -> [Option<T>; N] {
+    for i in 0..opts_arr.len() {
+        if !keep_arr[i] {
+            opts_arr[i] = None
+        }
+    }
+    opts_arr
+}

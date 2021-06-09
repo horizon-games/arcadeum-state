@@ -296,14 +296,13 @@ macro_rules! bind {
                 &self,
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
+                using_secrets: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                Ok($crate::utils::to_js(
-                    &self
-                        .store
-                        .state()
-                        .state()
-                        .simulate(player, &$crate::utils::from_js(action)?)?,
-                )?)
+                Ok($crate::utils::to_js(&self.store.state().state().simulate(
+                    player,
+                    &$crate::utils::from_js(action)?,
+                    $crate::utils::from_js(using_secrets)?,
+                ))?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -520,12 +519,13 @@ macro_rules! bind {
                 &self,
                 player: Option<$crate::Player>,
                 action: wasm_bindgen::JsValue,
+                using_secrets: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                Ok($crate::utils::to_js(
-                    &self
-                        .state
-                        .simulate(player, &$crate::utils::from_js(action)?)?,
-                )?)
+                Ok($crate::utils::to_js(&self.state.simulate(
+                    player,
+                    &$crate::utils::from_js(action)?,
+                    $crate::utils::from_js(using_secrets)?,
+                )?)?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]

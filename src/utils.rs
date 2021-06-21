@@ -183,3 +183,28 @@ pub(crate) fn keep_by_array<T, const N: usize>(
     }
     opts_arr
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_keep_by_array() {
+    assert_eq!(keep_by_array::<u8, 2>([None, None],       [true, true]),   [None, None]);
+    assert_eq!(keep_by_array::<u8, 2>([None, None],       [true, false]),  [None, None]);
+    assert_eq!(keep_by_array::<u8, 2>([None, None],       [false, true]),  [None, None]);
+    assert_eq!(keep_by_array::<u8, 2>([None, None],       [false, false]), [None, None]);
+
+    assert_eq!(keep_by_array::<u8, 2>([None, Some(1)],    [true, true]),   [None, Some(1)]);
+    assert_eq!(keep_by_array::<u8, 2>([None, Some(1)],    [true, false]),  [None, None]);
+    assert_eq!(keep_by_array::<u8, 2>([None, Some(1)],    [false, true]),  [None, Some(1)]);
+    assert_eq!(keep_by_array::<u8, 2>([None, Some(1)],    [false, false]), [None, None]);
+
+
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), None],    [true, true]),   [Some(1), None]);
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), None],    [true, false]),  [Some(1), None]);
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), None],    [false, true]),  [None, None]);
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), None],    [false, false]), [None, None]);
+
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), Some(2)], [true, true]),   [Some(1), Some(2)]);
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), Some(2)], [true, false]),  [Some(1), None]);
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), Some(2)], [false, true]),  [None, Some(2)]);
+    assert_eq!(keep_by_array::<u8, 2>([Some(1), Some(2)], [false, false]), [None, None]);
+}

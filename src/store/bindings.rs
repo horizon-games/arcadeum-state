@@ -302,7 +302,7 @@ macro_rules! bind {
                     player,
                     &$crate::utils::from_js(action)?,
                     $crate::utils::from_js(using_secrets)?,
-                ))?)
+                )?)?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]

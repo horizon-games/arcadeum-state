@@ -34,7 +34,7 @@ use {
 };
 
 #[cfg(not(feature = "no-crypto"))]
-pub use secp256k1::SecretKey;
+pub use libsecp256k1::SecretKey;
 
 #[cfg(feature = "no-crypto")]
 pub type SecretKey = Address;
@@ -57,7 +57,7 @@ pub type Hash = [u8; 32];
 /// use {arcadeum::crypto::Addressable, libsecp256k1_rand::SeedableRng};
 ///
 /// let mut random = libsecp256k1_rand::rngs::StdRng::from_seed([1; 32]);
-/// let secret = secp256k1::SecretKey::random(&mut random);
+/// let secret = libsecp256k1::SecretKey::random(&mut random);
 /// let message = b"quod erat demonstrandum";
 /// let signature = arcadeum::crypto::sign(message, &secret);
 ///
@@ -73,9 +73,9 @@ pub fn sign(message: &[u8], secret: &SecretKey) -> Signature {
     ]
     .concat();
 
-    let message = secp256k1::Message::parse(&keccak256(&message));
+    let message = libsecp256k1::Message::parse(&keccak256(&message));
 
-    let (mut signature, recovery) = secp256k1::sign(&message, secret);
+    let (mut signature, recovery) = libsecp256k1::sign(&message, secret);
     signature.normalize_s();
 
     let mut data = [0; size_of::<Signature>()];
@@ -150,10 +150,10 @@ cached::cached! {
     RECOVER_CACHE: cached::SizedCache<(Hash, Signature), Result<Address, String>> = cached::SizedCache::with_size(256);
 
     fn _cached_recover(digest: Hash, signature: Signature) -> Result<Address, String> = {
-        let message = secp256k1::Message::parse(&digest);
+        let message = libsecp256k1::Message::parse(&digest);
 
         let recovery =
-            secp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
+            libsecp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
                 0 | 27 => 0,
                 1 | 28 => 1,
                 2 | 29 => 2,
@@ -163,10 +163,10 @@ cached::cached! {
             .map_err(|error| format!("{:?}", error))?;
 
         let signature =
-            secp256k1::Signature::parse_slice(&signature[..size_of::<Signature>() - 1])
+            libsecp256k1::Signature::parse_standard_slice(&signature[..size_of::<Signature>() - 1])
                 .map_err(|error| format!("{:?}", error))?;
 
-        let public = secp256k1::recover(&message, &signature, &recovery)
+        let public = libsecp256k1::recover(&message, &signature, &recovery)
             .map_err(|error| format!("{:?}", error))?;
 
         Ok(address(&public))
@@ -202,9 +202,9 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
     ]
     .concat();
 
-    let message = secp256k1::Message::parse(&keccak256(&message));
+    let message = libsecp256k1::Message::parse(&keccak256(&message));
 
-    let recovery = secp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
+    let recovery = libsecp256k1::RecoveryId::parse(match signature[size_of::<Signature>() - 1] {
         0 | 27 => 0,
         1 | 28 => 1,
         2 | 29 => 2,
@@ -213,10 +213,10 @@ pub fn recover(message: &[u8], signature: &[u8]) -> Result<Address, String> {
     })
     .map_err(|error| format!("{:?}", error))?;
 
-    let signature = secp256k1::Signature::parse_slice(&signature[..size_of::<Signature>() - 1])
+    let signature = libsecp256k1::Signature::parse_slice(&signature[..size_of::<Signature>() - 1])
         .map_err(|error| format!("{:?}", error))?;
 
-    let public = secp256k1::recover(&message, &signature, &recovery)
+    let public = libsecp256k1::recover(&message, &signature, &recovery)
         .map_err(|error| format!("{:?}", error))?;
 
     Ok(address(&public))
@@ -265,13 +265,13 @@ pub trait Addressable {
     }
 }
 
-impl Addressable for secp256k1::SecretKey {
+impl Addressable for libsecp256k1::SecretKey {
     fn address(&self) -> Address {
-        secp256k1::PublicKey::from_secret_key(self).address()
+        libsecp256k1::PublicKey::from_secret_key(self).address()
     }
 }
 
-impl Addressable for secp256k1::PublicKey {
+impl Addressable for libsecp256k1::PublicKey {
     fn address(&self) -> Address {
         address(self)
     }
@@ -298,7 +298,7 @@ impl Addressable for &Address {
 }
 
 /// Computes the address of a secp256k1 ECDSA public key.
-pub fn address(public: &secp256k1::PublicKey) -> Address {
+pub fn address(public: &libsecp256k1::PublicKey) -> Address {
     keccak256(&public.serialize()[1..])[size_of::<Hash>() - size_of::<Address>()..]
         .try_into()
         .unwrap()

@@ -424,6 +424,10 @@ macro_rules! bind {
             pub fn apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
                 Ok(self.store.apply(&$crate::Diff::deserialize(diff)?)?)
             }
+            #[wasm_bindgen::prelude::wasm_bindgen]
+            pub fn raw_apply(&mut self, diff: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
+                Ok(self.store.raw_apply(&$crate::Diff::deserialize(diff)?)?)
+            }
 
             #[wasm_bindgen::prelude::wasm_bindgen(js_name = getApproval)]
             pub fn approval(player: &str, subkey: &str) -> Result<String, wasm_bindgen::JsValue> {

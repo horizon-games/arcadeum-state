@@ -709,10 +709,18 @@ impl<S: State> Store<S> {
         Ok(actions)
     }
 
-    /// Verifies and applies a cryptographically constructed diff to the store.
+    /// Verifies and applies a cryptographically constructed diff to the store, then calls .flush().
     ///
     /// `diff` must have been constructed using [Store::diff] on a store with the same state.
     pub fn apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
+        self.raw_apply(diff)?;
+
+        self.flush()
+    }
+    /// Verifies and applies a cryptographically constructed diff to the store.
+    ///
+    /// `diff` must have been constructed using [Store::diff] on a store with the same state.
+    pub fn raw_apply(&mut self, diff: &StoreDiff<S>) -> Result<(), String> {
         self.proof
             .state
             .state
@@ -722,8 +730,7 @@ impl<S: State> Store<S> {
             .enabled = true;
 
         self.proof.apply(diff)?;
-
-        self.flush()
+        Ok(())
     }
 
     /// Generates a diff that can be applied to a store with the same state.

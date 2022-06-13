@@ -16,6 +16,8 @@
 
 //! Store tester
 
+use crate::store::SecretKnowledge;
+
 use {
     alloc::{
         boxed::Box,
@@ -356,16 +358,28 @@ where
             crate::forbid!(store.proof.serialize() != self.proof.serialize());
 
             crate::forbid!({
-                let data = store.serialize(None);
+                let data = store.serialize(SecretKnowledge::Both);
 
-                deserialize_store::<S>(&data)?.serialize(None) != data
+                deserialize_store::<S>(&data)?.serialize(SecretKnowledge::Both) != data
             });
         }
 
-        crate::forbid!(self.stores[1].serialize(None) != self.stores[1].serialize(Some(0)));
-        crate::forbid!(self.stores[2].serialize(None) != self.stores[2].serialize(Some(1)));
-        crate::forbid!(self.stores[0].serialize(Some(0)) != self.stores[1].serialize(Some(0)));
-        crate::forbid!(self.stores[0].serialize(Some(1)) != self.stores[2].serialize(Some(1)));
+        crate::forbid!(
+            self.stores[1].serialize(SecretKnowledge::Both)
+                != self.stores[1].serialize(SecretKnowledge::Some(0))
+        );
+        crate::forbid!(
+            self.stores[2].serialize(SecretKnowledge::Both)
+                != self.stores[2].serialize(SecretKnowledge::Some(1))
+        );
+        crate::forbid!(
+            self.stores[0].serialize(SecretKnowledge::Some(0))
+                != self.stores[1].serialize(SecretKnowledge::Some(0))
+        );
+        crate::forbid!(
+            self.stores[0].serialize(SecretKnowledge::Some(1))
+                != self.stores[2].serialize(SecretKnowledge::Some(1))
+        );
 
         crate::forbid!(self.stores[0].state().state().secret(0).is_none());
         crate::forbid!(self.stores[0].state().state().secret(1).is_none());
@@ -374,27 +388,27 @@ where
         crate::forbid!(self.stores[2].state().state().secret(0).is_some());
         crate::forbid!(self.stores[2].state().state().secret(1).is_none());
 
-        let store = deserialize_store::<S>(&self.stores[0].serialize(Some(0)))?;
+        let store = deserialize_store::<S>(&self.stores[0].serialize(SecretKnowledge::Some(0)))?;
         crate::forbid!(store.state().state().secret(0).is_none());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[0].serialize(Some(1)))?;
+        let store = deserialize_store::<S>(&self.stores[0].serialize(SecretKnowledge::Some(1)))?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_none());
 
-        let store = deserialize_store::<S>(&self.stores[1].serialize(Some(0)))?;
+        let store = deserialize_store::<S>(&self.stores[1].serialize(SecretKnowledge::Some(0)))?;
         crate::forbid!(store.state().state().secret(0).is_none());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[1].serialize(Some(1)))?;
+        let store = deserialize_store::<S>(&self.stores[1].serialize(SecretKnowledge::Some(1)))?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[2].serialize(Some(0)))?;
+        let store = deserialize_store::<S>(&self.stores[2].serialize(SecretKnowledge::Some(0)))?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[2].serialize(Some(1)))?;
+        let store = deserialize_store::<S>(&self.stores[2].serialize(SecretKnowledge::Some(1)))?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_none());
 

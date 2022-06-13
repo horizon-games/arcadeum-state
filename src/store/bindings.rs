@@ -216,8 +216,13 @@ macro_rules! bind {
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
-            pub fn serialize(&self, player: Option<$crate::Player>) -> Vec<u8> {
-                self.store.serialize(player)
+            pub fn serialize(&self, secret_knowledge: u8) -> Vec<u8> {
+                self.store.serialize(match secret_knowledge {
+                    1 => $crate::store::SecretKnowledge::Some(0),
+                    2 => $crate::store::SecretKnowledge::Some(1),
+                    3 => $crate::store::SecretKnowledge::Both,
+                    _ => $crate::store::SecretKnowledge::None
+                })
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]

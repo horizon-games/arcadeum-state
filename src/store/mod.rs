@@ -46,6 +46,13 @@ mod tester;
 #[cfg(feature = "std")]
 pub mod bindings;
 
+#[derive(PartialEq)]
+pub enum SecretKnowledge {
+    Both,
+    None,
+    Some(crate::Player),
+}
+
 /// Client [State] store
 pub struct Store<S: State> {
     player: Option<crate::Player>,
@@ -121,6 +128,7 @@ impl<S: State> Store<S> {
 
         let player = match crate::utils::read_u8(&mut data)? {
             0 => None,
+            3 => None,
             byte => Some(byte - 1),
         };
 
@@ -278,7 +286,7 @@ impl<S: State> Store<S> {
     /// player.
     ///
     /// See [Store::deserialize].
-    pub fn serialize(&self, player: Option<crate::Player>) -> Vec<u8> {
+    pub fn serialize(&self, with_knowledge: SecretKnowledge) -> Vec<u8> {
         let root = self.proof.root.serialize();
         let proof = self.proof.serialize();
 
@@ -296,9 +304,10 @@ impl<S: State> Store<S> {
         crate::utils::write_u8(
             &mut data,
             match self.player {
-                None => match player {
-                    None => 0,
-                    Some(player) => 1 + player,
+                None => match with_knowledge {
+                    SecretKnowledge::None => 0,
+                    SecretKnowledge::Both => 3,
+                    SecretKnowledge::Some(player) => 1 + player,
                 },
                 Some(player) => 1 + player,
             },
@@ -306,7 +315,9 @@ impl<S: State> Store<S> {
 
         if let Some(_StoreState::Ready { secrets, .. }) = &self.proof.root.state.state.0 {
             for (i, secret) in secrets.iter().enumerate() {
-                if player.is_none() || player == Some(i.try_into().unwrap()) {
+                if with_knowledge == SecretKnowledge::Both
+                    || with_knowledge == SecretKnowledge::Some(i.try_into().unwrap())
+                {
                     match secret {
                         Some((secret, random)) => {
                             crate::utils::write_u8_bool(&mut data, true);
@@ -349,7 +360,9 @@ impl<S: State> Store<S> {
             .0
         {
             for (i, secret) in secrets.iter().enumerate() {
-                if player.is_none() || player == Some(i.try_into().unwrap()) {
+                if with_knowledge == SecretKnowledge::Both
+                    || with_knowledge == SecretKnowledge::Some(i.try_into().unwrap())
+                {
                     match secret {
                         Some((secret, random)) => {
                             crate::utils::write_u8_bool(&mut data, true);
@@ -375,7 +388,7 @@ impl<S: State> Store<S> {
         crate::utils::write_u32_usize(&mut data, proof.len()).unwrap();
         data.extend(proof);
 
-        if player.is_none() || player == Some(0) {
+        if with_knowledge == SecretKnowledge::Both || with_knowledge == SecretKnowledge::Some(0) {
             if let Some(seed) = &self.seed {
                 crate::utils::write_u8_bool(&mut data, true);
                 data.extend(seed);

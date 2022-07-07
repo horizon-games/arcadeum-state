@@ -1644,11 +1644,12 @@ pub struct Context<S: Secret, E> {
 
 impl<S: Secret, E> Context<S, E> {
     /// Mutates a player's secret information.
+    /// Returns whether or not we did the mutation (whether we had the secret)
     pub fn mutate_secret(
         &mut self,
         player: crate::Player,
         mutate: impl Fn(MutateSecretInfo<S, E>),
-    ) {
+    ) -> bool {
         self.event_count += 1;
 
         if let Some(secret) = &self.secrets[usize::from(player)] {
@@ -1684,7 +1685,10 @@ impl<S: Secret, E> Context<S, E> {
                     random,
                     log: &mut |_| (),
                 });
-            }
+            };
+            true
+        } else {
+            false
         }
     }
 

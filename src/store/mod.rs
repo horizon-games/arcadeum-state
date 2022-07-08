@@ -1644,12 +1644,11 @@ pub struct Context<S: Secret, E> {
 
 impl<S: Secret, E> Context<S, E> {
     /// Mutates a player's secret information.
-    /// Returns whether or not we did the mutation (whether we had the secret)
     pub fn mutate_secret(
         &mut self,
         player: crate::Player,
         mutate: impl Fn(MutateSecretInfo<S, E>),
-    ) -> bool {
+    ) {
         self.event_count += 1;
 
         if let Some(secret) = &self.secrets[usize::from(player)] {
@@ -1686,9 +1685,25 @@ impl<S: Secret, E> Context<S, E> {
                     log: &mut |_| (),
                 });
             };
-            true
+        }
+    }
+
+    /// Mutates a player's secret information, or if we don't have that secret, emit an arbitrary event
+    pub fn mutate_secret_or_log(
+        &mut self,
+        player: crate::Player,
+        mutate: impl Fn(MutateSecretInfo<S, E>),
+        event: E,
+    ) {
+        if self.secrets[usize::from(player)].is_some() {
+            self.mutate_secret(player, mutate);
         } else {
-            false
+            self.event_count += 1;
+            if self.logger.0 {
+                if let Ok(mut logger) = self.logger.1.try_borrow_mut() {
+                    logger.log(self.event_count, None, event);
+                }
+            }
         }
     }
 

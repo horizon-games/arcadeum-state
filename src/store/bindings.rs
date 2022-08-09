@@ -512,21 +512,20 @@ macro_rules! bind {
                 random: js_sys::Function,
             ) -> Result<WasmState, wasm_bindgen::JsValue> {
                 Ok(WasmState {
-                    state: arcadeum::store::StoreState::deserialize(data, move |target, event| {
-                        if let (Ok(target), Ok(event)) = (
-                            arcadeum::utils::to_js(&target),
-                            arcadeum::utils::to_js(&event),
-                        ) {
+                    state: $crate::store::StoreState::deserialize(data, move |target, event| {
+                        if let (Ok(target), Ok(event)) =
+                            ($crate::utils::to_js(&target), $crate::utils::to_js(&event))
+                        {
                             drop(log.call2(&wasm_bindgen::JsValue::UNDEFINED, &target, &event))
                         }
                     })?,
-                    random: arcadeum::store::bindings::JsRng(random),
+                    random: $crate::store::bindings::JsRng(random),
                 })
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub fn serialize(&self) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
-                arcadeum::State::serialize(&self.state).ok_or(wasm_bindgen::JsValue::from(
+                $crate::State::serialize(&self.state).ok_or(wasm_bindgen::JsValue::from(
                     "self.state.serialize().is_none()",
                 ))
             }

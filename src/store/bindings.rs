@@ -253,6 +253,11 @@ macro_rules! bind {
                 $crate::utils::hex(self.store.hash())
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = hasState)]
+            pub fn has_state(&self) -> bool {
+                self.store.state().state().state().is_some()
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
                 Ok($crate::utils::to_js(
@@ -262,6 +267,11 @@ macro_rules! bind {
                         .state()
                         .ok_or("self.store.state().state().state().is_none()")?,
                 )?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = hasSecret)]
+            pub fn has_secret(&self, player: $crate::Player) -> bool {
+                self.store.state().state().secret(player).is_some()
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -521,11 +531,21 @@ macro_rules! bind {
                 ))
             }
 
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = hasState)]
+            pub fn has_state(&self) -> bool {
+                self.state.state().is_some()
+            }
+
             #[wasm_bindgen::prelude::wasm_bindgen(getter)]
             pub fn state(&self) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
                 Ok($crate::utils::to_js(
                     self.state.state().ok_or("self.state.state().is_none()")?,
                 )?)
+            }
+
+            #[wasm_bindgen::prelude::wasm_bindgen(js_name = hasSecret)]
+            pub fn has_secret(&self, player: $crate::Player) -> bool {
+                self.state.secret(player).is_some()
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]

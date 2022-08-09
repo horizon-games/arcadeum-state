@@ -1,12 +1,13 @@
 [package]
 name = "arcadeum"
-version = "0.20.1"
+version = "0.20.2"
 authors = ["Horizon Blockchain Games Inc."]
 edition = "2018"
 
 [features]
 default = ["std"]
 no-crypto = []
+no-version-check = []
 std = ["cached", "js-sys", "rand_core", "serde-wasm-bindgen", "serde_cbor/std", "wasm-bindgen", "web-sys"]
 test-approvals = []
 

@@ -979,7 +979,11 @@ impl<S: State> ProofState<S> {
 
         forbid!(size != version.len());
         forbid!(data.len() < size);
-        forbid!(data[..size] != *version);
+
+        if cfg!(not(feature = "no-version-check")) {
+            forbid!(data[..size] != *version);
+        }
+
         data = &data[size..];
 
         let id = S::ID::deserialize(&mut data)?;

@@ -221,7 +221,7 @@ macro_rules! bind {
                     1 => $crate::store::SecretKnowledge::Some(0),
                     2 => $crate::store::SecretKnowledge::Some(1),
                     3 => $crate::store::SecretKnowledge::Both,
-                    _ => $crate::store::SecretKnowledge::None
+                    _ => $crate::store::SecretKnowledge::None,
                 })
             }
 
@@ -303,11 +303,13 @@ macro_rules! bind {
                 action: wasm_bindgen::JsValue,
                 using_secrets: wasm_bindgen::JsValue,
             ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
-                Ok($crate::utils::to_js(&self.store.state().state().simulate(
-                    player,
-                    &$crate::utils::from_js(action)?,
-                    $crate::utils::from_js(using_secrets)?,
-                )?)?)
+                Ok($crate::utils::to_js(
+                    &self.store.state().state().simulate(
+                        player,
+                        &$crate::utils::from_js(action)?,
+                        $crate::utils::from_js(using_secrets)?,
+                    )?,
+                )?)
             }
 
             #[wasm_bindgen::prelude::wasm_bindgen]
@@ -438,10 +440,14 @@ macro_rules! bind {
             pub fn approval(player: &str, subkey: &str) -> Result<String, wasm_bindgen::JsValue> {
                 Ok(
                     <$crate::store::StoreState<$type> as $crate::State>::approval(
-                        std::convert::TryInto::<_>::try_into($crate::utils::unhex(player)?.as_slice())
-                            .map_err(|error| format!("{}", error))?,
-                        std::convert::TryInto::<_>::try_into($crate::utils::unhex(subkey)?.as_slice())
-                            .map_err(|error| format!("{}", error))?,
+                        std::convert::TryInto::<_>::try_into(
+                            $crate::utils::unhex(player)?.as_slice(),
+                        )
+                        .map_err(|error| format!("{}", error))?,
+                        std::convert::TryInto::<_>::try_into(
+                            $crate::utils::unhex(subkey)?.as_slice(),
+                        )
+                        .map_err(|error| format!("{}", error))?,
                     ),
                 )
             }

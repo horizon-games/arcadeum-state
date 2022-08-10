@@ -41,7 +41,7 @@ macro_rules! bind {
                 send: js_sys::Function,
                 log: js_sys::Function,
                 random: js_sys::Function,
-                no_version_check: bool,
+                no_version_check: Option<bool>,
             ) -> Result<WasmMatch, wasm_bindgen::JsValue> {
                 Ok(Self {
                     store: {
@@ -122,7 +122,7 @@ macro_rules! bind {
                                 }
                             },
                             $crate::store::bindings::JsRng(random),
-                            no_version_check,
+                            no_version_check.unwrap_or(false),
                         )?
                     },
                     send,
@@ -138,7 +138,7 @@ macro_rules! bind {
                 send: js_sys::Function,
                 log: js_sys::Function,
                 random: js_sys::Function,
-                no_version_check: bool,
+                no_version_check: Option<bool>,
             ) -> Result<WasmMatch, wasm_bindgen::JsValue> {
                 Ok(Self {
                     store: {
@@ -212,7 +212,7 @@ macro_rules! bind {
                                 }
                             },
                             $crate::store::bindings::JsRng(random),
-                            no_version_check,
+                            no_version_check.unwrap_or(false),
                         )?
                     },
                     send,
@@ -629,12 +629,12 @@ macro_rules! bind {
         #[wasm_bindgen::prelude::wasm_bindgen(js_name = getRootProofID)]
         pub fn root_proof_id(
             root: &[u8],
-            no_version_check: bool,
+            no_version_check: Option<bool>,
         ) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
             Ok($crate::ID::serialize(
                 $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(
                     root,
-                    no_version_check,
+                    no_version_check.unwrap_or(false),
                 )?
                 .state()
                 .id(),
@@ -645,7 +645,7 @@ macro_rules! bind {
         pub fn root_proof_player(
             root: &[u8],
             player: &str,
-            no_version_check: bool,
+            no_version_check: Option<bool>,
         ) -> Result<$crate::Player, wasm_bindgen::JsValue> {
             let player = $crate::utils::unhex(player)?;
 
@@ -657,7 +657,7 @@ macro_rules! bind {
 
             let root = $crate::RootProof::<$crate::store::StoreState<$type>>::deserialize(
                 root,
-                no_version_check,
+                no_version_check.unwrap_or(false),
             )?;
 
             root.state()

@@ -1,6 +1,6 @@
 [package]
 name = "arcadeum"
-version = "0.20.2"
+version = "0.20.3"
 authors = ["Horizon Blockchain Games Inc."]
 edition = "2018"
 
@@ -24,5 +24,5 @@ serde = { version = "1.0.101", default-features = false, features = ["derive"] }
 serde-wasm-bindgen = { git = "https://github.com/awestlake87/serde-wasm-bindgen.git", optional = true }
 serde_cbor = { version = "0.11.1", default-features = false, features = ["alloc"] }
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
-wasm-bindgen = { version = "0.2.73", optional = true, features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.82", optional = true, features = ["serde-serialize"] }
 web-sys = { version = "0.3.25", optional = true, features = ["console"] }

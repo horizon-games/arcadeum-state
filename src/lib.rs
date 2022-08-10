@@ -92,8 +92,8 @@ impl<S: State> Proof<S> {
     /// Updates the proof's state from a binary representation.
     ///
     /// `data` must have been constructed using [Proof::serialize] on a proof with the same root.
-    pub fn deserialize(&mut self, data: &[u8]) -> Result<(), String> {
-        self.deserialize_and_init(data, |_| ())
+    pub fn deserialize(&mut self, data: &[u8], no_version_check: bool) -> Result<(), String> {
+        self.deserialize_and_init(data, |_| (), no_version_check)
     }
 
     /// Generates a binary representation that can be used to reconstruct the proof.
@@ -384,6 +384,7 @@ impl<S: State> Proof<S> {
         &mut self,
         mut data: &[u8],
         init: impl FnOnce(&mut S),
+        no_version_check: bool,
     ) -> Result<(), String> {
         forbid!(
             data.len()
@@ -401,7 +402,10 @@ impl<S: State> Proof<S> {
             let size = utils::read_u32_usize(&mut data)?;
 
             forbid!(data.len() < size);
-            let state = ProofState::<S>::deserialize_and_init(&data[..size], init)?;
+
+            let state =
+                ProofState::<S>::deserialize_and_init(&data[..size], init, no_version_check)?;
+
             data = &data[size..];
 
             state
@@ -664,8 +668,8 @@ impl<S: State> RootProof<S> {
     /// Constructs a root proof from its binary representation.
     ///
     /// `data` must have been constructed using [RootProof::serialize].
-    pub fn deserialize(data: &[u8]) -> Result<Self, String> {
-        Self::deserialize_and_init(data, |_| ())
+    pub fn deserialize(data: &[u8], no_version_check: bool) -> Result<Self, String> {
+        Self::deserialize_and_init(data, |_| (), no_version_check)
     }
 
     /// Generates a binary representation that can be used to reconstruct the root proof.
@@ -706,7 +710,11 @@ impl<S: State> RootProof<S> {
         &self.latest
     }
 
-    fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {
+    fn deserialize_and_init(
+        mut data: &[u8],
+        init: impl FnOnce(&mut S),
+        no_version_check: bool,
+    ) -> Result<Self, String> {
         forbid!(data.len() < size_of::<u32>() + size_of::<u32>() + size_of::<crypto::Signature>());
 
         let hash = crypto::keccak256(data);
@@ -714,7 +722,7 @@ impl<S: State> RootProof<S> {
         let size = utils::read_u32_usize(&mut data)?;
 
         forbid!(data.len() < size);
-        let state = ProofState::<S>::deserialize_and_init(&data[..size], init)?;
+        let state = ProofState::<S>::deserialize_and_init(&data[..size], init, no_version_check)?;
         data = &data[size..];
 
         let length = utils::read_u32_usize(&mut data)?;
@@ -973,14 +981,18 @@ impl<S: State> ProofState<S> {
         Ok(data[..size].to_vec())
     }
 
-    fn deserialize_and_init(mut data: &[u8], init: impl FnOnce(&mut S)) -> Result<Self, String> {
+    fn deserialize_and_init(
+        mut data: &[u8],
+        init: impl FnOnce(&mut S),
+        no_version_check: bool,
+    ) -> Result<Self, String> {
         let version = S::version();
         let size = utils::read_u32_usize(&mut data)?;
 
         forbid!(size != version.len());
         forbid!(data.len() < size);
 
-        if cfg!(not(feature = "no-version-check")) {
+        if cfg!(not(feature = "no-version-check")) && !no_version_check {
             forbid!(data[..size] != *version);
         }
 

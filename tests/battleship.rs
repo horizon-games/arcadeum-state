@@ -189,6 +189,7 @@ fn test_battleship() {
         Vec::new(),
         |player, _, _| println!("[{:?}: ready]", player),
         |player, target, event| println!("[{:?} (target {:?}): log] {:?}", player, target, event),
+        false,
     )
     .unwrap();
 

@@ -277,7 +277,7 @@ fn test_ttt() {
 
     assert_eq!(
         data,
-        RootProof::<Box<TTT>>::deserialize(&root.serialize())
+        RootProof::<Box<TTT>>::deserialize(&root.serialize(), false)
             .unwrap()
             .serialize()
     );
@@ -289,7 +289,7 @@ fn test_ttt() {
 
     assert_eq!(data, {
         let mut proof = Proof::new(root.clone());
-        proof.deserialize(&data).unwrap();
+        proof.deserialize(&data, false).unwrap();
         proof.serialize()
     });
 
@@ -316,7 +316,7 @@ fn test_ttt() {
 
         assert_eq!(data, {
             let mut proof = Proof::new(root.clone());
-            proof.deserialize(&data).unwrap();
+            proof.deserialize(&data, false).unwrap();
             proof.serialize()
         });
     }
@@ -341,7 +341,7 @@ fn test_ttt() {
 
         assert_eq!(data, {
             let mut proof = Proof::new(root.clone());
-            proof.deserialize(&data).unwrap();
+            proof.deserialize(&data, false).unwrap();
             proof.serialize()
         });
     };

@@ -39,6 +39,7 @@ where
     proof: crate::Proof<crate::store::StoreState<S>>,
     stores: [crate::store::Store<S>; 3],
     queues: [Rc<RefCell<VecDeque<Vec<u8>>>>; 3],
+    no_version_check: bool,
 }
 
 impl<S: crate::store::State> Tester<S>
@@ -52,6 +53,7 @@ where
         actions: Vec<crate::ProofAction<crate::store::StoreState<S>>>,
         ready: impl FnMut(Option<crate::Player>, &S, [Option<&S::Secret>; 2]) + 'static,
         log: impl FnMut(Option<crate::Player>, Option<crate::Player>, S::Event) + 'static,
+        no_version_check: bool,
     ) -> Result<Self, String> {
         let mut randoms = {
             const SIZE: usize = size_of::<
@@ -218,6 +220,7 @@ where
                             }
                         },
                         random0,
+                        no_version_check,
                     )?;
 
                     store.flush()?;
@@ -251,6 +254,7 @@ where
                             }
                         },
                         random1,
+                        no_version_check,
                     )?;
 
                     store.flush()?;
@@ -276,6 +280,7 @@ where
                             (log.try_borrow_mut().unwrap())(Some(1), target, event)
                         },
                         random2,
+                        no_version_check,
                     )?;
 
                     store.flush()?;
@@ -289,6 +294,7 @@ where
             proof,
             stores,
             queues,
+            no_version_check,
         };
 
         tester.flush()?;
@@ -345,13 +351,14 @@ where
         crate::forbid!({
             let data = self.proof.root.serialize();
 
-            deserialize_root_proof::<S>(&data)?.serialize() != data
+            deserialize_root_proof::<S>(&data, self.no_version_check)?.serialize() != data
         });
 
         crate::forbid!({
             let data = self.proof.serialize();
 
-            deserialize_proof(&data, self.proof.root.clone())?.serialize() != data
+            deserialize_proof(&data, self.proof.root.clone(), self.no_version_check)?.serialize()
+                != data
         });
 
         for store in &self.stores {
@@ -360,7 +367,9 @@ where
             crate::forbid!({
                 let data = store.serialize(SecretKnowledge::Both);
 
-                deserialize_store::<S>(&data)?.serialize(SecretKnowledge::Both) != data
+                deserialize_store::<S>(&data, self.no_version_check)?
+                    .serialize(SecretKnowledge::Both)
+                    != data
             });
         }
 
@@ -388,27 +397,45 @@ where
         crate::forbid!(self.stores[2].state().state().secret(0).is_some());
         crate::forbid!(self.stores[2].state().state().secret(1).is_none());
 
-        let store = deserialize_store::<S>(&self.stores[0].serialize(SecretKnowledge::Some(0)))?;
+        let store = deserialize_store::<S>(
+            &self.stores[0].serialize(SecretKnowledge::Some(0)),
+            self.no_version_check,
+        )?;
         crate::forbid!(store.state().state().secret(0).is_none());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[0].serialize(SecretKnowledge::Some(1)))?;
+        let store = deserialize_store::<S>(
+            &self.stores[0].serialize(SecretKnowledge::Some(1)),
+            self.no_version_check,
+        )?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_none());
 
-        let store = deserialize_store::<S>(&self.stores[1].serialize(SecretKnowledge::Some(0)))?;
+        let store = deserialize_store::<S>(
+            &self.stores[1].serialize(SecretKnowledge::Some(0)),
+            self.no_version_check,
+        )?;
         crate::forbid!(store.state().state().secret(0).is_none());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[1].serialize(SecretKnowledge::Some(1)))?;
+        let store = deserialize_store::<S>(
+            &self.stores[1].serialize(SecretKnowledge::Some(1)),
+            self.no_version_check,
+        )?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[2].serialize(SecretKnowledge::Some(0)))?;
+        let store = deserialize_store::<S>(
+            &self.stores[2].serialize(SecretKnowledge::Some(0)),
+            self.no_version_check,
+        )?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_some());
 
-        let store = deserialize_store::<S>(&self.stores[2].serialize(SecretKnowledge::Some(1)))?;
+        let store = deserialize_store::<S>(
+            &self.stores[2].serialize(SecretKnowledge::Some(1)),
+            self.no_version_check,
+        )?;
         crate::forbid!(store.state().state().secret(0).is_some());
         crate::forbid!(store.state().state().secret(1).is_none());
 
@@ -555,6 +582,7 @@ fn generate_keys_and_subkeys<R: libsecp256k1_rand::RngCore>(
 
 fn deserialize_store<S: crate::store::State>(
     data: &[u8],
+    no_version_check: bool,
 ) -> Result<crate::store::Store<S>, String> {
     let mut store = crate::store::Store::deserialize(
         data,
@@ -564,6 +592,7 @@ fn deserialize_store<S: crate::store::State>(
         |_| (),
         |_, _| (),
         UnreachableRng,
+        no_version_check,
     )?;
 
     store.flush()?;
@@ -574,18 +603,20 @@ fn deserialize_store<S: crate::store::State>(
 fn deserialize_proof<S: crate::store::State>(
     data: &[u8],
     root: crate::RootProof<crate::store::StoreState<S>>,
+    no_version_check: bool,
 ) -> Result<crate::Proof<crate::store::StoreState<S>>, String> {
     let mut proof = crate::Proof::new(root);
 
-    proof.deserialize(data)?;
+    proof.deserialize(data, no_version_check)?;
 
     Ok(proof)
 }
 
 fn deserialize_root_proof<S: crate::store::State>(
     data: &[u8],
+    no_version_check: bool,
 ) -> Result<crate::RootProof<crate::store::StoreState<S>>, String> {
-    crate::RootProof::deserialize(data)
+    crate::RootProof::deserialize(data, no_version_check)
 }
 
 struct UnreachableRng;

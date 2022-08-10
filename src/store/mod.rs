@@ -81,6 +81,7 @@ impl<S: State> Store<S> {
         send: impl FnMut(&StoreDiff<S>) + 'static,
         log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
         random: impl rand::RngCore + 'static,
+        no_version_check: bool,
     ) -> Result<Self, String> {
         Ok(Self {
             player,
@@ -100,6 +101,7 @@ impl<S: State> Store<S> {
 
                     state.set_logger(Rc::new(RefCell::new(Logger::new(log))));
                 },
+                no_version_check,
             )?),
             p2p,
             ready: Box::new(ready),
@@ -123,6 +125,7 @@ impl<S: State> Store<S> {
         send: impl FnMut(&StoreDiff<S>) + 'static,
         log: impl FnMut(Option<crate::Player>, S::Event) + 'static,
         random: impl rand::RngCore + 'static,
+        no_version_check: bool,
     ) -> Result<Self, String> {
         crate::forbid!(data.len() < 1 + size_of::<u32>() + size_of::<u32>() + 1);
 
@@ -180,8 +183,9 @@ impl<S: State> Store<S> {
 
         crate::forbid!(data.len() < size);
 
-        let root =
-            crate::RootProof::<StoreState<S>>::deserialize_and_init(&data[..size], |state| {
+        let root = crate::RootProof::<StoreState<S>>::deserialize_and_init(
+            &data[..size],
+            |state| {
                 if let Some(_StoreState::Ready {
                     secrets: state_secrets,
                     ..
@@ -193,7 +197,9 @@ impl<S: State> Store<S> {
                 }
 
                 state.set_logger(log.clone());
-            })?;
+            },
+            no_version_check,
+        )?;
 
         data = &data[size..];
 
@@ -246,19 +252,23 @@ impl<S: State> Store<S> {
         crate::forbid!(data.len() < size);
         let mut proof = crate::Proof::new(root);
 
-        proof.deserialize_and_init(&data[..size], |state| {
-            if let Some(_StoreState::Ready {
-                secrets: state_secrets,
-                ..
-            }) = &mut state.0
-            {
-                *state_secrets = secrets;
-            } else {
-                unreachable!("{}:{}:{}", file!(), line!(), column!());
-            }
+        proof.deserialize_and_init(
+            &data[..size],
+            |state| {
+                if let Some(_StoreState::Ready {
+                    secrets: state_secrets,
+                    ..
+                }) = &mut state.0
+                {
+                    *state_secrets = secrets;
+                } else {
+                    unreachable!("{}:{}:{}", file!(), line!(), column!());
+                }
 
-            state.set_logger(log);
-        })?;
+                state.set_logger(log);
+            },
+            no_version_check,
+        )?;
 
         data = &data[size..];
 

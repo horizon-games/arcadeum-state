@@ -1,6 +1,6 @@
 [package]
 name = "arcadeum"
-version = "0.21.1"
+version = "0.21.2"
 authors = ["Horizon Blockchain Games Inc."]
 edition = "2018"
 

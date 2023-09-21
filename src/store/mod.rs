@@ -71,6 +71,7 @@ impl<S: State> Store<S> {
     /// You should call [Store::flush] on the new store.
     ///
     /// `root` must have been constructed using [RootProof::serialize](crate::RootProof::serialize).
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         player: Option<crate::Player>,
         root: &[u8],
@@ -117,6 +118,7 @@ impl<S: State> Store<S> {
     /// You should call [Store::flush] on the new store.
     ///
     /// `data` must have been constructed using [Store::serialize].
+    #[allow(clippy::too_many_arguments)]
     pub fn deserialize(
         mut data: &[u8],
         p2p: bool,

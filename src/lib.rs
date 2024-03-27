@@ -153,6 +153,8 @@ impl<S: State> Proof<S> {
     ///
     /// `diff` must have been constructed using [Proof::diff] on a proof with the same digest.
     pub fn apply(&mut self, diff: &Diff<S>) -> Result<(), error::Error> {
+        console_log!(format!("state: {}\ndiff: {} {:?}", utils::hex(&self.hash), utils::hex(&diff.proof), diff));
+
         if diff.proof != self.hash {
             return Err(format!(
                 "diff.proof != self.hash: {} != {}",
@@ -311,6 +313,8 @@ impl<S: State> Proof<S> {
 
         self.hash = self.compute_hash();
         self.state = latest;
+
+        console_log!(format!("state: {}", utils::hex(&self.hash)));
 
         Ok(())
     }
